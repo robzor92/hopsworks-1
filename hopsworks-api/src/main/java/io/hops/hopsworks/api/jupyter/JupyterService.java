@@ -214,6 +214,19 @@ public class JupyterService {
     return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(livyActive).build();
   }
 
+  @GET
+  @Path("/convert/html/{path: .+}")
+  @Produces(MediaType.TEXT_HTML)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
+  @JWTRequired(acceptedTokens={Audience.API}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
+  public Response convertIpythonHtml(@PathParam("path") String path,
+                                         @Context SecurityContext sc) throws ServiceException {
+    String ipynbPath = Utils.getProjectPath(this.project.getName()) + "/" + path;
+    String hdfsUsername = getHdfsUser(sc);
+    String htmlString = jupyterController.convertIPythonNotebook(hdfsUsername, ipynbPath, project);
+    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(htmlString).build();
+  }
+
   @DELETE
   @Path("/livy/sessions/{appId}")
   @Produces(MediaType.APPLICATION_JSON)

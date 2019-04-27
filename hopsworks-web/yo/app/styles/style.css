@@ -166,6 +166,10 @@ a:focus {
   min-width: 900px;
 }
 
+.modal-experiment .modal-dialog {
+  min-width: 65%;
+}
+
 .modal-xlg {
   min-width: 99%;
 }
@@ -605,4 +609,9 @@ md-input-container {
 
 #python-install-progress .progress-bar {
   border-radius: unset !important;
+}
+
+.spin-icon {
+    -webkit-animation: spin 2000ms infinite linear;
+    animation: spin 2000ms infinite linear;
 }
