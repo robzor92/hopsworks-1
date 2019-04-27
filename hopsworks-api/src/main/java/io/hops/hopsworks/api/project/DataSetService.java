@@ -76,6 +76,7 @@ import io.hops.hopsworks.common.dao.user.security.apiKey.ApiScope;
 import io.hops.hopsworks.common.dataset.DatasetController;
 import io.hops.hopsworks.common.dataset.FilePreviewDTO;
 import io.hops.hopsworks.exceptions.DatasetException;
+import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.HopsSecurityException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.restutils.RESTCodes;
@@ -586,7 +587,7 @@ public class DataSetService {
   @JWTRequired(acceptedTokens={Audience.API}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
   @ApiKeyRequired( acceptedScopes = {ApiScope.DATASET_CREATE}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response createTopLevelDataSet(DataSetDTO dataSet, @Context SecurityContext sc)
-    throws DatasetException, HopsSecurityException {
+    throws DatasetException, HopsSecurityException, GenericException {
 
     Users user = jWTHelper.getUserPrincipal(sc);
     DistributedFileSystemOps dfso = dfs.getDfsOps();
@@ -1149,7 +1150,7 @@ public class DataSetService {
 //    Users user = jWTHelper.getUserPrincipal(sc);
 //
 //    DsPath dsPath = pathValidator.validatePath(this.project, path);
-//    org.apache.hadoop.fs.Path fullPath = dsPath.getFullPath();
+//    org.apache.hadoop.fs.Path fullPath = dsPath.getInodePath();
 //    Dataset ds = dsPath.getDs();
 //    if (ds.isShared() && ds.getEditable() == DatasetPermissions.OWNER_ONLY && !ds.isPublicDs()) {
 //      throw new DatasetException(RESTCodes.DatasetErrorCode.COMPRESSION_ERROR, Level.FINE);
@@ -1174,7 +1175,7 @@ public class DataSetService {
 //    RESTApiJsonResponse json = new RESTApiJsonResponse();
 //    json.setSuccessMessage(response);
 //    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(
-//            json).build();
+//            json).parse();
 //  }
 
   /**
