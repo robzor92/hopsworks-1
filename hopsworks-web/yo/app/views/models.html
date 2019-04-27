@@ -1,0 +1,125 @@
+<!--
+  ~ This file is part of Hopsworks
+  ~ Copyright (C) 2018, Logical Clocks AB. All rights reserved
+  ~
+  ~ Hopsworks is free software: you can redistribute it and/or modify it under the terms of
+  ~ the GNU Affero General Public License as published by the Free Software Foundation,
+  ~ either version 3 of the License, or (at your option) any later version.
+  ~
+  ~ Hopsworks is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  ~ without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+  ~ PURPOSE.  See the GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License along with this program.
+  ~ If not, see <https://www.gnu.org/licenses/>.
+  -->
+<div ng-controller="MainCtrl as mainCtrl">
+    <div ng-controller="ProjectCtrl as projectCtrl">
+        <div ng-include="'nav.html'"></div>
+        <div id="wrapper" class="toggled" ng-controller="ModelCtrl as modelCtrl">
+            <div class="overlay"></div>
+            <div ng-include="'navProject.html'"></div>
+
+            <div class="content-wrapper">
+                <div class="row">
+                    <div class="col-sm-9 col-md-9 col-lg-9 form-inline">
+                        <label>Search
+                            <input class="form-control" style="margin-left: 10px;" ng-model="modelCtrl.modelsFilter"
+                                   ng-model-options="{debounce: 800}" ng-change="modelCtrl.getAll()">
+                            <i class="fa fa-info-circle"
+                               uib-tooltip="Case sensitive search for experiment name." tooltip-placement="bottom"></i>
+                        </label>
+                    </div>
+
+
+                    <div class="col-sm-2 col-md-2 col-lg-2">
+                        <ui-select ng-model="modelCtrl.memberSelected" theme="bootstrap"
+                                   on-select="modelCtrl.updateMember(); modelCtrl.getAll();" style="z-index: 1;" id="memberList">
+                            <ui-select-match >
+                                <span ng-bind="modelCtrl.memberSelected.name"></span>
+                            </ui-select-match>
+                            <ui-select-choices repeat="member in (modelCtrl.membersList | filter: $select.search) track by member.name">
+                                <span ng-bind="member.name | highlight: $select.search"></span>
+                            </ui-select-choices>
+                        </ui-select>
+                    </div>
+                    <div class="col-sm-1 col-md-1 col-lg-1">
+                        <div class="pull-right btn-group">
+                            <span style="float: right; margin-right:30px; " class="glyphicon glyphicon-refresh fa-2x" ng-click="modelCtrl.getAll()" role="button" tabindex="0" ng-class="{'spin-icon':modelCtrl.updating}"> </span>
+                        </div>
+                    </div>
+
+                </div>
+                <div>
+                    <table class="table table-condensed table-hover" style="border-collapse:collapse;" data-toggle="table" data-pagination="true" data-search="true" data-show-pagination-switch="true">
+                        <thead style="border:none;">
+                        <tr>
+                            <th style="width: 50%" ng-click="modelCtrl.sortBy('name')">
+                                Name
+                                <span class="glyphicon sort-icon" ng-show="modelCtrl.sortType == 'name'" ng-class="{'glyphicon-chevron-up':!modelCtrl.reverse,'glyphicon-chevron-down':modelCtrl.reverse}"></span></th>
+                            <th>State</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr dir-paginate-start="model in modelCtrl.models | itemsPerPage:modelCtrl.pageSize"
+                            pagination-id="models_pagination"
+                            current-page="modelCtrl.currentPage"
+                            total-items="modelCtrl.totalItems" ng-click="">
+                            <td data-target="#{{model.name}}" data-toggle="collapse" class="accordion-toggle">{{model.name}}</td>
+                            <td data-target="#{{model.name}}" data-toggle="collapse" class="accordion-toggle">RESTING</td>
+                        </tr>
+                        <tr dir-paginate-end>
+                            <td colspan="12" class="hiddenRow">
+                                <div class="accordion-body collapse container-fluid" id="{{model.name}}">
+                                    <table class="table table-striped">
+                                        <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th colspan="2">Parameters</th>
+                                            <th colspan="2">Outputs</th>
+                                        </tr>
+                                        <tr>
+                                            <th ng-click="sortBy('version')">Version</th>
+                                            <th>Dropout</th>
+                                            <th>Learning rate</th>
+                                            <th>Val acc</th>
+                                            <th>Val loss</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr data-ng-repeat="version in model.versions | orderBy:sortType:reverse">
+                                            <td>{{version.version}}</td>
+                                            <td>2</td>
+                                            <td>3</td>
+                                            <td>4</td>
+                                            <td>4</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <dir-pagination-controls
+                            class="pull-right"
+                            max-size="modelCtrl.pageSize"
+                            pagination-id="models_pagination"
+                            direction-links="true"
+                            boundary-links="true"
+                            on-page-change="modelCtrl.getNewPage()">
+                    </dir-pagination-controls>
+                </div>
+
+
+                <div ng-if="modelCtrl.loading" class="loadingwrap">
+                    <div class="loading-content">
+                        <div class="loader-in-wrap"></div>
+                        {{modelCtrl.loadingText}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
