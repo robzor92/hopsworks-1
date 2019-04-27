@@ -385,8 +385,8 @@ public class ElasticController {
     //Get all project indices
     Map<String, IndexMetaData> indices = getIndices(project.getName() +
       "_(((logs|serving|" + Settings.ELASTIC_BEAMSDKWORKER_INDEX_PATTERN + "|" +
-      Settings.ELASTIC_BEAMJOBSERVER_INDEX_PATTERN + ")-\\d{4}.\\d{2}.\\d{2})|(" + Settings.ELASTIC_EXPERIMENTS_INDEX +
-      ")| (" + Settings.ELASTIC_KAGENT_INDEX_PATTERN + "))");
+      Settings.ELASTIC_BEAMJOBSERVER_INDEX_PATTERN + ")-\\d{4}.\\d{2}.\\d{2})|(" +
+        Settings.ELASTIC_KAGENT_INDEX_PATTERN + "))");
     for (String index : indices.keySet()) {
       if (!deleteIndex(index)) {
         LOG.log(Level.SEVERE, "Could not delete project index:{0}", index);

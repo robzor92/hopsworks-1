@@ -92,6 +92,8 @@ RSpec.configure do |config|
   config.include UsersHelper
   config.include ApiKeyHelper
   config.include ProvenanceHelper
+  config.include ExperimentHelper
+  config.include ModelHelper
   # uncomment next line if you need to clean hdfs and hopsworks db before test.
   # config.before(:suite) { clean_test_data }
   config.after(:suite) {
