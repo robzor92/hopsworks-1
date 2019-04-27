@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.security.PrivilegedExceptionAction;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,6 +61,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.XAttrSetFlag;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hdfs.protocol.HdfsConstants;
@@ -249,6 +251,74 @@ public class DistributedFileSystemOps {
   }
 
   /**
+   * Attach XAttr to file or directory in the given path
+   *
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public void setXAttr(String path, String name, byte[] value, EnumSet<XAttrSetFlag> flag) throws IOException {
+    Path hdfsPath = new Path(path);
+    dfs.setXAttr(hdfsPath, name, value, flag);
+  }
+  
+  /**
+   * Insert new XAttr value attached to file or directory in the given path
+   *
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public void insertXAttr(String path, String name, byte[] value) throws IOException {
+    Path hdfsPath = new Path(path);
+    EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
+    flags.add(XAttrSetFlag.CREATE);
+    dfs.setXAttr(hdfsPath, name, value, flags);
+  }
+  
+  /**
+   * Insert or update XAttr value attached to file or directory in the given path
+   *
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public void upsertXAttr(String path, String name, byte[] value) throws IOException {
+    Path hdfsPath = new Path(path);
+    EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
+    if(dfs.getXAttr(hdfsPath, name) != null) {
+      flags.add(XAttrSetFlag.REPLACE);
+    } else {
+      flags.add(XAttrSetFlag.CREATE);
+    }
+    dfs.setXAttr(hdfsPath, name, value, flags);
+  }
+  
+  /**
+   * Read XAttr attached to file or directory in the given path
+   *
+   * @param path
+   * @return xattr value as byte array
+   * @throws IOException
+   */
+  public byte[] getXAttr(String path, String name) throws IOException {
+    Path hdfsPath = new Path(path);
+    return dfs.getXAttr(hdfsPath, name);
+  }
+  
+  /**
+   * Remove XAttr attached to file or directory in the given path
+   *
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public void removeXAttr(String path, String name) throws IOException {
+    Path hdfsPath = new Path(path);
+    dfs.removeXAttr(hdfsPath, name);
+  }
+
+  /**
    * Delete a file or directory from the file system.
    *
    * @param location The location of file or directory to be removed.
@@ -423,7 +493,28 @@ public class DistributedFileSystemOps {
   public FSDataOutputStream create(Path path) throws IOException {
     return create(path.toString());
   }
-
+  
+  /**
+   * Creates a file and all parent dirs that does not exist and returns
+   * an FSDataOutputStream ready for append
+   *
+   * @param path
+   * @return FSDataOutputStream
+   * @throws IOException
+   */
+  public FSDataOutputStream append(String path) throws IOException {
+    return append(new Path(path));
+  }
+  
+  public FSDataOutputStream append(Path path) throws IOException {
+    if (!exists(path)) {
+      return create(path);
+    } else {
+      return dfs.append(path);
+    }
+  }
+  
+  
   /**
    * Set permission for path.
    * <p>
@@ -644,6 +735,27 @@ public class DistributedFileSystemOps {
    */
   public void unsetMetaEnabled(Path path) throws IOException {
     this.dfs.setMetaEnabled(path, false);
+  }
+  
+  /**
+   * Set Provenance enabled flag on a given path
+   * <p/>
+   * @param path
+   * @throws IOException
+   */
+  public void setProvenanceEnabled(Path path) throws IOException {
+    this.dfs.setProvenanceEnabled(path);
+  }
+  
+  /**
+   * Set Provenance enabled flag on a given path
+   * <p/>
+   * @param path
+   * @throws IOException
+   */
+  public void setProvenanceEnabled(String location) throws IOException {
+    Path path = new Path(location);
+    setProvenanceEnabled(path);
   }
   
   /**

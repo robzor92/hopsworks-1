@@ -664,6 +664,7 @@ public class Settings implements Serializable {
       FEATURESTORE_DB_DEFAULT_STORAGE_FORMAT =
           setStrVar(VARIABLE_FEATURESTORE_DEFAULT_STORAGE_FORMAT, FEATURESTORE_DB_DEFAULT_STORAGE_FORMAT);
 
+      populateProvenanceCache();
       cached = true;
     }
   }
@@ -1863,7 +1864,12 @@ public class Settings implements Serializable {
   public static final String ELASTIC_LOG_INDEX_REGEX = ".*_" + ELASTIC_LOGS_INDEX + "-\\d{4}.\\d{2}.\\d{2}";
   public static final String ELASTIC_SERVING_INDEX_REGEX = ".*_" + ELASTIC_SERVING_INDEX+ "-\\d{4}.\\d{2}.\\d{2}";
   public static final String ELASTIC_KAGENT_INDEX_REGEX = ".*_" + ELASTIC_KAGENT_INDEX + "-\\d{4}.\\d{2}.\\d{2}";
-
+  //Other Elastic indexes
+  public static final String ELASTIC_INDEX_FILE_PROVENANCE = "fileprovenance";
+  public static final String ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE = "_doc";
+  public static final String ELASTIC_INDEX_APP_PROVENANCE = "appprovenance";
+  public static final String ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE = "_doc";
+  
   public String getHopsworksTmpCertDir() {
     return Paths.get(getCertsDir(), "transient").toString();
   }
@@ -3403,5 +3409,18 @@ public class Settings implements Serializable {
   public Boolean isHopsUtilInsecure() {
     return isCloud() || isLocalHost();
   }
-
+  
+  //-------------------------------- PROVENANCE ----------------------------------------------//
+  private static final String VARIABLE_PROVENANCE_ARCHIVE_SIZE = "provenance_archive_size";
+  private int PROVENANCE_ARCHIVE_SIZE = 100;
+  
+  private void populateProvenanceCache() {
+    PROVENANCE_ARCHIVE_SIZE = setIntVar(VARIABLE_PROVENANCE_ARCHIVE_SIZE, PROVENANCE_ARCHIVE_SIZE);
+  }
+  
+  public synchronized int getProvArchiveSize() {
+    checkCache();
+    return PROVENANCE_ARCHIVE_SIZE;
+  }
+  //------------------------------ END PROVENANCE --------------------------------------------//
 }

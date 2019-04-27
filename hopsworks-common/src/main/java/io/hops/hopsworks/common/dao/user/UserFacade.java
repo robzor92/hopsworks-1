@@ -246,7 +246,7 @@ public class UserFacade extends AbstractFacade<Users> {
     FALSE_LOGIN("FALSE_LOGIN", "u.falseLogin = :falseLogin ", "falseLogin", "20"),
     FALSE_LOGIN_GT("FALSE_LOGIN_GT", "u.falseLogin > :falseLogin_gt ", "falseLogin_gt", "20"),
     FALSE_LOGIN_LT("FALSE_LOGIN_LT", "u.falseLogin < :falseLogin_lt ", "falseLogin_lt", "20"),
-    USER_NAME("USER_NAME", "UPPER(u.username) LIKE CONCAT(:username, '%') ", "username", " "),
+    USER_NAME("USER_ID", "UPPER(u.username) LIKE CONCAT(:username, '%') ", "username", " "),
     USER_FIRST_NAME("USER_FIRST_NAME", "UPPER(u.fname) LIKE CONCAT(:fname, '%') ", "fname", " "),
     USER_LAST_NAME("USER_LAST_NAME", "UPPER(u.lname) LIKE CONCAT(:lname, '%') ", "lname", " "),
     USER_EMAIL("USER_EMAIL", "UPPER(u.email) LIKE CONCAT(:email, '%') ", "email", " "),

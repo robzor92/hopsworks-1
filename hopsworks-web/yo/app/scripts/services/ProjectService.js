@@ -43,7 +43,8 @@ angular.module('hopsWorksApp')
         .factory("ProjectService", ['$resource', function ($resource) {
             return $resource(
                     "/api/project/:id",
-                    {id: "@id", projectName: "@projectName", inodeId: "@inodeId", type: "@type"},
+                    {id: "@id", projectName: "@projectName", inodeId: "@inodeId", type: "@type",
+                      provenanceStatus:"@provenanceStatus"},
             {
               "save": {
                 method: "POST",
@@ -119,6 +120,31 @@ angular.module('hopsWorksApp')
               "importPublicDataset": {
                 url: '/api/project/:id/importPublicDataset/:projectName/:inodeId',
                 'method': 'GET'                  
+              },
+              "getProjectProvenanceStatus": {
+                url: '/api/project/:id/provenance/status',
+                'method': 'GET'
+              },
+              "setProjectProvenanceStatus": {
+                url: '/api/project/:id/provenance/status/:provenanceStatus',
+                'method': 'POST'
+              },
+              "getDatasetsProvenanceStatus": {
+                url: '/api/project/:id/provenance/content',
+                'method': 'GET',
+                isArray: true
+              },
+              "provStates": {
+                url: '/api/project/:id/provenance/file/state/size',
+                'method': 'GET'
+              },
+              "provOps": {
+                url: '/api/project/:id/provenance/file/ops/size',
+                'method': 'GET'
+              },
+              "provCleanup": {
+                url: '/api/project/:id/provenance/file/ops/cleanupsize',
+                'method': 'GET'
               }
             }
             );
