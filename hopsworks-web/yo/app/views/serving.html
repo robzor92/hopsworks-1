@@ -89,7 +89,7 @@
                                                style="margin-left: 10px"></i>
                                         </div>
                                         <div style="margin-top: 7px; heigth: 2em;"><label>Serving Name</label></div>
-                                        <div style="margin-top: 9px; heigth: 2em;"><label>Serving Version</label></div>
+                                        <div style="margin-top: 9px; heigth: 2em;"><label>Model Version</label></div>
                                     </div>
 
                                     <div ng-if="servingCtrl.editServing.servingType === 'TENSORFLOW'">
@@ -105,8 +105,7 @@
                                                style="margin-left: 10px"></i>
                                         </div>
 
-                                        <div style="margin-top: 7px; heigth: 2em;"><label>Model
-                                            Name</label></div>
+                                        <div style="margin-top: 7px; heigth: 2em;"><label>Serving Name</label></div>
                                         <div style="margin-top: 9px; heigth: 2em;"><label>Model Version</label></div>
                                         <div style="margin-top: 15px; heigth: 2em;"
                                              ng-if="servingCtrl.sliderOptions.options.ceil > 1">
@@ -274,20 +273,19 @@
                                 <td> {{serving.created | date:'short'}}</td>
                                 </td>
                                 <td> {{serving.status}}</td>
-                                <td>
+                                <td class="fs-table">
+                                    <div class="btn-group fs-btn" role="group">
                                     <button class="btn btn-info glyphicon glyphicon-edit" uib-tooltip="Edit"
-                                            style="margin-right:-3px"
                                             ng-click="servingCtrl.updateServing(serving); $event.stopPropagation();"></button>
                                     <button class="btn btn-danger glyphicon glyphicon-trash" uib-tooltip="Delete"
-                                            style="margin-right: -3px;"
                                             ng-click="servingCtrl.deleteServing(serving); $event.stopPropagation();"></button>
-                                    <button class="btn btn-warning glyphicon glyphicon-list" uib-tooltip="Show logs"
-                                            style="margin-right: -3px;"
+                                    <button class="btn btn-warning glyphicon glyphicon-list" uib-tooltip="Show Logs"
                                             ng-click="servingCtrl.showServingLogs(serving); $event.stopPropagation();"></button>
                                     <button class="btn btn-primary glyphicon glyphicon-eye-open"
-                                            uib-tooltip="Show Detailed Information" style="margin-right: -3px;"
+                                            uib-tooltip="Show Detailed Information"
                                             ng-click="servingCtrl.showDetailedInformation(serving); $event.stopPropagation();">
                                     </button>
+                                    </div>
                                 </td>
                             </tr>
                             </tbody>
@@ -299,6 +297,11 @@
                                 boundary-links="true">
                         </dir-pagination-controls>
                     </div>
+                <div>
+                    <h3 class="text-muted ng-hide" style="text-align: center;" ng-show="servingCtrl.servings.length < 1 && servingCtrl.loaded" aria-hidden="true">
+                        No Servings to show
+                    </h3>
+                </div>
                     <!-- /#wrapper -->
                 </div>
                 <div class="" ng-if="servingCtrl.showLogs === true">
@@ -310,6 +313,12 @@
                     </button>
                     <iframe style="overflow-y: auto;" id="ui_iframe" ng-src="{{servingCtrl.kibanaUI}}" width="99%"
                             height="86%"></iframe>
+                </div>
+                <div ng-if="servingCtrl.loading" class="loadingwrap">
+                    <div class="loading-content">
+                        <div class="loader-in-wrap"></div>
+                        {{servingCtrl.loadingText}}
+                    </div>
                 </div>
             </div>
         </div>

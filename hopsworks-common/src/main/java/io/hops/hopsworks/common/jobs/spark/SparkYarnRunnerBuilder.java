@@ -50,7 +50,6 @@ import io.hops.hopsworks.common.util.HopsUtils;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.common.util.SparkConfigurationUtil;
 import io.hops.hopsworks.common.util.templates.ConfigProperty;
-import io.hops.hopsworks.exceptions.ServiceException;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
 import org.apache.hadoop.yarn.client.api.YarnClient;
@@ -116,10 +115,10 @@ public class SparkYarnRunnerBuilder {
    * @throws IOException If creation failed.
    */
   public YarnRunner getYarnRunner(Project project,
-      String jobUser, String usersFullName, AsynchronousJobExecutor services,
+      String jobUser, AsynchronousJobExecutor services,
       final DistributedFileSystemOps dfsClient, final YarnClient yarnClient,
       Settings settings)
-    throws IOException, ServiceException {
+    throws IOException {
 
     Map<String, ConfigProperty> jobHopsworksProps = new HashMap<>();
     JobType jobType = job.getJobConfig().getJobType();
@@ -201,7 +200,7 @@ public class SparkYarnRunnerBuilder {
 
     Map<String, String> finalJobProps = new HashMap<>();
     finalJobProps.putAll(sparkConfigurationUtil.setFrameworkProperties(project, job.getJobConfig(), settings,
-            jobUser, usersFullName, tfLibraryPath, extraJavaOptions));
+            jobUser, tfLibraryPath, extraJavaOptions));
 
     finalJobProps.put(Settings.SPARK_YARN_APPMASTER_ENV + "SPARK_USER", jobUser);
     finalJobProps.put(Settings.SPARK_EXECUTOR_ENV + "SPARK_USER", jobUser);

@@ -49,6 +49,9 @@ angular.module('hopsWorksApp')
             self.kafkaMaxNumReplicas = 1;
 
             self.servings = [];
+            self.loaded = false;
+            self.loading = false;
+            self.loadingText = "";
 
             self.editServing = {};
             self.editServing.batchingEnabled = false;
@@ -229,18 +232,34 @@ angular.module('hopsWorksApp')
             };
 
             self.getAllServings = function () {
+                if(!self.loaded) {
+                    startLoading('Loading Servings...')
+                }
                 ServingService.getAllServings(self.projectId).then(
                     function (success) {
+                        stopLoading();
                         if (!self.ignorePoll) {
                             self.servings = success.data;
+                            self.loaded = true;
                         }
                     },
                     function (error) {
+                        stopLoading();
+                        self.loaded = true;
                         growl.error(error.data.errorMsg, {
                             title: 'Error',
                             ttl: 15000
                         });
                     });
+            };
+
+            var startLoading = function(label) {
+                self.loading = true;
+                self.loadingText = label;
+            };
+            var stopLoading = function() {
+                self.loading = false;
+                self.loadingText = "";
             };
 
             self.filterTopics = function (topic) {
