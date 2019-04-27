@@ -31,7 +31,6 @@ import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
-import io.hops.hopsworks.common.jobs.jobhistory.JobState;
 import io.hops.hopsworks.common.livy.LivyController;
 import io.hops.hopsworks.common.livy.LivyMsg;
 import io.hops.hopsworks.common.security.CertificateMaterializer;
@@ -44,8 +43,6 @@ import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
@@ -195,9 +192,6 @@ public class JupyterController {
       }
       FileUtils.deleteQuietly(new File(jupyterHomePath));
       jupyterJWTManager.cleanJWT(pid, port);
-      for(LivyMsg.Session session: sessions) {
-        updateRunningExperimentAsKilled(project, session);
-      }
       livyController.deleteAllLivySessions(hdfsUser);
     }
   }
@@ -209,37 +203,8 @@ public class JupyterController {
     for(LivyMsg.Session session: sessions) {
       if(session.getAppId().equalsIgnoreCase(appId)) {
         livyController.deleteLivySession(session.getId());
-        updateRunningExperimentAsKilled(project, session);
         break;
       }
-    }
-  }
-
-  private void updateRunningExperimentAsKilled(Project project, LivyMsg.Session session) {
-    try {
-      String experimentsIndex = project.getName().toLowerCase()
-        + "_" + Settings.ELASTIC_EXPERIMENTS_INDEX;
-      // when jupyter is shutdown the experiment status should be updated accordingly as KILLED
-
-      String sessionAppId = session.getAppId();
-
-      String experiment = elasticController.findExperiment(experimentsIndex, sessionAppId);
-
-      JSONObject json = new JSONObject(experiment);
-      json = json.getJSONObject("hits");
-      JSONArray hits = json.getJSONArray("hits");
-      for(int i = 0; i < hits.length(); i++) {
-        JSONObject obj = (JSONObject)hits.get(i);
-        JSONObject source = obj.getJSONObject("_source");
-        String status = source.getString("status");
-
-        if(status.equalsIgnoreCase(JobState.RUNNING.name())) {
-          source.put("status", "KILLED");
-          elasticController.updateExperiment(experimentsIndex, obj.getString("_id"), source);
-        }
-      }
-    } catch(Exception e) {
-      LOGGER.log(Level.WARNING, "Exception while updating RUNNING status to KILLED on experiments", e);
     }
   }
 

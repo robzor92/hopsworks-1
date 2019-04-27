@@ -166,6 +166,10 @@ a:focus {
   min-width: 900px;
 }
 
+.modal-experiment .modal-dialog {
+  min-width: 60%;
+}
+
 .modal-xlg {
   min-width: 99%;
 }

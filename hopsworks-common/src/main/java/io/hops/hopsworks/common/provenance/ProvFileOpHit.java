@@ -23,7 +23,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @XmlRootElement
@@ -84,7 +83,7 @@ public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
         case ProvElastic.Common.ENTRY_TYPE_FIELD:
           break;
         default:
-          LOG.log(Level.WARNING, "unknown key:{0} value:{1}", new Object[]{entry.getKey(), entry.getValue()});
+          //LOG.log(Level.WARNING, "unknown key:{0} value:{1}", new Object[]{entry.getKey(), entry.getValue()});
           break;
       }
     }
