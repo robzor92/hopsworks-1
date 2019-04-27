@@ -47,6 +47,20 @@ import io.hops.hopsworks.common.dao.dataset.DatasetFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.dataset.DatasetController;
+import io.hops.hopsworks.common.provenance.AppProvenanceHit;
+import io.hops.hopsworks.common.provenance.MLAssetAppState;
+import io.hops.hopsworks.common.provenance.ProvAppFootprintType;
+import io.hops.hopsworks.common.provenance.ProvElastic;
+import io.hops.hopsworks.common.provenance.ProvFileHit;
+import io.hops.hopsworks.common.provenance.ProvFileOpHit;
+import io.hops.hopsworks.common.provenance.ProvFileStateHit;
+import io.hops.hopsworks.common.provenance.ProvFileAppDetailsQueryParams;
+import io.hops.hopsworks.common.provenance.ProvFileDetailsQueryParams;
+import io.hops.hopsworks.common.provenance.ProvFileQueryParams;
+import io.hops.hopsworks.common.provenance.ProvMLAssetDetailsQueryParams;
+import io.hops.hopsworks.common.provenance.ProvMLAssetQueryParams;
+import io.hops.hopsworks.common.provenance.Provenance;
+import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import io.hops.hopsworks.exceptions.ServiceException;
@@ -93,14 +107,19 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
@@ -109,9 +128,11 @@ import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.nestedQuery;
 import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
+import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 
 /**
  *
@@ -990,6 +1011,377 @@ public class ElasticController {
     JSONObject source = resp.getJSONObject("_source");
     return (String)source.get("logdir");
   }
+  
+  //PROVENANCE
+  static final int DEFAULT_PROVENANCE_QUERY_SIZE = 500;
+  
+  public List<ProvFileStateHit> provFileState(
+    ProvFileQueryParams fileParams, ProvMLAssetQueryParams mlAssetParams, ProvFileAppDetailsQueryParams appDetails)
+    throws ServiceException, ProjectException {
+    return provFileStateQuery(provFileStateQB(fileParams, mlAssetParams), appDetails,
+      DEFAULT_PROVENANCE_QUERY_SIZE);
+  }
+
+  public List<ProvFileStateHit> provFileState(
+    ProvFileDetailsQueryParams fileDetails, ProvMLAssetDetailsQueryParams mlAssetParams,
+    ProvFileAppDetailsQueryParams appDetails)
+    throws ServiceException, ProjectException {
+    return provFileStateQuery(provFileStateQB(fileDetails, mlAssetParams), appDetails,
+      DEFAULT_PROVENANCE_QUERY_SIZE);
+  }
+
+  public long provFileStateCount(ProvFileDetailsQueryParams fileParams, ProvMLAssetDetailsQueryParams mlAssetParams,
+    ProvFileAppDetailsQueryParams appDetails)
+    throws ServiceException, GenericException, ProjectException {
+    if(appDetails.withAppState) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "count(no source) and withAppState(multi) cannot be used together");
+    }
+    return provFileCountQuery(provFileStateQB(fileParams, mlAssetParams));
+  }
+  
+  public List<ProvFileHit> provAppFootprint(String appId, ProvAppFootprintType footprintType) throws ServiceException {
+    String inodeOperations[];
+    switch(footprintType) {
+      case ALL:
+        inodeOperations = new String[0];
+        break;
+      case INPUT:
+        inodeOperations = new String[]{"CREATE", "ACCESS_DATA"};
+        break;
+      case OUTPUT:
+        inodeOperations = new String[]{"CREATE", "MODIFY_DATA", "DELETE"};
+        break;
+      case OUTPUT_ADDED:
+      case TMP:
+      case REMOVED:
+        inodeOperations = new String[]{"CREATE", "DELETE"};
+        break;
+      default:
+        throw new IllegalArgumentException("footprint type:" + footprintType + " not managed");
+    }
+  
+    List<ProvFileOpHit> fileOps = provFileOps(null, appId, inodeOperations);
+    Map<Long, ProvFileHit> files = new HashMap<>();
+    Set<Long> filesAccessed = new HashSet<>();
+    Set<Long> filesCreated = new HashSet<>();
+    Set<Long> filesModified = new HashSet<>();
+    Set<Long> filesDeleted = new HashSet<>();
+    for(ProvFileOpHit fileOp : fileOps) {
+      files.put(fileOp.getInodeId(), new ProvFileHit(fileOp.getInodeId(), fileOp.getInodeName()));
+      switch(fileOp.getInodeOperation()) {
+        case "CREATE":
+          filesCreated.add(fileOp.getInodeId());
+          break;
+        case "DELETE":
+          filesDeleted.add(fileOp.getInodeId());
+          break;
+        case "ACCESS_DATA":
+          filesAccessed.add(fileOp.getInodeId());
+          break;
+        case "MODIFY_DATA":
+          filesModified.add(fileOp.getInodeId());
+          break;
+        default:
+      }
+    }
+    //filter files based on footprintTypes
+    switch(footprintType) {
+      case ALL:
+        //nothing - return all results
+        break;
+      case INPUT: {
+        //files read - that existed before app (not created by app)
+        Set<Long> aux = new HashSet<>(filesAccessed);
+        aux.removeAll(filesCreated);
+        files.keySet().retainAll(aux);
+      } break;
+      case OUTPUT: {
+        //files created or modified, but not deleted
+        Set<Long> aux = new HashSet<>(filesCreated);
+        aux.addAll(filesModified);
+        aux.removeAll(filesDeleted);
+        files.keySet().retainAll(aux);
+      } break;
+      case OUTPUT_ADDED: {
+        //files created but not deleted
+        Set<Long> aux = new HashSet<>(filesCreated);
+        aux.removeAll(filesDeleted);
+        files.keySet().retainAll(aux);
+      } break;
+      case TMP: {
+        //files created and deleted
+        Set<Long> aux = new HashSet<>(filesCreated);
+        aux.retainAll(filesDeleted);
+        files.keySet().retainAll(aux);
+      } break;
+      case REMOVED: {
+        //files not created and deleted
+        Set<Long> aux = new HashSet<>(filesDeleted);
+        aux.removeAll(filesCreated);
+        files.keySet().retainAll(aux);
+      } break;
+      default:
+        //continue;
+    }
+    return new LinkedList<>(files.values());
+  }
+  
+  public List<ProvFileOpHit> provFileOps(Long inodeId, String appId, String[] inodeOperations)
+    throws ServiceException {
+    QueryBuilder inodeOperationsQB = provInodeOperationsQB(inodeOperations);
+    List<ProvFileOpHit> queryResult
+      = provFileOpQuery(provFileOpQB(inodeId, appId, inodeOperationsQB), DEFAULT_PROVENANCE_QUERY_SIZE);
+    Collections.sort(queryResult, ProvFileOpHit.timestampComparator);
+    return queryResult;
+  }
+    
+  private SearchResponse rawQuery(String index, String docType, QueryBuilder query, int querySize)
+    throws ServiceException {
+    //some necessary client settings
+    Client client = getClient();
+
+    //check if the index are up and running
+    if (!this.indexExists(client, index)) {
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_NOT_FOUND, Level.SEVERE, 
+        "index: " + index);
+    }
+
+    //hit the indices - execute the queries
+    SearchRequestBuilder srb = client.prepareSearch(index);
+    srb = srb.setTypes(docType);
+    srb = srb.setQuery(query);
+    srb = srb.setSize(querySize);
+    LOG.log(Level.INFO, "index:{0} Elastic query: {1}", new Object[]{index, srb});
+    ActionFuture<SearchResponse> futureResponse = srb.execute();
+    SearchResponse response = futureResponse.actionGet();
+
+    if (response.status().getStatus() == 200) {
+      return response;
+    } else {
+      //something went wrong so throw an exception
+      shutdownClient();
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING, 
+        "Elasticsearch error code: " + response.status().getStatus());
+    }
+  }
+
+  private long provFileCountQuery(QueryBuilder query) throws ServiceException {
+    long count = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
+      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, 0)
+      .getHits().totalHits;
+    LOG.log(Level.WARNING, "query hits: {0}", count);
+    return count;
+  }
+  
+  private  List<ProvFileOpHit> provFileOpQuery(QueryBuilder query, int querySize) throws ServiceException {
+    List<ProvFileOpHit> result = new LinkedList<>();
+    SearchResponse searchResult = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
+      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, querySize);
+    SearchHit[] rawHits = searchResult.getHits().getHits();
+    LOG.log(Level.WARNING, "query hits: {0} total:{1}",
+      new Object[]{rawHits.length, searchResult.getHits().totalHits});
+    for (SearchHit rawHit : rawHits) {
+      ProvFileOpHit hit = new ProvFileOpHit(rawHit);
+      result.add(hit);
+    }
+    return result;
+  }
+  
+  private List<ProvFileStateHit> provFileStateQuery(QueryBuilder query,
+    ProvFileAppDetailsQueryParams appDetails, int querySize)
+    throws ServiceException {
+    List<ProvFileStateHit> result = new LinkedList<>();
+    Set<String> appIds = new HashSet<>();
+    SearchHit[] rawHits = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
+      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, querySize)
+      .getHits().getHits();
+    LOG.log(Level.WARNING, "query hits: {0}", rawHits.length);
+    for (SearchHit rawHit : rawHits) {
+      ProvFileStateHit fpHit = new ProvFileStateHit(rawHit);
+      result.add(fpHit);
+      if(appDetails.withAppState) {
+        appIds.add(getAppId(fpHit));
+      }
+    }
+    if(appDetails.withAppState) {
+      attachAppStates(result, appIds, appDetails.currentState, querySize);
+    }
+    return result;
+  }
+  
+  private void attachAppStates(List<ProvFileStateHit> fileStates, Set<String> appIds,
+    Provenance.AppState filterOnCurrentState, int querySize) throws ServiceException {
+    Map<String, Map<Provenance.AppState, AppProvenanceHit>> applicationsStates = appStates(appIds, querySize);
+    Iterator<ProvFileStateHit> it = fileStates.iterator();
+    while(it.hasNext()) {
+      ProvFileStateHit mlAsset = it.next();
+      Map<Provenance.AppState, AppProvenanceHit> appStates = applicationsStates.get(getAppId(mlAsset));
+      if(filterOnCurrentState != null) {
+        if(appStates == null || !appStates.containsKey(filterOnCurrentState)) {
+          it.remove();
+        } else {
+          mlAsset.setAppState(buildAppState(appStates));
+        }
+      } else {
+        if (appStates != null) {
+          mlAsset.setAppState(buildAppState(appStates));
+        }
+      }
+    }
+  }
+  
+  private MLAssetAppState buildAppState(Map<Provenance.AppState, AppProvenanceHit> appStates)
+    throws ServiceException {
+    MLAssetAppState mlAssetAppState = new MLAssetAppState();
+    //app states is an ordered map
+    //I assume values will still be ordered based on keys
+    //if this is the case, the correct progression is SUBMITTED->RUNNING->FINISHED/KILLED/FAILED
+    //as such just iterating over the states will provide us with the correct current state
+    for (AppProvenanceHit appState : appStates.values()) {
+      mlAssetAppState.setAppState(appState.getAppState(), appState.getAppStateTimestamp());
+    }
+    return mlAssetAppState;
+  }
+  
+  private String getAppId(ProvFileStateHit mlAsset) {
+    if(mlAsset.getAppId().equals("notls")) {
+      if(mlAsset.getXattrs().containsKey("appId")) {
+        return mlAsset.getXattrs().get("appId");
+      } else {
+        throw new IllegalArgumentException("withAppId enabled for tls clusters or notls cluster with xattr appIds");
+      }
+    } else {
+      return mlAsset.getAppId();
+    }
+  }
+  
+  private Map<String, Map<Provenance.AppState, AppProvenanceHit>> appStates(Set<String> appIds, int querySize)
+    throws ServiceException {
+    SearchHit[]  rawHits = rawQuery(Settings.ELASTIC_INDEX_APP_PROVENANCE, 
+      Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE, appProvenanceByAppIdQuery(appIds), querySize)
+      .getHits().getHits();
+//    LOG.log(Level.WARNING, "query hits: {0}", rawHits.length);
+    Map<String, Map<Provenance.AppState, AppProvenanceHit>> result = new HashMap<>();
+    for(SearchHit h : rawHits) {
+      AppProvenanceHit hit = new AppProvenanceHit(h);
+      Map<Provenance.AppState, AppProvenanceHit> appStates = result.get(hit.getAppId());
+      if(appStates == null) {
+        appStates = new TreeMap<>();
+        result.put(hit.getAppId(), appStates);
+      }
+      appStates.put(hit.getAppState(), hit);
+    }
+    return result;
+  }
+
+  private QueryBuilder getProvSearchQuery(String fieldName, String searchTerm) {
+    QueryBuilder nameQuery = boolQuery()
+      .should(prefixQuery(fieldName, searchTerm.toLowerCase()))
+      .should(fuzzyQuery(fieldName, searchTerm.toLowerCase()))
+      .should(wildcardQuery(fieldName, String.format("*%s*", searchTerm.toLowerCase())))
+      .should(matchPhraseQuery(fieldName, searchTerm.toLowerCase()));
+    return nameQuery;
+  }
+  
+  private long getProjectInodeId(int projectId) throws ProjectException {
+    Project project = projectFacade.find(projectId);
+    if (project == null) {
+      throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_NOT_FOUND, Level.INFO,
+        "projectId:" + projectId);
+    }
+    return project.getInode().getId();
+  }
+  
+  private QueryBuilder provFileStateQB(ProvFileDetailsQueryParams fileDetails,
+    ProvMLAssetDetailsQueryParams mlAssetListParams)
+    throws ProjectException {
+    BoolQueryBuilder query = boolQuery()
+      .must(termQuery(ProvFileStateHit.ML_ALIVE_FIELD, true));
+    if(fileDetails.projectId != null)
+      query = query
+        .must(termQuery(ProvFileStateHit.ML_PROJECT_INODE_ID_FIELD, getProjectInodeId(fileDetails.projectId)));
+    if(fileDetails.assetName != null)
+      query = query.must(matchQuery(ProvFileStateHit.ML_INODE_NAME_FIELD, fileDetails.assetName));
+    if(fileDetails.likeAssetName != null)
+      query = query.must(getProvSearchQuery(ProvFileStateHit.ML_INODE_NAME_FIELD, fileDetails.likeAssetName));
+    if(fileDetails.userName != null)
+      query = query.must(matchQuery(ProvFileStateHit.ML_USER_NAME_FIELD, fileDetails.userName));
+    if(fileDetails.likeUserName != null)
+      query = query.must(getProvSearchQuery(ProvFileStateHit.ML_USER_NAME_FIELD, fileDetails.likeUserName));
+    if(fileDetails.createdBeforeTimestamp != null || fileDetails.createdAfterTimestamp != null) {
+      RangeQueryBuilder rqb = rangeQuery(ProvFileStateHit.ML_CREATE_TIME_FIELD);
+      if(fileDetails.createdAfterTimestamp != null) {
+        rqb = rqb.from(fileDetails.createdAfterTimestamp);
+      }
+      if(fileDetails.createdBeforeTimestamp != null) {
+        rqb = rqb.to(fileDetails.createdBeforeTimestamp);
+      }
+      query = query.must(rqb);
+    }
+    if(fileDetails.xattrsExact != null) {
+      for (Map.Entry<String, String> xattr : fileDetails.xattrsExact.entrySet()) {
+        query = query.must(matchQuery(xattr.getKey(), xattr.getValue()));
+      }
+    }
+    if(fileDetails.xattrsLike != null) {
+      for (Map.Entry<String, String> xattr : fileDetails.xattrsLike.entrySet()) {
+        query = query.must(getProvSearchQuery(xattr.getKey(), xattr.getValue()));
+      }
+    }
+    if(mlAssetListParams.mlType != null)
+      query = query.must(termQuery(ProvFileStateHit.ML_TYPE_FIELD, mlAssetListParams.mlType));
+    if(fileDetails.appId != null)
+      query = query.must(termQuery(ProvFileStateHit.ML_APP_ID_FIELD, fileDetails.appId));
+    return query;
+  }
+
+  private QueryBuilder provFileStateQB(ProvFileQueryParams fileParams, ProvMLAssetQueryParams mlAssetParams)
+    throws ProjectException {
+//    LOG.log(Level.INFO, "exact ml asset:{0}", params);
+    BoolQueryBuilder query = boolQuery()
+      .must(termQuery(ProvFileStateHit.ML_ALIVE_FIELD, true));
+    if(fileParams.projectId != null)
+      query = query
+        .must(termQuery(ProvFileStateHit.ML_PROJECT_INODE_ID_FIELD, getProjectInodeId(fileParams.projectId)));
+    if(fileParams.inodeId != null)
+      query = query.must(termQuery(ProvFileStateHit.ML_INODE_ID_FIELD, fileParams.inodeId));
+    if(mlAssetParams.mlId != null)
+      query = query.must(termQuery(ProvFileStateHit.ML_ID_FIELD, mlAssetParams.mlId));
+    if(mlAssetParams.mlType != null)
+      query = query.must(termQuery(ProvFileStateHit.ML_TYPE_FIELD, mlAssetParams.mlType));
+//    LOG.log(Level.INFO, "query:{0}", query.toString());
+    return query;
+  }
+  
+  private QueryBuilder provInodeOperationsQB(String... inodeOps) {
+    if(inodeOps.length == 0) {
+      return null;
+    }
+    BoolQueryBuilder query = boolQuery();
+    for(String inodeOp : inodeOps) {
+      query = query.should(termQuery(ProvElastic.Common.INODE_OPERATION_FIELD, inodeOp));
+    }
+    return query;
+  }
+  
+  private QueryBuilder provFileOpQB(Long inodeId, String appId, QueryBuilder inodeOperationsQB) {
+    BoolQueryBuilder query = boolQuery()
+      .must(termQuery(ProvElastic.Common.ENTRY_TYPE_FIELD, "operation"));
+    if(inodeId != null)
+      query = query.must(termQuery(ProvElastic.Common.INODE_ID_FIELD, inodeId));
+    if(appId != null)
+      query  = query.must(termQuery(ProvElastic.Common.APP_ID_FIELD, appId));
+    if(inodeOperationsQB != null)
+      query = query.must(inodeOperationsQB);
+    return query;
+  }
+  
+  private QueryBuilder appProvenanceByAppIdQuery(Set<String> appIds) {
+    QueryBuilder query = termsQuery(AppProvenanceHit.APP_ID_FIELD, appIds);
+    return query;
+  }
+  //END_PROVENANCE
 }
 
 
