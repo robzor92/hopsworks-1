@@ -1069,7 +1069,6 @@ angular.module('hopsWorksApp')
                 });
                 return modalInstance.result;
             },
-
             noteCreate: function (size, title, msg, val) {
                 var modalInstance = $uibModal.open({
                     templateUrl: 'views/noteCreateModal.html',
@@ -1100,36 +1099,33 @@ angular.module('hopsWorksApp')
                 });
                 return modalInstance.result;
             },
-//              jupyterConfig: function (size, title, msg, val ) {
-//                var modalInstance = $uibModal.open({
-//                  templateUrl: 'views/jupyterConfigModal.html',
-//                  controller: 'JupyterModalCtrl as ctrl',
-//                  size: size,
-//                  resolve: {
-//                    auth: ['$q', '$location', 'AuthService',
-//                      function ($q, $location, AuthService) {
-//                        return AuthService.session().then(
-//                                function (success) {
-//                                },
-//                                function (err) {
-//                                  $location.path('/login');
-//                                  $location.replace();
-//                                  return $q.reject(err);
-//                                });
-//                      }],
-//                    title: function () {
-//                      return title;
-//                    },
-//                    msg: function () {
-//                      return msg;
-//                    },
-//                    val: function () {
-//                      return val;
-//                    }
-//                  }
-//                });
-//                return modalInstance.result;
-//              },
+            viewExperimentInfo: function (size, projectId, experiment) {
+                var modalInstance = $uibModal.open({
+                    templateUrl: 'views/experimentDetailed.html',
+                    controller: 'experimentDetailCtrl as experimentDetailCtrl',
+                    windowClass: 'modal-experiment',
+                    resolve: {
+                        auth: ['$q', '$location', 'AuthService',
+                            function ($q, $location, AuthService) {
+                                return AuthService.session().then(
+                                    function (success) {
+                                    },
+                                    function (err) {
+                                        $location.path('/login');
+                                        $location.replace();
+                                        return $q.reject(err);
+                                    });
+                            }],
+                        projectId: function () {
+                            return projectId;
+                        },
+                        experiment: function () {
+                            return experiment;
+                        }
+                    }
+                });
+                return modalInstance.result;
+            },
             transformGraph: function (size, servingId, inGraph, outGraph) {
                 var modalInstance = $uibModal.open({
                     templateUrl: 'views/transformGraphModal.html',
@@ -1795,5 +1791,32 @@ angular.module('hopsWorksApp')
                 });
                 return modalInstance.result;
             },
+            viewTrainingDatasetDependencies: function (size, projectId, trainingDataset) {
+                var modalInstance = $uibModal.open({
+                    templateUrl: 'views/trainingDatasetDependencies.html',
+                    controller: 'trainingDatasetDependenciesCtrl as trainingDatasetDependenciesCtrl',
+                    size: size,
+                    resolve: {
+                        auth: ['$q', '$location', 'AuthService',
+                            function ($q, $location, AuthService) {
+                                return AuthService.session().then(
+                                    function (success) {
+                                    },
+                                    function (err) {
+                                        $location.path('/login');
+                                        $location.replace();
+                                        return $q.reject(err);
+                                    });
+                            }],
+                        projectId: function () {
+                            return projectId;
+                        },
+                        trainingDataset: function () {
+                            return trainingDataset;
+                        }
+                    }
+                });
+                return modalInstance.result;
+            }
         };
     }]);
