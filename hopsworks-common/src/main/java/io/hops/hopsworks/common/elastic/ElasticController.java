@@ -46,6 +46,8 @@ import io.hops.hopsworks.common.dao.dataset.Dataset;
 import io.hops.hopsworks.common.dao.dataset.DatasetFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
+import io.hops.hopsworks.common.provenance.AppProvenanceHit;
+import io.hops.hopsworks.common.provenance.FileProvenanceHit;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import io.hops.hopsworks.exceptions.ServiceException;
@@ -987,6 +989,232 @@ public class ElasticController {
     JSONObject source = resp.getJSONObject("_source");
     return (String)source.get("logdir");
   }
+  
+  //PROVENANCE
+  public List<FileProvenanceHit> fileProvenanceByUserId(int userId) throws ServiceException {
+    return fileProvenanceQuery(fileProvenanceByUserIdQuery(userId));
+  }
+  
+  public List<FileProvenanceHit> fileProvenanceByAppId(String appId) throws ServiceException {
+    return fileProvenanceQuery(fileProvenanceByAppIdQuery(appId));
+  }
+  
+  public List<FileProvenanceHit> fileProvenanceByFileInodeId(long inodeId) throws ServiceException {
+    return fileProvenanceQuery(fileProvenanceByInodeIdQuery(inodeId));
+  }
+  
+  public List<FileProvenanceHit> fileProvenanceByProjectInodeId(long inodeId) throws ServiceException {
+    return fileProvenanceQuery(fileProvenanceByProjectIdQuery(inodeId));
+  }
+  
+  public List<FileProvenanceHit> fileProvenanceByDatasetInodeId(long inodeId) throws ServiceException {
+    return fileProvenanceQuery(fileProvenanceByDatasetIdQuery(inodeId));
+  }
+  
+  public List<FileProvenanceHit> fileProvenanceByInodeName(String inodeName) throws ServiceException {
+    return fileProvenanceQuery(fileProvenanceByInodeNameQuery(inodeName));
+  }
+  
+  public List<FileProvenanceHit> fileProvenanceByMLType(String mlType) throws ServiceException {
+    return fileProvenanceQuery(fileProvenanceByMLTypeQuery(mlType));
+  }
+
+  public List<FileProvenanceHit> fileProvenanceByMLType(String mlType, int projectId)
+    throws ServiceException, ProjectException {
+    Project project = projectFacade.find(projectId);
+    if (project == null) {
+      throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_NOT_FOUND, Level.INFO,
+        "projectId:" + projectId);
+    }
+    long projectInodeId = project.getInode().getId();
+    return fileProvenanceQuery(fileProvenanceByMLTypeQuery(mlType, projectInodeId));
+  }
+
+  public List<FileProvenanceHit> fileProvenanceByMLType(String mlType, int projectId, String mlId)
+    throws ServiceException, ProjectException {
+    Project project = projectFacade.find(projectId);
+    if (project == null) {
+      throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_NOT_FOUND, Level.INFO,
+        "projectId:" + projectId);
+    }
+    long projectInodeId = project.getInode().getId();
+    return fileProvenanceQuery(fileProvenanceByMLTypeQuery(mlType, projectInodeId, mlId));
+  }
+  
+  public List<AppProvenanceHit> appProvenanceByAppState(String appState) throws ServiceException {
+    return appProvenanceQuery(appProvenanceByAppStateQuery(appState));
+  }
+  
+  public List<AppProvenanceHit> appProvenanceByAppId(String appId) throws ServiceException {
+    return appProvenanceQuery(appProvenanceByAppIdQuery(appId));
+  }
+  
+  public List<AppProvenanceHit> appProvenanceByAppName(String appName) throws ServiceException {
+    return appProvenanceQuery(appProvenanceByAppNameQuery(appName));
+  }
+  
+  public List<AppProvenanceHit> appProvenanceByAppUser(String appUser) throws ServiceException {
+    return appProvenanceQuery(appProvenanceByAppUserQuery(appUser));
+  }
+    
+  private List<FileProvenanceHit> fileProvenanceQuery(QueryBuilder query) throws ServiceException {
+    //some necessary client settings
+    Client client = getClient();
+
+    //check if the index are up and running
+    if (!this.indexExists(client, Settings.ELASTIC_INDEX_FILE_PROVENANCE)) {
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_NOT_FOUND, Level.SEVERE, 
+        "index: " + Settings.ELASTIC_INDEX_FILE_PROVENANCE);
+    }
+
+    LOG.log(Level.INFO, "Found elastic index, now executing the query.");
+
+    //hit the indices - execute the queries
+    SearchRequestBuilder srb = client.prepareSearch(Settings.ELASTIC_INDEX_FILE_PROVENANCE);
+    srb = srb.setTypes(Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE);
+    srb = srb.setQuery(query);
+    LOG.log(Level.INFO, "FileProvenance Elastic query: {0}", srb);
+    ActionFuture<SearchResponse> futureResponse = srb.execute();
+    SearchResponse response = futureResponse.actionGet();
+
+    if (response.status().getStatus() == 200) {
+      //construct the response
+      List<FileProvenanceHit> fpHits = new LinkedList<>();
+      if (response.getHits().getHits().length > 0) {
+        SearchHit[] hits = response.getHits().getHits();
+
+        for (SearchHit hit : hits) {
+          FileProvenanceHit eHit = new FileProvenanceHit(hit);
+          fpHits.add(eHit);
+        }
+      }
+
+      return fpHits;
+    } else {
+      //something went wrong so throw an exception
+      shutdownClient();
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING, 
+        "Elasticsearch error code: " + response.status().getStatus());
+    }
+  }
+  
+  private List<AppProvenanceHit> appProvenanceQuery(QueryBuilder query) throws ServiceException {
+    //some necessary client settings
+    Client client = getClient();
+
+    //check if the index are up and running
+    if (!this.indexExists(client, Settings.ELASTIC_INDEX_APP_PROVENANCE)) {
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_NOT_FOUND, Level.SEVERE, 
+        "index: " + Settings.ELASTIC_INDEX_APP_PROVENANCE);
+    }
+
+    LOG.log(Level.INFO, "Found elastic index, now executing the query.");
+
+    //hit the indices - execute the queries
+    SearchRequestBuilder srb = client.prepareSearch(Settings.ELASTIC_INDEX_APP_PROVENANCE);
+    srb = srb.setTypes(Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE);
+    srb = srb.setQuery(query);
+    LOG.log(Level.INFO, "AppProvenance Elastic query: {0}", srb);
+    ActionFuture<SearchResponse> futureResponse = srb.execute();
+    SearchResponse response = futureResponse.actionGet();
+
+    if (response.status().getStatus() == 200) {
+      //construct the response
+      List<AppProvenanceHit> fpHits = new LinkedList<>();
+      if (response.getHits().getHits().length > 0) {
+        SearchHit[] hits = response.getHits().getHits();
+
+        for (SearchHit hit : hits) {
+          AppProvenanceHit eHit = new AppProvenanceHit(hit);
+          fpHits.add(eHit);
+        }
+      }
+
+      return fpHits;
+    } else {
+      //something went wrong so throw an exception
+      shutdownClient();
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING, 
+        "Elasticsearch error code: " + response.status().getStatus());
+    }
+  }
+    
+  private QueryBuilder fileProvenanceByUserIdQuery(int userId) {
+    QueryBuilder query = termQuery(FileProvenanceHit.USER_ID_FIELD, userId);
+    return query;
+  }
+  
+  private QueryBuilder fileProvenanceByAppIdQuery(String appId) {
+    QueryBuilder query = termQuery(FileProvenanceHit.APP_ID_FIELD, appId);
+    return query;
+  }
+  
+  private QueryBuilder fileProvenanceByInodeIdQuery(long inodeId) {
+    QueryBuilder query = termQuery(FileProvenanceHit.INODE_ID_FIELD, inodeId);
+    return query;
+  }
+  
+  private QueryBuilder fileProvenanceByProjectIdQuery(long inodeId) {
+    QueryBuilder query = termQuery(FileProvenanceHit.PROJECT_INODE_ID_FIELD, inodeId);
+    return query;
+  }
+  
+  private QueryBuilder fileProvenanceByDatasetIdQuery(long inodeId) {
+    QueryBuilder query = termQuery(FileProvenanceHit.DATASET_INODE_ID_FIELD, inodeId);
+    return query;
+  }
+  
+  private QueryBuilder fileProvenanceByInodeNameQuery(String inodeName) {
+    QueryBuilder query = termQuery(FileProvenanceHit.INODE_NAME_FIELD, inodeName);
+    return query;
+  }
+  
+  private QueryBuilder fileProvenanceByMLTypeQuery(String mlType) {
+    QueryBuilder query = termQuery(FileProvenanceHit.ML_TYPE_FIELD, mlType);
+    return query;
+  }
+
+  private QueryBuilder fileProvenanceByMLTypeQuery(String mlType, long projectInodeId) {
+    QueryBuilder mlTypeQuery = termQuery(FileProvenanceHit.ML_TYPE_FIELD, mlType);
+    QueryBuilder projectIIdQuery = termQuery(FileProvenanceHit.PROJECT_INODE_ID_FIELD, projectInodeId);
+
+    QueryBuilder query = boolQuery()
+      .must(mlTypeQuery)
+      .must(projectIIdQuery);
+    return query;
+  }
+
+  private QueryBuilder fileProvenanceByMLTypeQuery(String mlType, long projectInodeId, String mlId) {
+    QueryBuilder mlTypeQuery = termQuery(FileProvenanceHit.ML_TYPE_FIELD, mlType);
+    QueryBuilder projectIIdQuery = termQuery(FileProvenanceHit.PROJECT_INODE_ID_FIELD, projectInodeId);
+    QueryBuilder mlIdQuery = termQuery(FileProvenanceHit.ML_ID_FIELD, mlId);
+    QueryBuilder query = boolQuery()
+      .must(mlTypeQuery)
+      .must(mlIdQuery)
+      .must(projectIIdQuery);
+    return query;
+  }
+  
+  private QueryBuilder appProvenanceByAppIdQuery(String appId) {
+    QueryBuilder query = termQuery(AppProvenanceHit.APP_ID_FIELD, appId);
+    return query;
+  }
+  
+  private QueryBuilder appProvenanceByAppStateQuery(String appState) {
+    QueryBuilder query = termQuery(AppProvenanceHit.APP_STATE_FIELD, appState);
+    return query;
+  }
+  
+  private QueryBuilder appProvenanceByAppNameQuery(String appName) {
+    QueryBuilder query = termQuery(AppProvenanceHit.APP_NAME_FIELD, appName);
+    return query;
+  }
+  
+  private QueryBuilder appProvenanceByAppUserQuery(String appUser) {
+    QueryBuilder query = termQuery(AppProvenanceHit.APP_USER_FIELD, appUser);
+    return query;
+  }
+  //END_PROVENANCE
 }
 
 
