@@ -368,7 +368,7 @@ angular.module('hopsWorksApp')
               self.goToUrl('workflows');
             };
 
-            self.goToTfServing = function () {
+            self.goToServing = function () {
               self.toggleKibanaNavBar();
               self.goToUrl('serving');
             };
@@ -385,6 +385,11 @@ angular.module('hopsWorksApp')
             self.goToExperiments = function () {
               self.toggleKibanaNavBar();
               self.goToUrl('experiments');
+            };
+
+            self.goToModels = function () {
+              self.toggleKibanaNavBar();
+              self.goToUrl('models');
             };
 
             self.goToKafka = function () {
@@ -464,6 +469,10 @@ angular.module('hopsWorksApp')
               return (showService("Jobs") || showService("Jupyter"));
             };
 
+            self.showModels = function () {
+              return (showService("Jobs") || showService("Jupyter") || showService("Serving"));
+            };
+
             self.showSsh = function () {
               return showService("Ssh");
             };
@@ -483,10 +492,6 @@ angular.module('hopsWorksApp')
               return showService("Dela");
             };
 
-            self.showTensorflow = function () {
-              return showService("Tensorflow");
-            };
-
             self.showAirflow = function () {
               return showService("Airflow");
             };
@@ -496,7 +501,7 @@ angular.module('hopsWorksApp')
 //              return showService("RStudio");
             };
 
-            self.showTfServing = function () {
+            self.showServing = function () {
                 return showService("Serving");
             };
 

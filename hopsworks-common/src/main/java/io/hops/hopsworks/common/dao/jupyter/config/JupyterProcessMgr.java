@@ -117,8 +117,7 @@ public class JupyterProcessMgr implements JupyterManager {
     String prog = settings.getHopsworksDomainDir() + "/bin/jupyter.sh";
     
     Integer port = ThreadLocalRandom.current().nextInt(40000, 59999);
-    String realName = user.getFname() + " " + user.getLname();
-    JupyterPaths jp = jupyterConfigFilesGenerator.generateConfiguration(project, secretConfig, hdfsUser, realName,
+    JupyterPaths jp = jupyterConfigFilesGenerator.generateConfiguration(project, secretConfig, hdfsUser,
         hdfsLeFacade.getRPCEndpoint(), js, port, allowOrigin);
     String secretDir = settings.getStagingDir() + Settings.PRIVATE_DIRS + js.getSecret();
 
