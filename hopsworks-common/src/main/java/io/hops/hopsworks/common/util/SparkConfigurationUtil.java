@@ -33,8 +33,8 @@ import java.util.Map;
 
 public class SparkConfigurationUtil extends ConfigurationUtil {
 
-  public Map<String, String> getFrameworkProperties(Project project, JobConfiguration jobConfiguration,
-                                                            Settings settings, String hdfsUser, String usersFullName,
+  public Map<String, String> setFrameworkProperties(Project project, JobConfiguration jobConfiguration,
+                                                            Settings settings, String hdfsUser,
                                                             String tfLdLibraryPath, Map<String,
                                                             String> extraJavaOptions) throws IOException {
     SparkJobConfiguration sparkJobConfiguration = (SparkJobConfiguration)jobConfiguration;
@@ -145,7 +145,6 @@ public class SparkConfigurationUtil extends ConfigurationUtil {
             settings.getHadoopSymbolicLinkDir() +"/etc/hadoop/log4j.properties -Dhadoop.root.logger=ERROR,RFA",
       HopsUtils.APPEND_SPACE);
     addToSparkEnvironment(sparkProps, "REST_ENDPOINT", settings.getRestEndpoint(), HopsUtils.IGNORE);
-    addToSparkEnvironment(sparkProps,"HOPSWORKS_USER", usersFullName, HopsUtils.IGNORE);
     addToSparkEnvironment(sparkProps,
       Settings.SPARK_PYSPARK_PYTHON, settings.getAnacondaProjectDir(project) + "/bin/python",
             HopsUtils.IGNORE);
