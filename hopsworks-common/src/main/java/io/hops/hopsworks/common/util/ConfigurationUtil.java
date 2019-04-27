@@ -26,7 +26,7 @@ public abstract class ConfigurationUtil {
 
   public abstract Map<String, String> setFrameworkProperties(Project project, JobConfiguration jobConfiguration,
                                                                     Settings settings, String hdfsUser,
-                                                                    String usersFullName, String tfLibraryPath,
+                                                                    String tfLibraryPath,
                                                                     Map<String, String> extraJavaOptions)
                                                                       throws IOException;
 }

@@ -292,7 +292,8 @@ public class RESTCodes {
     DOWNLOAD_NOT_ALLOWED(48, "Downloading files is not allowed. Please contact the system administrator for further " +
       "information.", Response.Status.FORBIDDEN),
     DATASET_REQUEST_ERROR(49, "Could not send dataset request", Response.Status.INTERNAL_SERVER_ERROR),
-    DATASET_ACCESS_PERMISSION_DENIED(50, "Permission denied.", Response.Status.FORBIDDEN);
+    DATASET_ACCESS_PERMISSION_DENIED(50, "Permission denied.", Response.Status.FORBIDDEN),
+    ATTACH_XATTR_ERROR(51, "Failed to attach Xattr.", Response.Status.INTERNAL_SERVER_ERROR);
 
 
     private Integer code;
@@ -1359,10 +1360,12 @@ public class RESTCodes {
    */
   public enum TensorBoardErrorCode implements RESTErrorCode {
 
-    TENSORBOARD_CLEANUP_ERROR(1, "Failed when deleting a running TensorBoard", Response.Status.INTERNAL_SERVER_ERROR),
-    TENSORBOARD_START_ERROR(2, "Failed to start TensorBoard", Response.Status.INTERNAL_SERVER_ERROR),
-    TENSORBOARD_FETCH_ERROR(3, "Error while fetching TensorBoard from database",
-            Response.Status.INTERNAL_SERVER_ERROR);
+    TENSORBOARD_CLEANUP_ERROR(1, "Error when deleting a running TensorBoard", Response.Status.INTERNAL_SERVER_ERROR),
+    TENSORBOARD_START_ERROR(2, "Error to start TensorBoard", Response.Status.INTERNAL_SERVER_ERROR),
+    TENSORBOARD_FETCH_ERROR(3, "Error while fetching TensorBoard information",
+            Response.Status.INTERNAL_SERVER_ERROR),
+    TENSORBOARD_NOT_FOUND(4, "Could not find TensorBoard",
+        Response.Status.NOT_FOUND);
 
     private Integer code;
     private String message;
@@ -1563,6 +1566,86 @@ public class RESTCodes {
       return message;
     }
     
+    @Override
+    public int getRange() {
+      return range;
+    }
+  }
+
+  public enum ExperimentsErrorCode implements RESTErrorCode {
+
+    EXPERIMENT_NOT_FOUND(0, "No experiment found for provided id.",
+        Response.Status.NOT_FOUND),
+    PROVENANCE_NOT_FOUND(1, "No file provenance found for experiment.",
+        Response.Status.NOT_FOUND),
+    PROVENANCE_FILE_QUERY_ERROR(2, "Error occurred when retrieving file provenance information for experiment.",
+        Response.Status.INTERNAL_SERVER_ERROR),
+    RESULTS_NOT_FOUND(3, "No results found for provided id.",
+        Response.Status.NOT_FOUND),
+    RESULTS_RETRIEVAL_ERROR(4, "Error occurred when retrieving experiment results.",
+        Response.Status.INTERNAL_SERVER_ERROR);
+
+    private int code;
+    private String message;
+    private Response.Status respStatus;
+    public final int range = 330000;
+
+    ExperimentsErrorCode(Integer code, String message, Response.Status respStatus) {
+      this.code = range + code;
+      this.message = message;
+      this.respStatus = respStatus;
+    }
+
+    @Override
+    public Integer getCode() {
+      return code;
+    }
+
+    @Override
+    public String getMessage() {
+      return message;
+    }
+
+    public Response.StatusType getRespStatus() {
+      return respStatus;
+    }
+
+    @Override
+    public int getRange() {
+      return range;
+    }
+  }
+
+  public enum ModelsErrorCode implements RESTErrorCode {
+
+    MODEL_NOT_FOUND(0, "No model found for provided name and version.",
+        Response.Status.NOT_FOUND);
+
+    private int code;
+    private String message;
+    private Response.Status respStatus;
+    public final int range = 340000;
+
+    ModelsErrorCode(Integer code, String message, Response.Status respStatus) {
+      this.code = range + code;
+      this.message = message;
+      this.respStatus = respStatus;
+    }
+
+    @Override
+    public Integer getCode() {
+      return code;
+    }
+
+    @Override
+    public String getMessage() {
+      return message;
+    }
+
+    public Response.StatusType getRespStatus() {
+      return respStatus;
+    }
+
     @Override
     public int getRange() {
       return range;

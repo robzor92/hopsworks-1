@@ -16,83 +16,148 @@
 <div ng-controller="MainCtrl as mainCtrl">
     <div ng-controller="ProjectCtrl as projectCtrl">
         <div ng-include="'nav.html'"></div>
-        <div id="wrapper" class="toggled">
+        <div id="wrapper" class="toggled" ng-controller="ExperimentCtrl as experimentCtrl">
             <div class="overlay"></div>
             <div ng-include="'navProject.html'"></div>
-            <div class="">
-                <section ng-controller="ExperimentsCtrl as experimentsCtrl">
-                    <!-- Page Content -->
-                    <div class="content-wrapper hide-border" style="margin-left: 2px;">
-                        <div ng-if="experimentsCtrl.loading" class="loadingwrap">
-                            <div class="loading-content">
-                                <div class="loader-in-wrap"></div>
-                                {{experimentsCtrl.loadingText}}
-                            </div>
-                        </div>
-                        <div class="row" style="margin-left: 5px;">
-                            <div class="row" style="padding-bottom:3px">
-                                <div class="col-md-12" ng-if="experimentsCtrl.tb === ''">
-                           <span class="col-md-3" style="margin-left:-15px;">
-                           <button ng-click="experimentsCtrl.kibanaUI();
-                              $event.stopPropagation();"
-                                   class="btn btn-primary btn-md fa fa-table" style="font-size:0.9em; padding:7px 10px; background-color:#005571;"
-                                   onmouseover="this.style.backgroundColor='#004159'" onmouseout="this.style.backgroundColor='#005571'"> Experiments Summary
-                           </button>
-                           </span>
-                                    <div class="col-md-1">
-                                        <img height="30" src="images/tf-175x200.png" style="float:right;"/>
-                                    </div>
-                                    <span class="field-info input-group col-md-4" ng-if="experimentsCtrl.tb === ''" uib-tooltip="Search for specific experiment given id" style="padding-left:3px;">
-                              <input type="text" class="form-control" style="height: 32px;" placeholder="Start TensorBoard for given experiment _id" ng-model="experimentsCtrl.id" ng-keyup="experimentsCtrl.hitEnter($event);">
-                              <div class="input-group-btn" style="width: 54px;">
-                                 <button class="btn btn-default" style="color: #028e9b; padding: 6px 12px; height:32px;"
-                                         ng-click="experimentsCtrl.startTB(); $event.stopPropagation();" type="button">
-                                 <i class="fa fa-line-chart"></i>
-                                 </button>
-                              </div>
-                           </span>
-                                </div>
-                                <div class="col-md-12" ng-if="experimentsCtrl.tb !== ''">
-                           <span class="col-md-4" style="margin-left:-15px; padding-bottom:1px;">
-                           <button style="font-size:0.9em; padding:7px 10px; background-color:#005571;"
-                                   ng-click="experimentsCtrl.kibanaUI();
-                              $event.stopPropagation();"
-                                   class="btn btn-primary btn-md fa fa-table"
-                                   onmouseover="this.style.backgroundColor='#004159'" onmouseout="this.style.backgroundColor='#005571'"> Experiments Summary
-                           </button>
-                               <button uib-tooltip="View TensorBoard"
-                                       tooltip-placement="auto top"
-                                       ng-click="experimentsCtrl.viewTB();
-                              $event.stopPropagation();"
-                                       type="button" class="btn btn-md" style="padding:2px 5px; border:1px solid gray;"
-                                       onmouseover="this.style.backgroundColor='lightgray'" onmouseout="this.style.backgroundColor='white'">
-                                   <img src="images/tf-175x200.png" height="29" />
-                           </button>
-                               <button uib-tooltip="Shutdown TensorBoard"
-                                       tooltip-placement="auto top"
-                                       ng-click="experimentsCtrl.stopTB();"
-                                       type="button" class="btn btn-danger btn-md glyphicon glyphicon-off" style="padding:6px 11px; margin-bottom:1px;">
-                           </button>
 
-                           </span>
-                                    <span style="font-size:16px; margin-right:25px; float:right; padding-top:5px;">
-                                        <span>
-                                        <a ng-click="experimentsCtrl.newWindow()"><i class="glyphicon glyphicon-new-window"></i> New Window</a>
-                                            </span>
-                           </span>
-                                    <span style="font-size:16px; margin-right:40px; float:right; padding-top:5px;">
-                                        <span>
-                                        Showing TensorBoard for experiment   <b>{{experimentsCtrl.tb.elasticId}}</b>
-                                            </span>
-                           </span>
-                                </div>
-                            </div>
-                            <div ng-if="experimentsCtrl.ui !== ''">
-                                <iframe style="overflow-y: auto" id="ui_iframe"  ng-src="{{experimentsCtrl.ui}}" width="99%" height ="86%"></iframe>
+            <div class="content-wrapper" ng-controller="TensorBoardCtrl as tensorBoardCtrl">
+
+                <div ng-if="tensorBoardCtrl.loading" class="loadingwrap">
+                    <div class="loading-content">
+                        <div class="loader-in-wrap"></div>
+                        {{tensorBoardCtrl.loadingText}}
+                    </div>
+                </div>
+                <div ng-if="experimentCtrl.loading" class="loadingwrap">
+                    <div class="loading-content">
+                        <div class="loader-in-wrap"></div>
+                        {{experimentCtrl.loadingText}}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-9 col-md-9 col-lg-9 form-inline">
+                        <label>Search
+                            <input class="form-control" style="margin-left: 10px;" ng-model="experimentCtrl.experimentsFilter"
+                                   ng-model-options="{debounce: 800}" ng-change="experimentCtrl.getAll()">
+                            <i class="fa fa-info-circle"
+                               uib-tooltip="Case sensitive search for experiment name." tooltip-placement="bottom"></i>
+                            <md-datepicker ng-change="experimentCtrl.getAll()"
+                                           ng-model="experimentCtrl.experimentsFromDate"
+                                           md-placeholder="From"></md-datepicker>
+                            <md-datepicker ng-change="experimentCtrl.getAll()"
+                                           ng-model="experimentCtrl.experimentsToDate"
+                                           md-placeholder="To"></md-datepicker>
+                        </label>
+                    </div>
+
+
+                    <div class="col-sm-2 col-md-2 col-lg-2">
+                            <ui-select ng-model="experimentCtrl.memberSelected" theme="bootstrap"
+                                       on-select="experimentCtrl.updateMember(); experimentCtrl.getAll();" style="z-index: 1;" id="memberList">
+                                <ui-select-match >
+                                    <span ng-bind="experimentCtrl.memberSelected.name"></span>
+                                </ui-select-match>
+                                <ui-select-choices repeat="member in (experimentCtrl.membersList | filter: $select.search) track by member.name">
+                                    <span ng-bind="member.name | highlight: $select.search"></span>
+                                </ui-select-choices>
+                            </ui-select>
+                    </div>
+                    <div class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="pull-right btn-group">
+                        <span style="float: right; margin-right:30px; " class="glyphicon glyphicon-refresh fa-2x" ng-click="experimentCtrl.getAll()" role="button" tabindex="0" ng-class="{'spin-icon':experimentCtrl.updating}"> </span>
+                    </div>
+                    </div>
+
+                </div>
+
+            <table class="table table-hover">
+                <thead style="border:none;">
+                <th style="width: 19%" ng-click="experimentCtrl.sortBy('name')">
+                    Name
+                    <span class="glyphicon sort-icon" ng-show="experimentCtrl.sortType == 'name'" ng-class="{'glyphicon-chevron-up':!experimentCtrl.reverse,'glyphicon-chevron-down':experimentCtrl.reverse}"></span></th>
+                <th style="width: 11%" ng-click="experimentCtrl.sortBy('metric')">
+                    Metric
+                    <span class="glyphicon sort-icon" ng-show="experimentCtrl.sortType == 'metric'" ng-class="{'glyphicon-chevron-up':!experimentCtrl.reverse,'glyphicon-chevron-down':experimentCtrl.reverse}"></span>
+                </th>
+                <th style="width: 15%" ng-click="experimentCtrl.sortBy('user')">
+                    User
+                    <span class="glyphicon sort-icon" ng-show="experimentCtrl.sortType == 'user'" ng-class="{'glyphicon-chevron-up':!experimentCtrl.reverse,'glyphicon-chevron-down':experimentCtrl.reverse}"></span>
+                </th>
+                <th style="width: 14%" ng-click="experimentCtrl.sortBy('start')">
+                    Start
+                    <span class="glyphicon sort-icon" ng-show="experimentCtrl.sortType == 'start'" ng-class="{'glyphicon-chevron-up':!experimentCtrl.reverse,'glyphicon-chevron-down':experimentCtrl.reverse}"></span>
+                </th>
+                <th style="width: 14%" ng-click="experimentCtrl.sortBy('end')">
+                    End
+                    <span class="glyphicon sort-icon" ng-show="experimentCtrl.sortType == 'end'" ng-class="{'glyphicon-chevron-up':!experimentCtrl.reverse,'glyphicon-chevron-down':experimentCtrl.reverse}"></span>
+                </th>
+                <th style="width: 11%" ng-click="experimentCtrl.sortBy('state')">
+                    State
+                    <span class="glyphicon sort-icon" ng-show="experimentCtrl.sortType == 'state'" ng-class="{'glyphicon-chevron-up':!experimentCtrl.reverse,'glyphicon-chevron-down':experimentCtrl.reverse}"></span>
+                </th>
+                <th style="width: 14%">Actions</th>
+                </thead>
+                <tbody>
+                <tr dir-paginate="experiment in experimentCtrl.experiments | itemsPerPage:experimentCtrl.pageSize"
+                    pagination-id="experiments_pagination"
+                    current-page="experimentCtrl.currentPage"
+                    total-items="experimentCtrl.totalItems">
+                    <td> {{experiment.name}} </td>
+                    <td> {{experiment.metric}} </td>
+                    <td> {{experiment.userFullName}} </td>
+                    <td> {{experiment.started | date:'medium'}} </td>
+                    <td> {{experiment.finished | date:'medium'}} </td>
+                    <td>
+                        <span ng-if="experiment.state === 'NEW' || experiment.state === 'SUBMITTED' || experiment.state === 'RUNNING'" style="color: #0066bb">
+                          {{experiment.state}}
+                        </span>
+                        <span ng-if="experiment.state === 'FINISHED'" style="color: #00A000">
+                          {{experiment.state}}
+                        </span>
+                        <span ng-if="experiment.state === 'KILLED' || experiment.state === 'FAILED' || experiment.state === 'UNKNOWN'" style="color: #880000">
+                          {{experiment.state}}
+                        </span>
+                    </td>
+                    <td class="fs-table">
+                        <div class="btn-group fs-btn" role="group">
+                            <button uib-tooltip="Show TensorBoard" tooltip-placement="auto top" ng-click="tensorBoardCtrl.start(experiment.id);
+                              $event.stopPropagation();" class="btn glyphicon" style="background-color:lightgray;">
+                                <img src="images/tf-2.png" height="20" />
+                            </button>
+                            <button class="btn btn-primary glyphicon glyphicon-list-alt" style="background-color: rgb(51, 122, 183)"
+                                    uib-tooltip="Show Detailed Information"
+                                    ng-click="experimentCtrl.viewExperiment(experiment); $event.stopPropagation();">
+                            </button>
+
+                            <div uib-dropdown class="btn-group" role="group"
+                                 style="z-index: auto;">
+                                <button type="button"
+                                        uib-dropdown-toggle class="btn btn-default glyphicon"
+                                        style="font-family: sans-serif;">
+                                    More
+                                    <span class="caret"></span>
+                                </button>
+                                <ul uib-dropdown-menu class="dropdown-menu dropdown-menu-right" style="font-family:
+                            sans-serif;">
+                                    <li><a role="menuitem" ng-click="experimentCtrl.viewMonitor(experiment); $event.stopPropagation();" >Monitoring UI</a></li>
+                                    <li><a role="menuitem" ng-click="experimentCtrl.goToExperiment(experiment.id); $event.stopPropagation();" >Output Folder</a></li>
+                                    <li><a role="menuitem" ng-click="experimentCtrl.deleteExperiment(experiment.id); $event.stopPropagation();" >Delete</a></li>
+                                </ul>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <dir-pagination-controls
+                    class="pull-right"
+                    max-size="experimentCtrl.pageSize"
+                    pagination-id="experiments_pagination"
+                    direction-links="true"
+                    boundary-links="true"
+                    on-page-change="experimentCtrl.getNewPage()">
+            </dir-pagination-controls>
             </div>
         </div>
     </div>

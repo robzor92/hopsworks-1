@@ -96,7 +96,7 @@ public class JupyterConfigFilesGenerator {
     return new JupyterPaths(settings.getJupyterDir(), project.getName(), hdfsUser, secretConfig);
   }
   
-  public JupyterPaths generateConfiguration(Project project, String secretConfig, String hdfsUser, String usersFullName,
+  public JupyterPaths generateConfiguration(Project project, String secretConfig, String hdfsUser,
     String nameNodeEndpoint, JupyterSettings js, Integer port, String allowOrigin)
     throws ServiceException {
     boolean newDir = false;
@@ -105,7 +105,7 @@ public class JupyterConfigFilesGenerator {
     
     try {
       newDir = createJupyterDirs(jp);
-      createConfigFiles(jp, hdfsUser, usersFullName, project, nameNodeEndpoint,
+      createConfigFiles(jp, hdfsUser, project, nameNodeEndpoint,
         port, js, allowOrigin);
     } catch (Exception e) {
       if (newDir) { // if the folder was newly created delete it
@@ -228,8 +228,8 @@ public class JupyterConfigFilesGenerator {
       ).toString();
   }
   
-  public String createSparkMagicConfig(Project project, JupyterSettings js, String hdfsUser, String confDirPath,
-      String usersFullName) throws IOException {
+  public String createSparkMagicConfig(Project project, JupyterSettings js, String hdfsUser, String confDirPath)
+      throws IOException {
     
     SparkJobConfiguration sparkJobConfiguration = (SparkJobConfiguration) js.getJobConfig();
     
@@ -247,7 +247,7 @@ public class JupyterConfigFilesGenerator {
       "hdfs:///Projects/" + project.getName() + "/Resources");
   
     finalSparkConfiguration.putAll(sparkConfigurationUtil.setFrameworkProperties(project, sparkJobConfiguration,
-      settings, hdfsUser, usersFullName, tfLdLibraryPath, extraJavaOptions));
+      settings, hdfsUser, tfLdLibraryPath, extraJavaOptions));
     StringBuilder sparkConfBuilder = new StringBuilder();
     ArrayList<String> keys = new ArrayList<>(finalSparkConfiguration.keySet());
     Collections.sort(keys);
@@ -283,12 +283,11 @@ public class JupyterConfigFilesGenerator {
     return ConfigFileGenerator.instantiateFromTemplate(ConfigFileGenerator.JUPYTER_CUSTOM_TEMPLATE,
       "hadoop_home", this.settings.getHadoopSymbolicLinkDir()).toString();
   }
-  
-  // returns true if one of the conf files were created anew 
-  private boolean createConfigFiles(JupyterPaths jp, String hdfsUser, String usersFullName, Project project,
+
+  // returns true if one of the conf files were created anew
+  private boolean createConfigFiles(JupyterPaths jp, String hdfsUser, Project project,
       String nameNodeEndpoint, Integer port, JupyterSettings js, String allowOrigin)
       throws IOException, ServiceException {
-    
     String confDirPath = jp.getConfDirPath();
     String kernelsDir = jp.getKernelsDir();
     String certsDir = jp.getCertificatesDir();
@@ -316,7 +315,7 @@ public class JupyterConfigFilesGenerator {
     
     if (!sparkmagic_config_file.exists()) {
       createdSparkmagic = ConfigFileGenerator.createConfigFile(sparkmagic_config_file, createSparkMagicConfig(project
-        , js, hdfsUser, confDirPath, usersFullName));
+        , js, hdfsUser, confDirPath));
     }
     
     if (!custom_js.exists()) {
