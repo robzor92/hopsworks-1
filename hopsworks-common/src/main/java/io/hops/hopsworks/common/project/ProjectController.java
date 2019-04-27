@@ -82,11 +82,14 @@ import io.hops.hopsworks.common.dao.user.activity.ActivityFlag;
 import io.hops.hopsworks.common.dataset.DatasetController;
 import io.hops.hopsworks.common.dataset.FolderNameValidator;
 import io.hops.hopsworks.common.elastic.ElasticController;
-import io.hops.hopsworks.common.experiments.TensorBoardController;
+import io.hops.hopsworks.common.python.environment.EnvironmentController;
+import io.hops.hopsworks.common.util.DateUtils;
+import io.hops.hopsworks.common.hdfs.Utils;
+import io.hops.hopsworks.exceptions.FeaturestoreException;
+import io.hops.hopsworks.common.experiments.tensorboard.TensorBoardController;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
-import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.hive.HiveController;
 import io.hops.hopsworks.common.jobs.JobController;
 import io.hops.hopsworks.common.jobs.execution.ExecutionController;
@@ -96,20 +99,17 @@ import io.hops.hopsworks.common.jobs.yarn.YarnLogUtil;
 import io.hops.hopsworks.common.jupyter.JupyterController;
 import io.hops.hopsworks.common.kafka.KafkaController;
 import io.hops.hopsworks.common.message.MessageController;
-import io.hops.hopsworks.common.python.environment.EnvironmentController;
 import io.hops.hopsworks.common.security.CertificateMaterializer;
 import io.hops.hopsworks.common.security.CertificatesController;
 import io.hops.hopsworks.common.serving.ServingController;
 import io.hops.hopsworks.common.serving.inference.logger.KafkaInferenceLogger;
 import io.hops.hopsworks.common.user.UsersController;
-import io.hops.hopsworks.common.util.DateUtils;
 import io.hops.hopsworks.common.util.EmailBean;
 import io.hops.hopsworks.common.util.ProjectUtils;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.common.yarn.YarnClientService;
 import io.hops.hopsworks.common.yarn.YarnClientWrapper;
 import io.hops.hopsworks.exceptions.DatasetException;
-import io.hops.hopsworks.exceptions.FeaturestoreException;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.HopsSecurityException;
 import io.hops.hopsworks.exceptions.JobException;
@@ -2437,63 +2437,10 @@ public class ProjectController {
    * Handles Kibana related indices and templates for projects.
    * @param project project
    * @throws ProjectException ProjectException
-   * @throws ServiceException ServiceException
    */
-  public void addKibana(Project project) throws ProjectException, ServiceException {
-
+  public void addKibana(Project project) throws ProjectException {
     String projectName = project.getName().toLowerCase();
-
     elasticController.createIndexPattern(project, projectName + Settings.ELASTIC_LOGS_INDEX_PATTERN);
-    // Create index and index-pattern for experiment service
-    String indexName = projectName + "_" + Settings.ELASTIC_EXPERIMENTS_INDEX;
-    if (!elasticController.indexExists(indexName)) {
-      elasticController.createIndex(indexName);
-    }
-
-    elasticController.createIndexPattern(project, indexName);
-
-    String savedSummarySearch =
-      "{\"attributes\":{\"title\":\"Experiments summary\",\"description\":\"\",\"hits\":0,\"columns\"" +
-        ":[\"_id\",\"user\",\"name\",\"start\",\"finished\",\"status\",\"module\",\"function\"" +
-        ",\"hyperparameter\"" +
-        ",\"metric\"],\"sort\":[\"start\"" +
-        ",\"desc\"],\"version\":1,\"kibanaSavedObjectMeta\":{\"searchSourceJSON\":\"" +
-        "{\\\"index\\\":\\\"" + indexName + "\\\",\\\"highlightAll\\\":true,\\\"version\\\":true" +
-        ",\\\"query\\\":{\\\"language\\\":\\\"lucene\\\",\\\"query\\\":\\\"\\\"},\\\"filter\\\":" +
-        "[]}\"}}}";
-
-    Map<String, String> params = new HashMap<>();
-    params.put("op", "POST");
-    params.put("data", savedSummarySearch);
-    JSONObject resp = elasticController.sendKibanaReq(params, "search", indexName + "_summary-search", true);
-
-    if (!(resp.has("updated_at") || (resp.has("statusCode") && resp.get("statusCode").toString().equals("409")))) {
-      throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_KIBANA_CREATE_SEARCH_ERROR, Level.SEVERE,
-        "project: " + projectName + ", resp: " + resp.toString(2));
-    }
-
-    String savedSummaryDashboard =
-      "{\"attributes\":{\"title\":\"Experiments summary dashboard\",\"hits\":0,\"description\":\"" +
-        "A summary of all experiments run in this project\",\"panelsJSON\":\"[{\\\"gridData\\\"" +
-        ":{\\\"h\\\":9,\\\"i\\\":\\\"1\\\",\\\"w\\\":12,\\\"x\\\":0,\\\"y\\\":0},\\\"id\\\"" +
-        ":\\\"" + indexName + "_summary-search" + "\\\",\\\"panelIndex\\\":\\\"1\\\"" +
-        ",\\\"type\\\":\\\"search\\\"" +
-        ",\\\"version\\\":\\\"" + settings.getKibanaVersion() +
-        "\\\"}]\",\"optionsJSON\":\"{\\\"darkTheme\\\":false" +
-        ",\\\"hidePanelTitles\\\":false,\\\"useMargins\\\":true}\",\"version\":1,\"timeRestore\":" +
-        "false" +
-        ",\"kibanaSavedObjectMeta\":{\"searchSourceJSON\":\"{\\\"query\\\":{\\\"language\\\"" +
-        ":\\\"lucene\\\",\\\"query\\\":\\\"\\\"},\\\"filter\\\":[],\\\"highlightAll\\\":" +
-        "true,\\\"version\\\":true}\"}}}";
-    params.clear();
-    params.put("op", "POST");
-    params.put("data", savedSummaryDashboard);
-    resp = elasticController.sendKibanaReq(params, "dashboard", indexName + "_summary-dashboard", true);
-
-    if (!(resp.has("updated_at") || (resp.has("statusCode") && resp.get("statusCode").toString().equals("409")))) {
-      throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_KIBANA_CREATE_DASHBOARD_ERROR, Level.SEVERE,
-        "project: " + projectName + ", resp: " + resp.toString(2));
-    }
   }
 
   public void removeElasticsearch(Project project) throws ServiceException {
@@ -2524,12 +2471,6 @@ public class ProjectController {
       resp = elasticController.sendKibanaReq(params, "index-pattern",
           projectName + Settings.ELASTIC_KAGENT_INDEX_PATTERN);
       LOGGER.log(Level.FINE, resp.toString(4));
-
-      // 3. Cleanup Experiment related Kibana stuff
-      String experimentsIndex = projectName + "_" + Settings.ELASTIC_EXPERIMENTS_INDEX;
-      elasticController.sendKibanaReq(params, "index-pattern", experimentsIndex, false);
-      elasticController.sendKibanaReq(params, "search", experimentsIndex + "_summary-search", false);
-      elasticController.sendKibanaReq(params, "dashboard", experimentsIndex + "_summary-dashboard", false);
       LOGGER.log(Level.FINE, "removeElasticsearch-2");
     }
 
