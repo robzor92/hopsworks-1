@@ -87,12 +87,15 @@ import io.hops.hopsworks.common.dao.user.activity.ActivityFlag;
 import io.hops.hopsworks.common.dataset.DatasetController;
 import io.hops.hopsworks.common.dataset.FolderNameValidator;
 import io.hops.hopsworks.common.elastic.ElasticController;
-import io.hops.hopsworks.common.experiments.TensorBoardController;
+import io.hops.hopsworks.common.python.environment.EnvironmentController;
+import io.hops.hopsworks.common.util.DateUtils;
+import io.hops.hopsworks.common.hdfs.Utils;
+import io.hops.hopsworks.exceptions.FeaturestoreException;
+import io.hops.hopsworks.common.experiments.tensorboard.TensorBoardController;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.FsPermissions;
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
-import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.hive.HiveController;
 import io.hops.hopsworks.common.jobs.JobController;
 import io.hops.hopsworks.common.jobs.execution.ExecutionController;
@@ -104,13 +107,11 @@ import io.hops.hopsworks.common.kafka.KafkaController;
 import io.hops.hopsworks.common.message.MessageController;
 import io.hops.hopsworks.common.provenance.v2.HopsFSProvenanceController;
 import io.hops.hopsworks.common.provenance.v3.xml.ProvTypeDTO;
-import io.hops.hopsworks.common.python.environment.EnvironmentController;
 import io.hops.hopsworks.common.security.CertificateMaterializer;
 import io.hops.hopsworks.common.security.CertificatesController;
 import io.hops.hopsworks.common.serving.ServingController;
 import io.hops.hopsworks.common.serving.inference.logger.KafkaInferenceLogger;
 import io.hops.hopsworks.common.user.UsersController;
-import io.hops.hopsworks.common.util.DateUtils;
 import io.hops.hopsworks.common.util.EmailBean;
 import io.hops.hopsworks.common.util.ProjectUtils;
 import io.hops.hopsworks.common.util.Settings;
@@ -118,7 +119,6 @@ import io.hops.hopsworks.common.yarn.YarnClientService;
 import io.hops.hopsworks.common.yarn.YarnClientWrapper;
 import io.hops.hopsworks.exceptions.CryptoPasswordNotFoundException;
 import io.hops.hopsworks.exceptions.DatasetException;
-import io.hops.hopsworks.exceptions.FeaturestoreException;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.HopsSecurityException;
 import io.hops.hopsworks.exceptions.JobException;
@@ -418,7 +418,7 @@ public class ProjectController {
 
       if (environmentController.condaEnabledHosts()) {
         try {
-          environmentController.createEnv("3.6", project);//TODO: use variables for version
+          environmentController.createEnv(project, project.getOwner(), "3.6");//TODO: use variables for version
         } catch (PythonException | EJBException ex) {
           cleanup(project, sessionId, projectCreationFutures);
           throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_ANACONDA_ENABLE_ERROR, Level.SEVERE,
@@ -2478,7 +2478,7 @@ public class ProjectController {
 
   @TransactionAttribute(TransactionAttributeType.NEVER)
   public void removeAnacondaEnv(Project project) throws ServiceException {
-    environmentController.removeEnvironment(project);
+    environmentController.removeEnvironment(project, project.getOwner());
   }
 
   @TransactionAttribute(TransactionAttributeType.NEVER)
@@ -2491,77 +2491,20 @@ public class ProjectController {
     tensorBoardController.removeProject(project);
   }
 
-  @TransactionAttribute(TransactionAttributeType.NEVER)
-  public void cloneAnacondaEnv(Project srcProj, Project destProj) throws ServiceException {
-    environmentController.cloneProject(srcProj, destProj);
-  }
-
   /**
    * Handles Kibana related indices and templates for projects.
    *
    * @param project project
    * @throws ProjectException ProjectException
-   * @throws ServiceException ServiceException
    */
-  public void addKibana(Project project) throws ProjectException, ServiceException {
-
+  public void addKibana(Project project) throws ProjectException {
     String projectName = project.getName().toLowerCase();
-
     elasticController.createIndexPattern(project, projectName + Settings.ELASTIC_LOGS_INDEX_PATTERN);
+
     elasticController.createIndexPattern(project,
       project.getName().toLowerCase() + Settings.ELASTIC_BEAMJOBSERVER_INDEX_PATTERN);
     elasticController.createIndexPattern(project,
       project.getName().toLowerCase() + Settings.ELASTIC_BEAMSDKWORKER_INDEX_PATTERN);
-    // Create index and index-pattern for experiment service
-    String indexName = projectName + "_" + Settings.ELASTIC_EXPERIMENTS_INDEX;
-    if (!elasticController.indexExists(indexName)) {
-      elasticController.createIndex(indexName);
-    }
-
-    elasticController.createIndexPattern(project, indexName);
-
-    String savedSummarySearch =
-      "{\"attributes\":{\"title\":\"Experiments summary\",\"description\":\"\",\"hits\":0,\"columns\"" +
-        ":[\"_id\",\"user\",\"name\",\"start\",\"finished\",\"status\",\"module\",\"function\"" +
-        ",\"hyperparameter\"" +
-        ",\"metric\"],\"sort\":[\"start\"" +
-        ",\"desc\"],\"version\":1,\"kibanaSavedObjectMeta\":{\"searchSourceJSON\":\"" +
-        "{\\\"index\\\":\\\"" + indexName + "\\\",\\\"highlightAll\\\":true,\\\"version\\\":true" +
-        ",\\\"query\\\":{\\\"language\\\":\\\"lucene\\\",\\\"query\\\":\\\"\\\"},\\\"filter\\\":" +
-        "[]}\"}}}";
-
-    Map<String, String> params = new HashMap<>();
-    params.put("op", "POST");
-    params.put("data", savedSummarySearch);
-    JSONObject resp = elasticController.sendKibanaReq(params, "search", indexName + "_summary-search", true);
-
-    if (!(resp.has("updated_at") || (resp.has("statusCode") && resp.get("statusCode").toString().equals("409")))) {
-      throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_KIBANA_CREATE_SEARCH_ERROR, Level.SEVERE,
-        "project: " + projectName + ", resp: " + resp.toString(2));
-    }
-
-    String savedSummaryDashboard =
-      "{\"attributes\":{\"title\":\"Experiments summary dashboard\",\"hits\":0,\"description\":\"" +
-        "A summary of all experiments run in this project\",\"panelsJSON\":\"[{\\\"gridData\\\"" +
-        ":{\\\"h\\\":9,\\\"i\\\":\\\"1\\\",\\\"w\\\":12,\\\"x\\\":0,\\\"y\\\":0},\\\"id\\\"" +
-        ":\\\"" + indexName + "_summary-search" + "\\\",\\\"panelIndex\\\":\\\"1\\\"" +
-        ",\\\"type\\\":\\\"search\\\"" +
-        ",\\\"version\\\":\\\"" + settings.getKibanaVersion() +
-        "\\\"}]\",\"optionsJSON\":\"{\\\"darkTheme\\\":false" +
-        ",\\\"hidePanelTitles\\\":false,\\\"useMargins\\\":true}\",\"version\":1,\"timeRestore\":" +
-        "false" +
-        ",\"kibanaSavedObjectMeta\":{\"searchSourceJSON\":\"{\\\"query\\\":{\\\"language\\\"" +
-        ":\\\"lucene\\\",\\\"query\\\":\\\"\\\"},\\\"filter\\\":[],\\\"highlightAll\\\":" +
-        "true,\\\"version\\\":true}\"}}}";
-    params.clear();
-    params.put("op", "POST");
-    params.put("data", savedSummaryDashboard);
-    resp = elasticController.sendKibanaReq(params, "dashboard", indexName + "_summary-dashboard", true);
-
-    if (!(resp.has("updated_at") || (resp.has("statusCode") && resp.get("statusCode").toString().equals("409")))) {
-      throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_KIBANA_CREATE_DASHBOARD_ERROR, Level.SEVERE,
-        "project: " + projectName + ", resp: " + resp.toString(2));
-    }
   }
 
   public void removeElasticsearch(Project project) throws ServiceException {
@@ -2592,6 +2535,7 @@ public class ProjectController {
       resp = elasticController.sendKibanaReq(params, "index-pattern",
         projectName + Settings.ELASTIC_KAGENT_INDEX_PATTERN);
       LOGGER.log(Level.FINE, resp.toString(4));
+
       LOGGER.log(Level.FINE, "removeElasticsearch-2:{0}", projectName);
 
       //3. Delete beam job service and sdk worker Kibana indices

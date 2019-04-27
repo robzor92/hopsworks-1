@@ -28,6 +28,7 @@ import io.hops.hopsworks.common.dao.hdfs.inode.InodeFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.python.environment.EnvironmentController;
+import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.PythonException;
@@ -77,6 +78,8 @@ public class EnvironmentResource {
   private EnvironmentCommandsResource environmentCommandsResource;
   @EJB
   private EnvironmentBuilder environmentBuilder;
+  @EJB
+  private Settings settings;
   
   private Project project;
   
@@ -143,16 +146,16 @@ public class EnvironmentResource {
   public Response post(@PathParam("version") String version,
       @QueryParam("action") EnvironmentDTO.Operation action,
       @Context UriInfo uriInfo,
-      @Context SecurityContext sc) throws PythonException, ServiceException {
-    Users user = jWTHelper.getUserPrincipal(sc);
+      @Context SecurityContext sc) throws PythonException, ServiceException, ProjectException {
     EnvironmentDTO dto;
+    Users user = jWTHelper.getUserPrincipal(sc);
     switch ((action != null) ? action : EnvironmentDTO.Operation.CREATE) {
       case EXPORT:
-        environmentController.exportEnv(user, project);
+        environmentController.exportEnv(project, user, Settings.PROJECT_STAGING_DIR);
         dto = buildEnvDTO(uriInfo, null, version);
         return Response.ok().entity(dto).build();
       case CREATE:
-        environmentController.createEnv(version, project);
+        environmentController.createEnv(project, user, version);
         dto = buildEnvDTO(uriInfo,null, version);
         return Response.created(dto.getHref()).entity(dto).build();
       default:
@@ -185,8 +188,9 @@ public class EnvironmentResource {
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response delete(@PathParam("version") String version) throws ServiceException {
-    environmentController.removeEnvironment(project);
+  public Response delete(@PathParam("version") String version, @Context SecurityContext sc) throws ServiceException {
+    Users user = jWTHelper.getUserPrincipal(sc);
+    environmentController.removeEnvironment(project, user);
     return Response.noContent().build();
   }
 

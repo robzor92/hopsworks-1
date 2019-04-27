@@ -1087,7 +1087,6 @@ angular.module('hopsWorksApp')
                 });
                 return modalInstance.result;
             },
-
             noteCreate: function (size, title, msg, val) {
                 var modalInstance = $uibModal.open({
                     templateUrl: 'views/noteCreateModal.html',

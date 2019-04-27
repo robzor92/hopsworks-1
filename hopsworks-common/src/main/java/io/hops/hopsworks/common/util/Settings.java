@@ -1134,9 +1134,6 @@ public class Settings implements Serializable {
     return YARN_WEB_UI_IP + ":" + YARN_WEB_UI_PORT;
   }
 
-  private String HDFS_WEB_UI_IP = "127.0.0.1";
-  private int HDFS_WEB_UI_PORT = 50070;
-
   private String HDFS_DEFAULT_QUOTA_MBs = "200000";
 
   public synchronized long getHdfsDefaultQuotaInMBs() {
@@ -1228,6 +1225,9 @@ public class Settings implements Serializable {
   public static final String SPARK_LOCALIZED_CONF_DIR = "__spark_conf__";
   public static final String SPARK_LOCALIZED_PYTHON_DIR = "__pyfiles__";
   public static final String SPARK_LOCRSC_APP_JAR = "__app__.jar";
+
+  public static final String HOPS_EXPERIMENTS_DATASET = "Experiments";
+  public static final String HOPS_MODELS_DATASET = "Models";
 
   public static final String HOPS_TOUR_DATASET = "TestJob";
   public static final String HOPS_DL_TOUR_DATASET = "TourData";
@@ -1887,6 +1887,7 @@ public class Settings implements Serializable {
       + "## %s";
 
   public static final String FILE_PREVIEW_TEXT_TYPE = "text";
+  public static final String FILE_PREVIEW_HTML_TYPE = "html";
   public static final String FILE_PREVIEW_IMAGE_TYPE = "image";
   public static final String FILE_PREVIEW_MODE_TAIL = "tail";
 
@@ -1899,12 +1900,12 @@ public class Settings implements Serializable {
   public static final String ELASTIC_KAGENT_INDEX = "kagent";
   public static final String ELASTIC_SERVING_INDEX_PATTERN = "_" + ELASTIC_SERVING_INDEX + "-*";
   public static final String ELASTIC_KAGENT_INDEX_PATTERN = "_" + ELASTIC_KAGENT_INDEX + "-*";
+
   public static final String ELASTIC_BEAMJOBSERVER_INDEX_PATTERN =
     "_" + Settings.ELASTIC_BEAMJOBSERVER + "-*";
   public static final String ELASTIC_BEAMSDKWORKER_INDEX_PATTERN =
     "_" + Settings.ELASTIC_BEAMSDKWORKER + "-*";
-  
-  public static final String ELASTIC_EXPERIMENTS_INDEX = "experiments";
+
   public static final String ELASTIC_SAVED_OBJECTS = "saved_objects";
   public static final String ELASTIC_VISUALIZATION = "visualization";
   public static final String ELASTIC_SAVED_SEARCH = "search";

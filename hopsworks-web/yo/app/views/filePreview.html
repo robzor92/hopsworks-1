@@ -54,6 +54,9 @@
 <div class="modal-body content" ng-show="filePreviewCtrl.type === 'image'">
   <img class="img-preview" src="data:image/{{filePreviewCtrl.extension}};base64,{{filePreviewCtrl.content}}" alt="Waiting for image download...">
 </div>
-<div class="modal-body " ng-show="filePreviewCtrl.type === 'text'">
+<div class="modal-body" ng-show="filePreviewCtrl.type === 'text'">
   <p class="filepreview">{{filePreviewCtrl.content}}</p>
+</div>
+<div class="modal-body" ng-show="filePreviewCtrl.type === 'html'" ng-bind-html="filePreviewCtrl.content">
+
 </div>

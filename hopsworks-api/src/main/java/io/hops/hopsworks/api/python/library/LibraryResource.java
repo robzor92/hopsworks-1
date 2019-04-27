@@ -17,6 +17,7 @@ package io.hops.hopsworks.api.python.library;
 
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
+import io.hops.hopsworks.api.jwt.JWTHelper;
 import io.hops.hopsworks.api.python.library.command.LibraryCommandsResource;
 import io.hops.hopsworks.api.python.library.search.LibrarySearchBuilder;
 import io.hops.hopsworks.api.python.library.search.LibrarySearchDTO;
@@ -26,6 +27,7 @@ import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.python.CondaCommandFacade;
 import io.hops.hopsworks.common.dao.python.LibraryFacade;
 import io.hops.hopsworks.common.dao.python.PythonDep;
+import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.python.commands.CommandsController;
 import io.hops.hopsworks.common.python.environment.EnvironmentController;
 import io.hops.hopsworks.common.python.library.LibraryController;
@@ -44,7 +46,6 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -56,6 +57,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -80,6 +82,8 @@ public class LibraryResource {
   private LibraryCommandsResource libraryCommandsResource;
   @EJB
   private EnvironmentController environmentController;
+  @EJB
+  private JWTHelper jWTHelper;
 
   private static final Pattern VALIDATION_PATTERN = Pattern.compile("[a-zA-Z0-9_\\-\\.]+");
   private static final Pattern CHANNEL_PATTERN = Pattern.compile("[a-zA-Z0-9_\\-:/~?&\\.]+");
@@ -144,8 +148,9 @@ public class LibraryResource {
   @Path("{library}")
   @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
   @JWTRequired(acceptedTokens={Audience.API}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
-  public Response uninstall(@PathParam("library") String library)
+  public Response uninstall(@PathParam("library") String library, @Context SecurityContext sc)
     throws ServiceException, GenericException, ProjectException, PythonException {
+    Users user = jWTHelper.getUserPrincipal(sc);
     validatePattern(library);
     environmentController.checkCondaEnabled(project, pythonVersion);
     if (settings.getPreinstalledPythonLibraryNames().contains(library)) {
@@ -153,10 +158,10 @@ public class LibraryResource {
           "library: " + library);
     }
 
-    environmentController.checkCondaEnvExists(project);
+    environmentController.checkCondaEnvExists(project, user);
 
     commandsController.deleteCommands(project, library);
-    libraryController.uninstallLibrary(project, library);
+    libraryController.uninstallLibrary(project, user, library);
     return Response.noContent().build();
   }
 
@@ -172,8 +177,10 @@ public class LibraryResource {
                           @QueryParam("channel") String channel,
                           @QueryParam("machine") LibraryFacade.MachineType machine,
                           @Context UriInfo uriInfo,
-                          @Context HttpServletRequest req)
+                          @Context SecurityContext sc)
     throws ServiceException, GenericException, PythonException, ProjectException {
+
+    Users user = jWTHelper.getUserPrincipal(sc);
 
     if (version == null || version.isEmpty()) {
       throw new PythonException(RESTCodes.PythonErrorCode.VERSION_NOT_SPECIFIED, Level.FINE);
@@ -211,9 +218,9 @@ public class LibraryResource {
       }
     }
 
-    environmentController.checkCondaEnvExists(project);
+    environmentController.checkCondaEnvExists(project, user);
   
-    PythonDep dep = libraryController.addLibrary(project, CondaCommandFacade.
+    PythonDep dep = libraryController.addLibrary(project, user, CondaCommandFacade.
         CondaInstallType.valueOf(packageManager.name().toUpperCase()), machine, channel, library, version);
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.LIBRARIES);
     LibraryDTO libraryDTO = librariesBuilder.build(uriInfo, resourceRequest, dep, project);
