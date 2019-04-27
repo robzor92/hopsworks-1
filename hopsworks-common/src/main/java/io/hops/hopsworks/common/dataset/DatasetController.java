@@ -63,9 +63,12 @@ import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
 import io.hops.hopsworks.common.hdfs.Utils;
+import io.hops.hopsworks.common.provenance.ProvenanceController;
+import io.hops.hopsworks.common.provenance.v2.ProvXAttrs;
 import io.hops.hopsworks.common.util.HopsUtils;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.DatasetException;
+import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.HopsSecurityException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -116,6 +119,8 @@ public class DatasetController {
   private DistributedFsService dfs;
   @EJB
   private Settings settings;
+  @EJB
+  private ProvenanceController provenanceCtrl;
 
   /**
    * Create a new DataSet. This is, a folder right under the project home
@@ -140,9 +145,10 @@ public class DatasetController {
    */
   @TransactionAttribute(TransactionAttributeType.NEVER)
   public void createDataset(Users user, Project project, String dataSetName,
-      String datasetDescription, int templateId, boolean searchable,
+      String datasetDescription, int templateId, Inode.MetaStatus metaStatus,
       boolean stickyBit, boolean defaultDataset, DistributedFileSystemOps dfso)
-    throws DatasetException, HopsSecurityException {
+    throws DatasetException, HopsSecurityException, GenericException {
+  
     //Parameter checking.
     if (user == null || project == null || dataSetName == null) {
       throw new IllegalArgumentException("User, project or dataset were not provided");
@@ -171,7 +177,7 @@ public class DatasetController {
         ds = inodes.findByInodePK(parent, dataSetName,
             HopsUtils.dataSetPartitionId(parent, dataSetName));
         Dataset newDS = new Dataset(ds, project);
-        newDS.setSearchable(searchable);
+        newDS.setSearchable(isSearchable(metaStatus));
 
         if (datasetDescription != null) {
           newDS.setDescription(datasetDescription);
@@ -182,12 +188,10 @@ public class DatasetController {
         // creates a dataset and adds user as owner.
         hdfsUsersBean.addDatasetUsersGroups(user, project, newDS, dfso);
 
-        //set the dataset meta enabled. Support 3 level indexing
-        if (searchable) {
-          dfso.setMetaEnabled(dsPath);
-          Dataset logDs = getByProjectAndDsName(project,null, dataSetName);
-          logDataset(logDs, OperationType.Add);
-        }
+        Dataset logDs = getByProjectAndDsName(project,null, dataSetName);
+        //set the dataset meta enabled(or prov). Support 3 level indexing
+        updateProvenanceStatusInt(logDs, metaStatus, dfso);
+        logDataset(logDs, OperationType.Add);
       } catch (Exception e) {
         try {
           dfso.rm(new Path(dsPath), true); //if dataset persist fails rm ds folder.
@@ -203,6 +207,10 @@ public class DatasetController {
       throw new DatasetException(RESTCodes.DatasetErrorCode.DATASET_OPERATION_ERROR, Level.INFO,
         "Could not create dataset: " + dataSetName);
     }
+  }
+  
+  private boolean isSearchable(Inode.MetaStatus metaStatus) {
+    return !Inode.MetaStatus.DISABLED.equals(metaStatus);
   }
 
   /**
@@ -291,7 +299,7 @@ public class DatasetController {
   public boolean deleteDatasetDir(Dataset dataset, Path location,
       DistributedFileSystemOps udfso) throws IOException {
     OperationsLog log = new OperationsLog(dataset, OperationType.Delete);
-    udfso.unsetMetaEnabled(location);
+//    udfso.unsetMetaEnabled(location);
     boolean success = udfso.rm(location, true);
     if (success) {
       operationsLogFacade.persist(log);
@@ -321,7 +329,7 @@ public class DatasetController {
 
     /*
      * TODO: Currently there is no change permission recursively operation
-     * available in HOPSFS client. So we build all the path of the tree and
+     * available in HOPSFS client. So we parse all the path of the tree and
      * we call the set permission on each one
      */
     // Set permission/ownership for the root
@@ -645,4 +653,40 @@ public class DatasetController {
     }
   }
   
+  // PROVENANCE
+  public void updateProvenanceStatus(Dataset dataset, Inode.MetaStatus status, DistributedFileSystemOps dfso)
+    throws GenericException {
+    Inode.MetaStatus previousStatus = dataset.getInode().getMetaStatus();
+    if(status.equals(previousStatus)) {
+      return;
+    }
+    updateProvenanceStatusInt(dataset, status, dfso);
+  }
+  
+  public void updateProvenanceStatusInt(Dataset dataset, Inode.MetaStatus status, DistributedFileSystemOps dfso)
+    throws GenericException {
+    try {
+      String datasetPath = Utils.getDatasetPath(dataset.getProject().getName(), dataset.getName());
+      dfso.setMetaStatus(datasetPath, status);
+      if(isHive(dataset) || isFeatureStore(dataset)) {
+        return;
+      }
+      dfso.upsertXAttr(datasetPath, ProvXAttrs.STATUS, status.name().getBytes());
+    } catch (IOException e) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "dataset provenance persistance exception");
+    }
+  }
+  
+  private boolean isHive(Dataset ds) {
+    String hiveDB = ds.getProject().getName() + ".db";
+    return hiveDB.equals(ds.getName());
+  }
+  
+  private boolean isFeatureStore(Dataset ds) {
+    String hiveDB = ds.getProject().getName() + "_featurestore.db";
+    return hiveDB.equals(ds.getName());
+  }
+  
+  // PROVENANCE END
 }

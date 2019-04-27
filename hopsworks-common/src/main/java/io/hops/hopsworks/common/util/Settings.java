@@ -676,6 +676,7 @@ public class Settings implements Serializable {
       FEATURESTORE_JDBC_URL = setStrVar(VARIABLE_FEATURESTORE_JDBC_URL, FEATURESTORE_JDBC_URL);
       ONLINE_FEATURESTORE = setBoolVar(VARIABLE_ONLINE_FEATURESTORE, ONLINE_FEATURESTORE);
 
+      populateProvenanceCache();
       cached = true;
     }
   }
@@ -1891,6 +1892,12 @@ public class Settings implements Serializable {
   public static final String ELASTIC_BEAMSDKWORKER_INDEX_REGEX =
     ".*_" + ELASTIC_BEAMSDKWORKER + "-\\d{4}.\\d{2}.\\d{2}";
 
+  //Other Elastic indexes
+  public static final String ELASTIC_INDEX_FILE_PROVENANCE = "fileprovenance";
+  public static final String ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE = "_doc";
+  public static final String ELASTIC_INDEX_APP_PROVENANCE = "appprovenance";
+  public static final String ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE = "_doc";
+  
   public String getHopsworksTmpCertDir() {
     return Paths.get(getCertsDir(), "transient").toString();
   }
@@ -3515,4 +3522,39 @@ public class Settings implements Serializable {
     return REQUESTS_VERIFY;
   }
 
+  //-------------------------------- PROVENANCE ----------------------------------------------//
+  private static final String VARIABLE_PROVENANCE_ARCHIVE_SIZE = "provenance_archive_size";
+  private static final String VARIABLE_PROVENANCE_ARCHIVE_DELAY = "provenance_archive_delay";
+  private Integer PROVENANCE_ARCHIVE_SIZE = 100;
+  private Long PROVENANCE_ARCHIVE_DELAY = 0l;
+  
+  private void populateProvenanceCache() {
+    PROVENANCE_ARCHIVE_SIZE = setIntVar(VARIABLE_PROVENANCE_ARCHIVE_SIZE, PROVENANCE_ARCHIVE_SIZE);
+    PROVENANCE_ARCHIVE_DELAY = setLongVar(VARIABLE_PROVENANCE_ARCHIVE_DELAY, PROVENANCE_ARCHIVE_DELAY);
+  }
+  
+  public synchronized Integer getProvArchiveSize() {
+    checkCache();
+    return PROVENANCE_ARCHIVE_SIZE;
+  }
+  
+  public synchronized void setProvArchiveSize(Integer size) {
+    if(!PROVENANCE_ARCHIVE_SIZE.equals(size)) {
+      em.merge(new Variables(VARIABLE_PROVENANCE_ARCHIVE_SIZE, size.toString()));
+      PROVENANCE_ARCHIVE_SIZE = size;
+    }
+  }
+  
+  public synchronized Long getProvArchiveDelay() {
+    checkCache();
+    return PROVENANCE_ARCHIVE_DELAY;
+  }
+  
+  public synchronized void setProvArchiveDelay(Long delay) {
+    if(!PROVENANCE_ARCHIVE_DELAY.equals(delay)) {
+      em.merge(new Variables(VARIABLE_PROVENANCE_ARCHIVE_DELAY, delay.toString()));
+      PROVENANCE_ARCHIVE_DELAY = delay;
+    }
+  }
+  //------------------------------ END PROVENANCE --------------------------------------------//
 }
