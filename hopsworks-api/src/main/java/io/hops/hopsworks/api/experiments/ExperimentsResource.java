@@ -4,7 +4,6 @@ import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
 import io.hops.hopsworks.api.jobs.JobDTO;
 import io.hops.hopsworks.api.jobs.JobsBeanParam;
-import io.hops.hopsworks.api.jobs.JobsBuilder;
 import io.hops.hopsworks.api.jwt.JWTHelper;
 import io.hops.hopsworks.api.util.Pagination;
 import io.hops.hopsworks.common.api.ResourceRequest;
@@ -12,8 +11,9 @@ import io.hops.hopsworks.common.dao.jobs.description.Jobs;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.dao.user.Users;
-import io.hops.hopsworks.common.hdfs.XAttrController;
-import io.hops.hopsworks.common.jobs.yarn.YarnJobConfiguration;
+import io.hops.hopsworks.common.experiments.ExperimentConfiguration;
+import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
+import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
 import io.swagger.annotations.ApiOperation;
 
@@ -38,13 +38,13 @@ public class ExperimentsResource {
     private static final Logger LOGGER = Logger.getLogger(io.hops.hopsworks.api.experiments.ExperimentsResource.class.getName());
 
     @EJB
-    private XAttrController xAttrController;
-    @EJB
     private ProjectFacade projectFacade;
     @EJB
     private ExperimentsBuilder experimentsBuilder;
     @EJB
     private JWTHelper jwtHelper;
+    @EJB
+    private DistributedFsService dfs;
 
     private Project project;
     public ExperimentsResource setProject(Integer projectId) {
@@ -81,14 +81,14 @@ public class ExperimentsResource {
     @JWTRequired(acceptedTokens={Audience.API, Audience.JOB}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
     public Response put (
             @PathParam("appId") String appId,
-            YarnJobConfiguration config,
+            ExperimentConfiguration experimentConfiguration,
             @Context HttpServletRequest req,
             @Context UriInfo uriInfo) {
-        if (config == null) {
-            throw new IllegalArgumentException("Job configuration was not provided.");
+        if (experimentConfiguration == null) {
+            throw new IllegalArgumentException("Experiment configuration was not provided.");
         }
 
-        Users user = jWTHelper.getUserPrincipal(req);
+        Users user = jwtHelper.getUserPrincipal(req);
 
         //Check if experiment with same id exists, in that case this is an update and not creation
         Response.Status status = Response.Status.CREATED;
@@ -96,9 +96,11 @@ public class ExperimentsResource {
         if(job != null) {
             status = Response.Status.OK;
         }
-
+        DistributedFileSystemOps dfsops = dfs.getDfsOps();
         //Set XAttr on directory
-        xAttrController.applyXAttr(appId);
+
+
+        dfsops.setXAttr(appId, "config", null, null);
 
         ExperimentsDTO dto = new ExperimentsDTO();
         UriBuilder builder = uriInfo.getAbsolutePathBuilder().path(dto.getId());

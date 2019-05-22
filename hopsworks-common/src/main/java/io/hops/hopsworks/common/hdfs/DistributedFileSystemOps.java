@@ -48,17 +48,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.security.PrivilegedExceptionAction;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.ContentSummary;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FileUtil;
-import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.*;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hdfs.protocol.HdfsConstants;
@@ -245,6 +240,18 @@ public class DistributedFileSystemOps {
    */
   public FileStatus getFileStatus(Path location) throws IOException {
     return dfs.getFileStatus(location);
+  }
+
+  /**
+   * Attach XAttr to file or directory in the given path
+   *
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public void setXAttr(String path,  String name, byte[] value, EnumSet<XAttrSetFlag> flag) throws IOException {
+    Path hdfsPath = new Path(path);
+    dfs.setXAttr(hdfsPath, name, value, flag);
   }
 
   /**
