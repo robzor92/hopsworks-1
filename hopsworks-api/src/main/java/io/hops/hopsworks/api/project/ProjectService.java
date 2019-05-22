@@ -53,7 +53,7 @@ import io.hops.hopsworks.api.jwt.JWTHelper;
 import io.hops.hopsworks.api.serving.TfServingService;
 import io.hops.hopsworks.api.python.PythonResource;
 import io.hops.hopsworks.api.serving.inference.InferenceResource;
-import io.hops.hopsworks.api.tensorflow.TensorBoardService;
+import io.hops.hopsworks.api.experiments.tensorboard.TensorBoardService;
 import io.hops.hopsworks.api.util.LocalFsService;
 import io.hops.hopsworks.api.util.RESTApiJsonResponse;
 import io.hops.hopsworks.common.constants.message.ResponseMessages;
