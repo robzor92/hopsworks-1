@@ -50,11 +50,9 @@ public class ExperimentsResource {
   private JWTHelper jwtHelper;
   @EJB
   private DistributedFsService dfs;
-  @EJB
-  private DistributedFsService dfsService;
 
   private Project project;
-  public ExperimentsResource setProject(Integer projectId) {
+  public ExperimentsResource setProjectId(Integer projectId) {
     this.project = projectFacade.find(projectId);
     return this;
   }
@@ -106,7 +104,7 @@ public class ExperimentsResource {
 
     } finally {
       if (dfso != null) {
-        dfsService.closeDfsClient(dfso);
+        dfs.closeDfsClient(dfso);
       }
     }
 

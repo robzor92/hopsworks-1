@@ -5,8 +5,13 @@ import io.hops.hopsworks.common.dao.jobs.description.Jobs;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 
+import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.UriInfo;
 
+@Stateless
+@TransactionAttribute(TransactionAttributeType.NEVER)
 public class ExperimentsBuilder {
 
   public ExperimentDTO uri(ExperimentDTO dto, UriInfo uriInfo, Project project) {

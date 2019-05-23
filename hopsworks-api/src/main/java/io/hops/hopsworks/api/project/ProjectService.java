@@ -42,6 +42,7 @@ import io.hops.hopsworks.api.activities.ProjectActivitiesResource;
 import io.hops.hopsworks.api.airflow.AirflowService;
 import io.hops.hopsworks.api.dela.DelaClusterProjectService;
 import io.hops.hopsworks.api.dela.DelaProjectService;
+import io.hops.hopsworks.api.experiments.ExperimentsResource;
 import io.hops.hopsworks.api.featurestore.FeaturestoreService;
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
@@ -155,6 +156,8 @@ public class ProjectService {
   private AirflowService airflow;
   @Inject
   private TensorBoardService tensorboard;
+  @Inject
+  private ExperimentsResource experiments;
   @Inject
   private TfServingService tfServingService;
   @Inject
@@ -748,6 +751,13 @@ public class ProjectService {
     this.tensorboard.setProjectId(id);
     return this.tensorboard;
   }
+
+  @Path("{projectId}/experiments")
+  public ExperimentsResource experiments(@PathParam("projectId") Integer id) {
+    this.experiments.setProjectId(id);
+    return this.experiments;
+  }
+
   @Path("{projectId}/airflow")
   public AirflowService airflow(@PathParam("projectId") Integer id)  {
     this.airflow.setProjectId(id);
