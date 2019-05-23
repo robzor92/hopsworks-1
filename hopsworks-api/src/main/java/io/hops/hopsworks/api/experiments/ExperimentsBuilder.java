@@ -4,12 +4,13 @@ import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.AbstractFacade;
 import io.hops.hopsworks.common.dao.jobs.description.Jobs;
 import io.hops.hopsworks.common.dao.project.Project;
+import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 
 import javax.ws.rs.core.UriInfo;
 
 public class ExperimentsBuilder {
 
-  public ExperimentsDTO uri(ExperimentsDTO dto, UriInfo uriInfo, Project project) {
+  public ExperimentDTO uri(ExperimentDTO dto, UriInfo uriInfo, Project project) {
     dto.setHref(uriInfo.getBaseUriBuilder().path(ResourceRequest.Name.PROJECT.toString().toLowerCase())
         .path(Integer.toString(project.getId()))
         .path(ResourceRequest.Name.EXPERIMENTS.toString().toLowerCase())
@@ -17,7 +18,7 @@ public class ExperimentsBuilder {
     return dto;
   }
 
-  public ExperimentsDTO expand(ExperimentsDTO dto, ResourceRequest resourceRequest) {
+  public ExperimentDTO expand(ExperimentDTO dto, ResourceRequest resourceRequest) {
     if (resourceRequest != null && resourceRequest.contains(ResourceRequest.Name.EXPERIMENTS)) {
       dto.setExpand(true);
     }
@@ -25,8 +26,8 @@ public class ExperimentsBuilder {
   }
 
   //Build collection
-  public ExperimentsDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project) {
-    ExperimentsDTO dto = new ExperimentsDTO();
+  public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project) {
+    ExperimentDTO dto = new ExperimentDTO();
     uri(dto, uriInfo, project);
     expand(dto, resourceRequest);
     if(dto.isExpand()) {
@@ -42,8 +43,8 @@ public class ExperimentsBuilder {
   }
 
   //Build specific
-  public ExperimentsDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Jobs job) {
-    ExperimentsDTO dto = new ExperimentsDTO();
+  public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Jobs job) {
+    ExperimentDTO dto = new ExperimentDTO();
     uri(dto, uriInfo, job);
     expand(dto, resourceRequest);
     if (dto.isExpand()) {

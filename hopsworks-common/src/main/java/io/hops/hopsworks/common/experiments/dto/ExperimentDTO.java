@@ -1,5 +1,6 @@
 package io.hops.hopsworks.common.experiments.dto;
 
+import io.hops.hopsworks.common.api.RestDTO;
 import io.hops.hopsworks.common.jobs.spark.SparkJobConfiguration;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -13,7 +14,7 @@ import java.util.Date;
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
-public class ExperimentConfigurationDTO {
+public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   @XmlElement
   private String appPath;
@@ -23,9 +24,6 @@ public class ExperimentConfigurationDTO {
 
   @XmlElement
   private String description;
-
-  @XmlElement
-  private String user;
 
   @XmlElement
   private Date start;
@@ -40,8 +38,7 @@ public class ExperimentConfigurationDTO {
   private String function;
 
   @XmlElement
-  //ID to model, will be a separate entry in provenance (it is attached to /Models/mnist/1)
-  private String model;
+  private String modelPath;
 
   @XmlElement
   private HyperparameterDTO[] hyperparameter;
@@ -74,14 +71,6 @@ public class ExperimentConfigurationDTO {
 
   public void setDescription(String description) {
     this.description = description;
-  }
-
-  public String getUser() {
-    return user;
-  }
-
-  public void setUser(String user) {
-    this.user = user;
   }
 
   public Date getStart() {
@@ -140,11 +129,11 @@ public class ExperimentConfigurationDTO {
     this.metrics = metrics;
   }
 
-  public String getModel() {
-    return model;
+  public String getModelPath() {
+    return modelPath;
   }
 
-  public void setModel(String model) {
-    this.model = model;
+  public void setModel(String modelPath) {
+    this.modelPath = modelPath;
   }
 }
