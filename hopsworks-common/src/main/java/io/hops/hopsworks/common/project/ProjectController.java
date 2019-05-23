@@ -2463,63 +2463,10 @@ public class ProjectController {
    * Handles Kibana related indices and templates for projects.
    * @param project project
    * @throws ProjectException ProjectException
-   * @throws ServiceException ServiceException
    */
-  public void addKibana(Project project) throws ProjectException, ServiceException {
-
+  public void addKibana(Project project) throws ProjectException {
     String projectName = project.getName().toLowerCase();
-
     elasticController.createIndexPattern(project, projectName + Settings.ELASTIC_LOGS_INDEX_PATTERN);
-    // Create index and index-pattern for experiment service
-    String indexName = projectName + "_" + Settings.ELASTIC_EXPERIMENTS_INDEX;
-    if (!elasticController.indexExists(indexName)) {
-      elasticController.createIndex(indexName);
-    }
-
-    elasticController.createIndexPattern(project, indexName);
-
-    String savedSummarySearch =
-      "{\"attributes\":{\"title\":\"Experiments summary\",\"description\":\"\",\"hits\":0,\"columns\"" +
-        ":[\"_id\",\"user\",\"name\",\"start\",\"finished\",\"status\",\"module\",\"function\"" +
-        ",\"hyperparameter\"" +
-        ",\"metric\"],\"sort\":[\"start\"" +
-        ",\"desc\"],\"version\":1,\"kibanaSavedObjectMeta\":{\"searchSourceJSON\":\"" +
-        "{\\\"index\\\":\\\"" + indexName + "\\\",\\\"highlightAll\\\":true,\\\"version\\\":true" +
-        ",\\\"query\\\":{\\\"language\\\":\\\"lucene\\\",\\\"query\\\":\\\"\\\"},\\\"filter\\\":" +
-        "[]}\"}}}";
-
-    Map<String, String> params = new HashMap<>();
-    params.put("op", "POST");
-    params.put("data", savedSummarySearch);
-    JSONObject resp = elasticController.sendKibanaReq(params, "search", indexName + "_summary-search", true);
-
-    if (!(resp.has("updated_at") || (resp.has("statusCode") && resp.get("statusCode").toString().equals("409")))) {
-      throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_KIBANA_CREATE_SEARCH_ERROR, Level.SEVERE,
-        "project: " + projectName + ", resp: " + resp.toString(2));
-    }
-
-    String savedSummaryDashboard =
-      "{\"attributes\":{\"title\":\"Experiments summary dashboard\",\"hits\":0,\"description\":\"" +
-        "A summary of all experiments run in this project\",\"panelsJSON\":\"[{\\\"gridData\\\"" +
-        ":{\\\"h\\\":9,\\\"i\\\":\\\"1\\\",\\\"w\\\":12,\\\"x\\\":0,\\\"y\\\":0},\\\"id\\\"" +
-        ":\\\"" + indexName + "_summary-search" + "\\\",\\\"panelIndex\\\":\\\"1\\\"" +
-        ",\\\"type\\\":\\\"search\\\"" +
-        ",\\\"version\\\":\\\"" + settings.getKibanaVersion() +
-        "\\\"}]\",\"optionsJSON\":\"{\\\"darkTheme\\\":false" +
-        ",\\\"hidePanelTitles\\\":false,\\\"useMargins\\\":true}\",\"version\":1,\"timeRestore\":" +
-        "false" +
-        ",\"kibanaSavedObjectMeta\":{\"searchSourceJSON\":\"{\\\"query\\\":{\\\"language\\\"" +
-        ":\\\"lucene\\\",\\\"query\\\":\\\"\\\"},\\\"filter\\\":[],\\\"highlightAll\\\":" +
-        "true,\\\"version\\\":true}\"}}}";
-    params.clear();
-    params.put("op", "POST");
-    params.put("data", savedSummaryDashboard);
-    resp = elasticController.sendKibanaReq(params, "dashboard", indexName + "_summary-dashboard", true);
-
-    if (!(resp.has("updated_at") || (resp.has("statusCode") && resp.get("statusCode").toString().equals("409")))) {
-      throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_KIBANA_CREATE_DASHBOARD_ERROR, Level.SEVERE,
-        "project: " + projectName + ", resp: " + resp.toString(2));
-    }
   }
 
   public void removeElasticsearch(Project project) throws ServiceException {
@@ -2550,12 +2497,6 @@ public class ProjectController {
       resp = elasticController.sendKibanaReq(params, "index-pattern",
           projectName + Settings.ELASTIC_KAGENT_INDEX_PATTERN);
       LOGGER.log(Level.FINE, resp.toString(4));
-      
-      // 3. Cleanup Experiment related Kibana stuff
-      String experimentsIndex = projectName + "_" + Settings.ELASTIC_EXPERIMENTS_INDEX;
-      elasticController.sendKibanaReq(params, "index-pattern", experimentsIndex, false);
-      elasticController.sendKibanaReq(params, "search", experimentsIndex + "_summary-search", false);
-      elasticController.sendKibanaReq(params, "dashboard", experimentsIndex + "_summary-dashboard", false);
       LOGGER.log(Level.FINE, "removeElasticsearch-2");
     }
 
