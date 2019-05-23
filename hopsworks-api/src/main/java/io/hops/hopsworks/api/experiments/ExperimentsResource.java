@@ -10,7 +10,7 @@ import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.dao.user.Users;
-import io.hops.hopsworks.common.experiments.dto.ExperimentConfigurationDTO;
+import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
@@ -31,7 +31,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -75,7 +74,7 @@ public class ExperimentsResource {
     resourceRequest.setSort(jobsBeanParam.getSortBySet());
     resourceRequest.setFilter(jobsBeanParam.getFilter());
     resourceRequest.setExpansions(jobsBeanParam.getExpansions().getResources());
-    ExperimentsDTO dto = experimentsBuilder.build(uriInfo, resourceRequest, project);
+    ExperimentDTO dto = experimentsBuilder.build(uriInfo, resourceRequest, project);
     return Response.ok().entity(dto).build();
   }
 
@@ -88,7 +87,7 @@ public class ExperimentsResource {
   @JWTRequired(acceptedTokens={Audience.API, Audience.JOB}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
   public Response put (
         @PathParam("appId") String appId,
-        ExperimentConfigurationDTO experimentConfiguration,
+        ExperimentDTO experimentConfiguration,
         @Context HttpServletRequest req,
         @Context UriInfo uriInfo) {
     if (experimentConfiguration == null) {
@@ -111,12 +110,16 @@ public class ExperimentsResource {
       }
     }
 
-    ExperimentsDTO dto = new ExperimentsDTO();
+    ExperimentDTO dto = new ExperimentDTO();
+    /*
     UriBuilder builder = uriInfo.getAbsolutePathBuilder().path(dto.getId());
     if(status == Response.Status.CREATED) {
       return Response.created(builder.build()).entity(dto).build();
     } else {
       return Response.ok(builder.build()).entity(dto).build();
     }
+    */
+    return null;
+
   }
 }

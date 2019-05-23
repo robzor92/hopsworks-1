@@ -1,7 +1,6 @@
 package io.hops.hopsworks.api.experiments;
 
 import io.hops.hopsworks.common.api.ResourceRequest;
-import io.hops.hopsworks.common.dao.AbstractFacade;
 import io.hops.hopsworks.common.dao.jobs.description.Jobs;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
@@ -30,6 +29,7 @@ public class ExperimentsBuilder {
     ExperimentDTO dto = new ExperimentDTO();
     uri(dto, uriInfo, project);
     expand(dto, resourceRequest);
+    /*
     if(dto.isExpand()) {
       AbstractFacade.CollectionInfo collectionInfo = experimentsFacade.findByProject(resourceRequest.getOffset(),
           resourceRequest.getLimit(),
@@ -39,16 +39,18 @@ public class ExperimentsBuilder {
       dto.setCount(collectionInfo.getCount());
       collectionInfo.getItems().forEach((job) -> dto.addItem(build(uriInfo, resourceRequest, (Jobs) job)));
     }
+    */
+
     return dto;
   }
 
   //Build specific
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Jobs job) {
     ExperimentDTO dto = new ExperimentDTO();
-    uri(dto, uriInfo, job);
+    //uri(dto, uriInfo, job);
     expand(dto, resourceRequest);
     if (dto.isExpand()) {
-      dto.setId(job.getId());
+      //dto.setId(job.getId());
     }
     return dto;
   }

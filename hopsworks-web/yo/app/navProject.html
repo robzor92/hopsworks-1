@@ -115,6 +115,12 @@
         </a>
       </li>
 
+      <li ng-click="projectCtrl.goToML()" ng-show="projectCtrl.cloak" id="mlTab">
+        <a>
+          Machine Learning<img class="pull-right" style="margin-right:8px" height="27" src="images/experiments.png"/>
+        </a>
+      </li>
+
       <li ng-click="projectCtrl.goToAirflow()" ng-show="projectCtrl.showAirflow()">
         <a>
           Airflow
