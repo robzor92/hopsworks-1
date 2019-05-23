@@ -16,6 +16,9 @@ import java.util.Date;
 public class ExperimentConfigurationDTO {
 
   @XmlElement
+  private String appPath;
+
+  @XmlElement
   private String name;
 
   @XmlElement
@@ -48,6 +51,14 @@ public class ExperimentConfigurationDTO {
 
   @XmlElement
   private SparkJobConfiguration sparkJobConfiguration;
+
+  public String getAppPath() {
+    return appPath;
+  }
+
+  public void setAppPath(String appPath) {
+    this.appPath = appPath;
+  }
 
   public String getName() {
     return name;
