@@ -1,29 +1,48 @@
-package io.hops.hopsworks.common.experiments;
+package io.hops.hopsworks.common.experiments.dto;
 
 import io.hops.hopsworks.common.jobs.spark.SparkJobConfiguration;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Date;
 
-public class ExperimentConfiguration {
+/**
+ * Contains Spark-specific run information for a Spark job, on top of Yarn configuration.
+ */
+@XmlRootElement
+@XmlAccessorType(XmlAccessType.NONE)
+public class ExperimentConfigurationDTO {
 
+  @XmlElement
   private String name;
 
+  @XmlElement
   private String description;
 
+  @XmlElement
   private String user;
 
+  @XmlElement
   private Date start;
 
+  @XmlElement
   private Date finished;
 
+  @XmlElement
   private String status;
 
+  @XmlElement
   private String function;
 
-  private String hp;
+  @XmlElement
+  private HyperparameterDTO[] hyperparameter;
 
-  private String metrics;
+  @XmlElement
+  private MetricsDTO[] metrics;
 
+  @XmlElement
   private SparkJobConfiguration sparkJobConfiguration;
 
   public String getName() {
@@ -82,27 +101,27 @@ public class ExperimentConfiguration {
     this.function = function;
   }
 
-  public String getHp() {
-    return hp;
-  }
-
-  public void setHp(String hp) {
-    this.hp = hp;
-  }
-
-  public String getMetrics() {
-    return metrics;
-  }
-
-  public void setMetrics(String metrics) {
-    this.metrics = metrics;
-  }
-
   public SparkJobConfiguration getSparkJobConfiguration() {
     return sparkJobConfiguration;
   }
 
   public void setSparkJobConfiguration(SparkJobConfiguration sparkJobConfiguration) {
     this.sparkJobConfiguration = sparkJobConfiguration;
+  }
+
+  public HyperparameterDTO[] getHyperparameter() {
+    return hyperparameter;
+  }
+
+  public void setHyperparameter(HyperparameterDTO[] hyperparameter) {
+    this.hyperparameter = hyperparameter;
+  }
+
+  public MetricsDTO[] getMetrics() {
+    return metrics;
+  }
+
+  public void setMetrics(MetricsDTO[] metrics) {
+    this.metrics = metrics;
   }
 }

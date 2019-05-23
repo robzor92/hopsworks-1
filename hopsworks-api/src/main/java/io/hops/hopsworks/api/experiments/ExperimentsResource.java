@@ -7,11 +7,10 @@ import io.hops.hopsworks.api.jobs.JobsBeanParam;
 import io.hops.hopsworks.api.jwt.JWTHelper;
 import io.hops.hopsworks.api.util.Pagination;
 import io.hops.hopsworks.common.api.ResourceRequest;
-import io.hops.hopsworks.common.dao.jobs.description.Jobs;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.dao.user.Users;
-import io.hops.hopsworks.common.experiments.ExperimentConfiguration;
+import io.hops.hopsworks.common.experiments.dto.ExperimentConfigurationDTO;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
@@ -28,6 +27,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.util.logging.Logger;
 
 
@@ -45,6 +45,8 @@ public class ExperimentsResource {
     private JWTHelper jwtHelper;
     @EJB
     private DistributedFsService dfs;
+    @EJB
+    private DistributedFsService dfsService;
 
     private Project project;
     public ExperimentsResource setProject(Integer projectId) {
@@ -68,7 +70,7 @@ public class ExperimentsResource {
         resourceRequest.setFilter(jobsBeanParam.getFilter());
         resourceRequest.setExpansions(jobsBeanParam.getExpansions().getResources());
 
-        JobDTO dto = experimentsBuilder.build(uriInfo, resourceRequest, project);
+        ExperimentsDTO dto = experimentsBuilder.build(uriInfo, resourceRequest, project);
         return Response.ok().entity(dto).build();
     }
 
@@ -81,7 +83,7 @@ public class ExperimentsResource {
     @JWTRequired(acceptedTokens={Audience.API, Audience.JOB}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
     public Response put (
             @PathParam("appId") String appId,
-            ExperimentConfiguration experimentConfiguration,
+            ExperimentConfigurationDTO experimentConfiguration,
             @Context HttpServletRequest req,
             @Context UriInfo uriInfo) {
         if (experimentConfiguration == null) {
@@ -92,15 +94,19 @@ public class ExperimentsResource {
 
         //Check if experiment with same id exists, in that case this is an update and not creation
         Response.Status status = Response.Status.CREATED;
-        Jobs job = jobFacade.findByProjectAndName(project, config.getAppName());
-        if(job != null) {
-            status = Response.Status.OK;
+
+        DistributedFileSystemOps dfso = null;
+        try {
+            dfso = dfs.getDfsOps();
+            dfso.setXAttr(appId, "config", null, null);
+        } catch(IOException ioe) {
+
+
+        } finally {
+            if (dfso != null) {
+                dfsService.closeDfsClient(dfso);
+            }
         }
-        DistributedFileSystemOps dfsops = dfs.getDfsOps();
-        //Set XAttr on directory
-
-
-        dfsops.setXAttr(appId, "config", null, null);
 
         ExperimentsDTO dto = new ExperimentsDTO();
         UriBuilder builder = uriInfo.getAbsolutePathBuilder().path(dto.getId());
