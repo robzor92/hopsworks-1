@@ -9,7 +9,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Date;
 
 /**
- * Contains Spark-specific run information for a Spark job, on top of Yarn configuration.
+ * Contains configuration and other information about an experiment
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
@@ -35,6 +35,10 @@ public class ExperimentConfigurationDTO {
 
   @XmlElement
   private String function;
+
+  @XmlElement
+  //ID to model, will be a separate entry in provenance (it is attached to /Models/mnist/1)
+  private String model;
 
   @XmlElement
   private HyperparameterDTO[] hyperparameter;
@@ -123,5 +127,13 @@ public class ExperimentConfigurationDTO {
 
   public void setMetrics(MetricsDTO[] metrics) {
     this.metrics = metrics;
+  }
+
+  public String getModel() {
+    return model;
+  }
+
+  public void setModel(String model) {
+    this.model = model;
   }
 }
