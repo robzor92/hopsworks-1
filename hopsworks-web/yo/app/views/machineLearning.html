@@ -20,19 +20,39 @@
             <div class="overlay"></div>
             <div ng-include="'navProject.html'"></div>
             <div class="">
+                <section ng-controller="ExperimentsCtrl as experimentsCtrl">
+                    <!-- Page Content -->
+                    <div class="content-wrapper hide-border" style="margin-left: 2px;">
 
                 <uib-tabset active="indextab">
 
                     <uib-tab index="0" heading="Feature Store">
+
+                        <div ng-include="'views/featurestore.html'"></div>
+
                     </uib-tab>
 
                     <uib-tab index="1" heading="Experiments">
+
+                        <div ng-include="'views/experiments.html'"></div>
+
                     </uib-tab>
 
                     <uib-tab index="2" heading="Deploy">
+
+                        <div ng-include="'views/serving.html'"></div>
+
+                    </uib-tab>
+
+                    <uib-tab index="3" heading="Monitoring">
+
+                        yolo
+
                     </uib-tab>
 
                 </uib-tabset>
+                    </div>
+                </section>
             </div>
         </div>
     </div>

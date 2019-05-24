@@ -16,11 +16,7 @@
 
 <div ng-controller="MainCtrl as mainCtrl">
     <div ng-include="'nav.html'"></div>
-    <div id="wrapper" class="toggled" ng-controller="featurestoreCtrl as featurestoreCtrl">
-        <div class="overlay"></div>
-        <div ng-include="'navProject.html'"></div>
-
-        <div class="content-wrapper">
+    <div ng-controller="featurestoreCtrl as featurestoreCtrl">
             <!-- Page Content -->
             <div class="content" style="background-color:white">
                 <div class="row">
@@ -31,15 +27,6 @@
                         </div>
                     </div>
                     <div class="form-group row">
-                        <div class="col-sm-2">
-                            <button type="button"
-                                    ng-click="featurestoreCtrl.viewFeaturestoreInfo()" class="btn btn-sm btn-primary"
-                                    uib-tooltip="View feature store info"
-                                    id="viewFeaturestoreInfo"
-                            >
-                                View Info
-                            </button>
-                        </div>
                         <label class="col-sm-2 control-label" style="margin-top: 5px;">
                             Feature Store:
                             <i class="fa fa-info-circle" tooltip-placement="auto left"
@@ -60,6 +47,15 @@
                                     <span ng-bind="item.featurestoreName"></span>
                                 </ui-select-choices>
                             </ui-select>
+                        </div>
+                        <div class="col-sm-2">
+                            <button type="button"
+                                    style="float:right; margin-right:20px;"
+                                    ng-click="featurestoreCtrl.viewFeaturestoreInfo()" class="btn btn-sm btn-primary"
+                                    uib-tooltip="View feature store info"
+                                    id="viewFeaturestoreInfo">
+                                View Info
+                            </button>
                         </div>
                     </div>
 
@@ -618,7 +614,6 @@
                     </div>
                 </div>
             </div>
-        </div>
         <tour class="ng-scope" step="featurestoreCtrl.tourService.currentStep_TourNine"
               post-tour="closeTour()"
               ng-if="featurestoreCtrl.tourService.activeTour === 'featurestore'
