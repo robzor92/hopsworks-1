@@ -388,7 +388,7 @@ angular.module('hopsWorksApp')
 
             self.goToML = function () {
               self.toggleKibanaNavBar();
-              self.goToUrl('ml');
+              self.goToUrl('machineLearning');
             };
 
             self.goToKafka = function () {
