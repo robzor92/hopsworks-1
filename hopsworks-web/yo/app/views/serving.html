@@ -16,7 +16,12 @@
 
 <div ng-controller="MainCtrl as mainCtrl">
   <div ng-include="'nav.html'"></div>
-  <div ng-controller="servingCtrl as servingCtrl">
+  <div id="wrapper" class="toggled"  ng-controller="servingCtrl as servingCtrl">
+    <div class="overlay"></div>
+    <div ng-include="'navProject.html'"></div>
+
+    <div class="content-wrapper">
+
       <div ng-show="servingCtrl.activeTab === 'serving'" layout-align="center center">
 
         <div class="" ng-if="servingCtrl.showLogs === false">
@@ -206,5 +211,6 @@
           <iframe style="overflow-y: auto;" id="ui_iframe"  ng-src="{{servingCtrl.kibanaUI}}" width="99%" height="86%"></iframe>
         </div>
       </div>
+    </div>
   </div>
 </div>
