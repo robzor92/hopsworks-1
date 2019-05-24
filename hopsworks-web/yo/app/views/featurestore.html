@@ -27,9 +27,9 @@
                         </div>
                     </div>
                     <div class="form-group row">
-                        <div class="sm-12">
-                        <label class="control-label" style="margin-top: 5px;">
-                            Feature Store:
+                        <div class="col-sm-11">
+                        <label class="control-label col-md-2" style="margin-top: 5px; min-width:200px">
+                            Current Feature Store:
                             <i class="fa fa-info-circle" tooltip-placement="auto left"
                                uib-tooltip="Each project with the feature store service enabled have a feature store.
                            In addition, feature stores can be shared across projets. This dropdown list shows your project's feature store and all
@@ -38,7 +38,8 @@
                         </label>
                             <ui-select ng-model="selected.value"
                                        on-select="featurestoreCtrl.onSelectFeaturestoreCallback($item)"
-                                       style="z-index: 101"
+                                       style="z-index: 101; min-width:300px"
+                                       class="col-md-2"
                                        id="selectFeatureStore">
                                 <ui-select-match placeholder="Select one of your feature stores">
                                     <span>{{$select.selected.featurestoreName}}</span>
@@ -47,6 +48,27 @@
                                     <span ng-bind="item.featurestoreName"></span>
                                 </ui-select-choices>
                             </ui-select>
+                            <div class="col-sm-1"></div>
+
+
+
+                                <button type="button" ng-click="featurestoreCtrl.showCreateFeaturegroupForm()"
+                                        class="btn btn-default btn-success control-label col-sm-2" style="margin-right: 10px"
+                                        uib-tooltip="Create new feature group"
+                                        id="createNewFg">
+                                    New Feature Group<i style="margin-left: 10px" class="glyphicon glyphicon-plus">
+                                </i>
+                                </button>
+
+                                <button type="button" ng-click="featurestoreCtrl.showCreateTrainingDatasetForm()"
+                                        class="btn btn-default btn-success control-label col-sm-2" style="margin-bottom: 10px"
+                                        uib-tooltip="Create new training dataset" ,
+                                        id="createNewTd">
+                                    New Training Dataset<i style="margin-left: 10px"
+                                                           class="glyphicon glyphicon-plus">
+                                </i>
+                                </button>
+                        </div>
                             <button type="button"
                                     style="float:right; margin-right:20px;"
                                     ng-click="featurestoreCtrl.viewFeaturestoreInfo()" class="btn btn-sm btn-primary"
@@ -54,35 +76,8 @@
                                     id="viewFeaturestoreInfo">
                                 View Info
                             </button>
-                        </div>
                     </div>
-
-                    <div class="row">
-                        <div class="col-sm-2">
-                            <button type="button" ng-click="featurestoreCtrl.showCreateFeaturegroupForm()"
-                                    class="btn btn-default btn-success control-label" style="margin-bottom: 10px"
-                                    uib-tooltip="Create new feature group"
-                                    id="createNewFg"
-                            >
-                                Create New Feature Group<i style="margin-left: 10px" class="glyphicon glyphicon-plus">
-                            </i>
-                            </button>
-                        </div>
-                        <div class="col-sm-1"></div>
-                        <div class="col-sm-2">
-                            <button type="button" ng-click="featurestoreCtrl.showCreateTrainingDatasetForm()"
-                                    class="btn btn-default btn-success control-label" style="margin-bottom: 10px"
-                                    uib-tooltip="Create new training dataset" ,
-                                    id="createNewTd"
-                            >
-                                Create New Training Dataset<i style="margin-left: 10px"
-                                                              class="glyphicon glyphicon-plus">
-                            </i>
-                            </button>
-                        </div>
-                        <div class="col-sm-8"></div>
-                    </div>
-                    <h3 class="text-muted" style="text-align: center;"
+                    <h3 class="text-muted" style="padding: 240px 0; text-align: center;"
                         ng-show="featurestoreCtrl.featuregroupsDictList.length < 1 && featurestoreCtrl.trainingDatasetsDictList.length < 1">
                         No features or training datasets to show.
                     </h3>
