@@ -87,18 +87,21 @@
         </a>
       </li>
 
-      <li ng-click="projectCtrl.goToTensorflow()" ng-show="projectCtrl.showTensorflow()">
-        <a>
-          Tensorflow
-          <img ng-show="projectCtrl.activeService !== 'tensorflow'" class="pull-right" style="margin-left:10px" height="25" src="images/tf-175x200_bw.png"/>
-          <img ng-show="projectCtrl.activeService === 'tensorflow'" class="pull-right" style="margin-left:10px" height="25" src="images/tf-175x200.png"/>
-        </a>
-      </li>
-
-
       <li ng-click="projectCtrl.goToRStudio()" ng-show="projectCtrl.showRStudio()">
         <a>
           RStudio<img class="pull-right" style="margin-right:15px" height="25" src="images/rstudio.png">
+        </a>
+      </li>
+
+      <li ng-click="projectCtrl.goToFeaturestore()" ng-show="projectCtrl.showFeaturestore()" id="featurestoreTab">
+        <a>
+          Feature Store<span class="sub_icon fa fa-database fa-lg pull-right"></span>
+        </a>
+      </li>
+
+      <li ng-click="projectCtrl.goToExperiments()" ng-show="projectCtrl.showExperiments()" id="experimentsTab">
+        <a>
+          Experiments<img class="pull-right" style="margin-right:8px" height="27" src="images/experiments.png"/>
         </a>
       </li>
 
@@ -109,12 +112,6 @@
         </a>
       </li>
 
-      <li ng-click="projectCtrl.goToExperiments()" ng-show="projectCtrl.showExperiments()" id="experimentsTab">
-        <a>
-          Experiments<img class="pull-right" style="margin-right:8px" height="27" src="images/experiments.png"/>
-        </a>
-      </li>
-
       <li ng-click="projectCtrl.goToAirflow()" ng-show="projectCtrl.showAirflow()">
         <a>
           Airflow
@@ -122,12 +119,6 @@
                src="images/airflow-200x198-bw.png"/>
           <img ng-show="projectCtrl.activeService === 'airflow'" class="pull-right" style="margin-left:10px; margin-right:10px" height="25"
                src="images/airflow-200x198.png"/>
-        </a>
-      </li>
-
-      <li ng-click="projectCtrl.goToFeaturestore()" ng-show="projectCtrl.showFeaturestore()" id="featurestoreTab">
-        <a>
-          Feature Store<span class="sub_icon fa fa-database fa-lg pull-right"></span>
         </a>
       </li>
       
