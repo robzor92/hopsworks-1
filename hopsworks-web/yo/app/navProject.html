@@ -102,9 +102,16 @@
         </a>
       </li>
 
-      <li ng-click="projectCtrl.goToML()" ng-show="projectCtrl.cloak" id="mlTab">
+      <li ng-click="projectCtrl.goToTfServing()" ng-show="projectCtrl.showTfServing()" id="servingTab">
+        <a class="left-right">
+          Model Serving
+          <img class="pull-right" style="margin-right:10px" height="25" src="images/tf-175x200_bw.png"/>
+        </a>
+      </li>
+
+      <li ng-click="projectCtrl.goToExperiments()" ng-show="projectCtrl.showExperiments()" id="experimentsTab">
         <a>
-          Machine Learning<img class="pull-right" style="margin-right:8px" height="27" src="images/experiments.png"/>
+          Experiments<img class="pull-right" style="margin-right:8px" height="27" src="images/experiments.png"/>
         </a>
       </li>
 
@@ -117,6 +124,13 @@
                src="images/airflow-200x198.png"/>
         </a>
       </li>
+
+      <li ng-click="projectCtrl.goToFeaturestore()" ng-show="projectCtrl.showFeaturestore()" id="featurestoreTab">
+        <a>
+          Feature Store<span class="sub_icon fa fa-database fa-lg pull-right"></span>
+        </a>
+      </li>
+      
       <li ng-click="projectCtrl.goToDatasets()" style="margin-top:20px; margin-bottom:20px;" ng-show="projectCtrl.cloak" id="datasetsTab">
         <a>
           Data Sets <span class="sub_icon fa fa-folder-open fa-lg pull-right"></span>
