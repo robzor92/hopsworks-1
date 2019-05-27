@@ -43,13 +43,13 @@ angular.module('hopsWorksApp')
         .factory('TensorBoardService', ['$http', function ($http) {
             return {
               getTensorBoard: function (projectId) {
-                return $http.get('/api/project/' + projectId + '/tensorboard/');
+                return $http.get('/api/project/' + projectId + '/experiments/tensorboard');
               },
               startTensorBoard: function (projectId, elasticId) {
-                return $http.post('/api/project/' + projectId + '/tensorboard/' + elasticId);
+                return $http.post('/api/project/' + projectId + '/experiments/tensorboard/' + elasticId);
               },
               stopTensorBoard: function (projectId) {
-                return $http.delete('/api/project/' + projectId + '/tensorboard');
+                return $http.delete('/api/project/' + projectId + '/experiments/tensorboard');
               }
             };
           }]);

@@ -82,8 +82,9 @@ public class TensorBoardService {
   public TensorBoardService(){
   }
 
-  public void setProjectId(Integer projectId) {
-    this.project = this.projectFacade.find(projectId);
+  public TensorBoardService setProject(Project project) {
+    this.project = project;
+    return this;
   }
 
   public Project getProject() {

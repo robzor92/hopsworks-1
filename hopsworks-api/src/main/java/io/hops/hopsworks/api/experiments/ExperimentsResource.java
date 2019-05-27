@@ -1,10 +1,12 @@
 package io.hops.hopsworks.api.experiments;
 
+import io.hops.hopsworks.api.experiments.tensorboard.TensorBoardService;
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
 import io.hops.hopsworks.api.jobs.JobDTO;
 import io.hops.hopsworks.api.jobs.JobsBeanParam;
 import io.hops.hopsworks.api.jwt.JWTHelper;
+import io.hops.hopsworks.api.python.environment.EnvironmentResource;
 import io.hops.hopsworks.api.util.Pagination;
 import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
@@ -20,6 +22,7 @@ import javax.ejb.EJB;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
@@ -50,6 +53,8 @@ public class ExperimentsResource {
   private JWTHelper jwtHelper;
   @EJB
   private DistributedFsService dfs;
+  @Inject
+  private TensorBoardService tensorBoardService;
 
   private Project project;
   public ExperimentsResource setProjectId(Integer projectId) {
@@ -119,5 +124,11 @@ public class ExperimentsResource {
     */
     return null;
 
+  }
+
+  @ApiOperation(value = "Python environment sub-resource")
+  @Path("/environments")
+  public TensorBoardService tensorboard() {
+    return this.tensorBoardService.setProject(project);
   }
 }
