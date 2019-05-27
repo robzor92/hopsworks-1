@@ -126,8 +126,8 @@ public class ExperimentsResource {
 
   }
 
-  @ApiOperation(value = "Python environment sub-resource")
-  @Path("/environments")
+  @ApiOperation(value = "Experiment sub-resource")
+  @Path("/tensorboard")
   public TensorBoardService tensorboard() {
     return this.tensorBoardService.setProject(project);
   }
