@@ -722,13 +722,9 @@ public class DataSetService {
    *
    * @param fileName
    * @param sc
-<<<<<<< HEAD
    * @return
    * @throws io.hops.hopsworks.common.exception.DatasetException
    * @throws io.hops.hopsworks.common.exception.ProjectException
-=======
-   * @return 
->>>>>>> [HOPSWORKS-715] Hopsworks singletons are not single
    */
   @DELETE
   @Path("corrupted/{fileName: .+}")

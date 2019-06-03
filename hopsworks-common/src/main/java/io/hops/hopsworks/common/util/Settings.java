@@ -1884,7 +1884,6 @@ public class Settings implements Serializable {
   public static final String ELASTIC_KAGENT_INDEX = "kagent";
   public static final String ELASTIC_SERVING_INDEX_PATTERN = "_" + ELASTIC_SERVING_INDEX + "-*";
   public static final String ELASTIC_KAGENT_INDEX_PATTERN = "_" + ELASTIC_KAGENT_INDEX + "-*";
-  public static final String ELASTIC_EXPERIMENTS_INDEX = "experiments";
   public static final String ELASTIC_SAVED_OBJECTS = "saved_objects";
   public static final String ELASTIC_VISUALIZATION = "visualization";
   public static final String ELASTIC_SAVED_SEARCH = "search";

@@ -49,7 +49,7 @@
                                                        style="margin:2px; background:rgb(108, 117, 125); color:white;">
                                                     <input type="radio" value="TENSORFLOW_SERVING"
                                                            id="TENSORFLOW_SERVING">
-                                                    Tensorflow
+                                                    TensorFlow
                                                     <i class="fa fa-info-circle"
                                                        uib-tooltip="Serving of Tensorflow models"
                                                        tooltip-placement="left" style="margin-left: 10px">
@@ -298,6 +298,10 @@
                                 direction-links="true"
                                 boundary-links="true">
                         </dir-pagination-controls>
+                        <h3 class="text-muted" style="padding: 180px 0; text-align: center;"
+                            ng-show="servingCtrl.servings.length < 1">
+                            No model servings to show.
+                        </h3>
                     </div>
                     <!-- /#wrapper -->
                 </div>
