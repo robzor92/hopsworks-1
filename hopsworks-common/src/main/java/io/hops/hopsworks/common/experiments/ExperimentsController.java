@@ -47,7 +47,7 @@ public class ExperimentsController {
       EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
       flags.add(XAttrSetFlag.CREATE);
 
-      dfso.setXAttr(experimentPath, "user.config", experiment, flags);
+      dfso.setXAttr(experimentPath, "provenance.config", experiment, flags);
     } catch(IOException | JAXBException ex) {
       throw new DatasetException(RESTCodes.DatasetErrorCode.ATTACH_XATTR_ERROR, Level.SEVERE,
           "path: " + experimentPath, ex.getMessage(), ex);
