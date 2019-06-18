@@ -39,8 +39,6 @@
 
 package io.hops.hopsworks.common.elastic;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import io.hops.hopsworks.common.dao.dataset.Dataset;
 import io.hops.hopsworks.common.dao.dataset.DatasetFacade;
@@ -74,7 +72,6 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRespon
 import org.elasticsearch.action.admin.indices.exists.types.TypesExistsRequest;
 import org.elasticsearch.action.admin.indices.exists.types.TypesExistsResponse;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.AdminClient;
@@ -84,7 +81,6 @@ import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
@@ -97,7 +93,6 @@ import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -211,46 +206,6 @@ public class ElasticController {
       throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING, "Elasticsearch " +
         "error code: " + response.status().getStatus());
     }
-  }
-
-  public String findExperiment(String index, String app_id) throws ServiceException {
-
-    Client client = getClient();
-
-    SearchResponse searchResponse = client.prepareSearch(index)
-        .setQuery(QueryBuilders.matchQuery("app_id", app_id))
-        .get();
-
-    int status = searchResponse.status().getStatus();
-    if(status != 200) {
-      LOG.log(Level.SEVERE, "Unexpected response code " + searchResponse.status().getStatus() +
-          " when updating experiment in Elastic. " + searchResponse.toString());
-    }
-
-    return searchResponse.toString();
-  }
-
-  public void updateExperiment(String index, String id, JSONObject source) throws IOException, ServiceException {
-
-    Client client = getClient();
-
-    Map<String, Object> map;
-
-    ObjectMapper mapper = new ObjectMapper();
-    map = mapper.readValue(source.toString(),
-        new TypeReference<HashMap<String, Object>>() {
-        });
-
-    IndexResponse indexResponse = client.prepareIndex(index, "experiments", id)
-        .setSource(map)
-        .get();
-
-    int status = indexResponse.status().getStatus();
-    if(status != 200) {
-      LOG.log(Level.SEVERE, "Unexpected response code " + indexResponse.status().getStatus() +
-              " when updating experiment in Elastic. " + indexResponse.toString());
-    }
-
   }
 
   public List<ElasticHit> projectSearch(Integer projectId, String searchTerm) throws ServiceException {
@@ -397,8 +352,7 @@ public class ElasticController {
   public void deleteProjectIndices(Project project) throws ServiceException {
     //Get all project indices
     Map<String, IndexMetaData> indices = getIndices(project.getName() +
-        "_(((logs|serving)-\\d{4}.\\d{2}.\\d{2})|("+ Settings.ELASTIC_EXPERIMENTS_INDEX + ")"
-        + "| (" + Settings.ELASTIC_KAGENT_INDEX_PATTERN + "))");
+        "_(((logs|serving)-\\d{4}.\\d{2}.\\d{2})|(" + Settings.ELASTIC_KAGENT_INDEX_PATTERN + "))");
     for (String index : indices.keySet()) {
       if (!deleteIndex(index)) {
         LOG.log(Level.SEVERE, "Could not delete project index:{0}", index);

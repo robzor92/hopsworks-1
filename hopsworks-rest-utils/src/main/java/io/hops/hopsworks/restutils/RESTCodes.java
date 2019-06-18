@@ -292,7 +292,8 @@ public class RESTCodes {
     DOWNLOAD_NOT_ALLOWED(48, "Downloading files is not allowed. Please contact the system administrator for further " +
       "information.", Response.Status.FORBIDDEN),
     DATASET_REQUEST_ERROR(49, "Could not send dataset request", Response.Status.INTERNAL_SERVER_ERROR),
-    DATASET_ACCESS_PERMISSION_DENIED(50, "Permission denied.", Response.Status.FORBIDDEN);
+    DATASET_ACCESS_PERMISSION_DENIED(50, "Permission denied.", Response.Status.FORBIDDEN),
+    ATTACH_XATTR_ERROR(51, "Failed to attach Xattr.", Response.Status.INTERNAL_SERVER_ERROR);
 
 
     private Integer code;

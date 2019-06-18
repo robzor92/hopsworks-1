@@ -76,12 +76,12 @@
               </button>
             </div>
             <div class="col-sm-2 col-md-2 col-lg-2" style="margin-top:-20px;" ng-if="jupyterCtrl.ui !== '' && sparkConfigCtrl.uneditableMode===false" id="viewConfig">
-              <button class="btn btn-info btn-md" ng-click="jupyterCtrl.tgState=false; sparkConfigCtrl.uneditableMode=true;">
+              <button class="btn btn-primary btn-md" ng-click="jupyterCtrl.tgState=false; sparkConfigCtrl.uneditableMode=true;">
                 <i class="fa fa-sliders"></i> View Configuration
               </button>
             </div>
             <div class="col-sm-2 col-md-2 col-lg-2" style="margin-top:-20px;" ng-if="jupyterCtrl.ui !== '' && sparkConfigCtrl.uneditableMode===true">
-              <button class="btn btn-info btn-md" ng-click="jupyterCtrl.tgState=true; sparkConfigCtrl.uneditableMode=false;">
+              <button class="btn btn-primary btn-md" ng-click="jupyterCtrl.tgState=true; sparkConfigCtrl.uneditableMode=false;">
                 <i class="fa fa-share" style="margin-right:5px;"></i>View Notebook Server
               </button>
             </div>
@@ -131,6 +131,11 @@
                 <div>
                   <div>$PDIR <i class="fa fa-info-circle" uib-tooltip="Private local directory on this server for Python Notebooks." style="margin-left: 10px"></i>
                     <span style="margin-left: 10px;">{{jupyterCtrl.jupyterSettings.privateDir}}</span>
+                  </div>
+                </div>
+                <div>
+                  <div>Base <i class="fa fa-info-circle" uib-tooltip="Relative path inside project where Jupyter Notebook Server root path is located." style="margin-left: 17px"></i>
+                    <span style="margin-left: 10px;">{{jupyterCtrl.jupyterSettings.baseDir}}</span>
                   </div>
                 </div>
                 <div>
@@ -184,7 +189,7 @@
                                 uib-tooltip="Open ApplicationUI"
                                 tooltip-placement="auto right"
                                 ng-click="jupyterCtrl.showLivyUI(session.appId)"
-                                type="button" class="btn btn-info btn-sm" >
+                                type="button" class="btn btn-primary btn-sm" >
                           <span class="glyphicon glyphicon-eye-open" ></span>
                         </button>
                         <button
@@ -223,7 +228,7 @@
                                 <button id="openNotebook" uib-tooltip="Open a new Browser Tab to connect to the running Jupyter Notebook Server"
                                         tooltip-placement="auto right"
                                         ng-click="jupyterCtrl.openWindow()"
-                                        type="button" class="btn btn-info btn-sm">
+                                        type="button" class="btn btn-primary btn-sm">
                                   <span class="glyphicon glyphicon-eye-open" ></span>
                                 </button>
                               </td>
