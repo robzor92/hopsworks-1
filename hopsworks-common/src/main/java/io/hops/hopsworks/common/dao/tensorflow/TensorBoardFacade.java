@@ -106,4 +106,10 @@ public class TensorBoardFacade {
     q.setParameter("projectId", project.getId());
     return q.getResultList();
   }
+
+  public TensorBoard findByMlId(String mlId) {
+    TypedQuery<TensorBoard> q = em.createNamedQuery("TensorBoard.mlId", TensorBoard.class);
+    q.setParameter("mlId", mlId);
+    return q.getSingleResult();
+  }
 }

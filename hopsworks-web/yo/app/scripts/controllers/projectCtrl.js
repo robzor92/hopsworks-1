@@ -482,10 +482,6 @@ angular.module('hopsWorksApp')
               return showService("Dela");
             };
 
-            self.showTensorflow = function () {
-              return showService("Tensorflow");
-            };
-
             self.showAirflow = function () {
               return showService("Airflow");
             };

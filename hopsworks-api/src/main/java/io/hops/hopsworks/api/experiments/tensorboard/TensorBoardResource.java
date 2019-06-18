@@ -14,7 +14,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-package io.hops.hopsworks.api.tensorflow;
+package io.hops.hopsworks.api.experiments.tensorboard;
 
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
@@ -22,18 +22,15 @@ import io.hops.hopsworks.api.filter.NoCacheResponse;
 import io.hops.hopsworks.api.jwt.JWTHelper;
 import io.hops.hopsworks.api.project.util.DsPath;
 import io.hops.hopsworks.api.project.util.PathValidator;
-import io.hops.hopsworks.common.dao.hdfs.inode.InodeFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.dao.tensorflow.config.TensorBoardDTO;
 import io.hops.hopsworks.common.dao.user.Users;
-import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.TensorBoardException;
 import io.hops.hopsworks.restutils.RESTCodes;
-import io.hops.hopsworks.exceptions.ServiceException;
-import io.hops.hopsworks.common.experiments.TensorBoardController;
+import io.hops.hopsworks.common.experiments.tensorboard.TensorBoardController;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
 import io.swagger.annotations.ApiOperation;
 
@@ -45,8 +42,6 @@ import javax.persistence.PersistenceException;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -60,16 +55,12 @@ import javax.ws.rs.core.SecurityContext;
 
 @RequestScoped
 @TransactionAttribute(TransactionAttributeType.NEVER)
-public class TensorBoardService {
+public class TensorBoardResource {
 
   @EJB
   private ProjectFacade projectFacade;
   @EJB
-  private InodeFacade inodesFacade;
-  @EJB
   private TensorBoardController tensorBoardController;
-  @EJB
-  private ElasticController elasticController;
   @EJB
   private PathValidator pathValidator;
   @EJB
@@ -78,21 +69,24 @@ public class TensorBoardService {
   private NoCacheResponse noCacheResponse;
 
   private Project project;
+  private String experimentId;
 
-  public TensorBoardService(){
+  public TensorBoardResource(){
   }
 
-  public void setProjectId(Integer projectId) {
-    this.project = this.projectFacade.find(projectId);
+  public TensorBoardResource setProject(Project project, String experimentId) {
+    this.project = project;
+    this.experimentId = experimentId;
+    return this;
   }
 
   public Project getProject() {
     return project;
   }
 
-  private final static Logger LOGGER = Logger.getLogger(TensorBoardService.class.getName());
+  private final static Logger LOGGER = Logger.getLogger(TensorBoardResource.class.getName());
 
-  @ApiOperation("Get the running TensorBoard of the logged in user in this project")
+  @ApiOperation("Get the running TensorBoard")
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
@@ -111,31 +105,24 @@ public class TensorBoardService {
     }
   }
 
-  @ApiOperation("Start a new TensorBoard for the logged in user")
+  @ApiOperation("Start a new TensorBoard")
   @POST
-  @Path("/{elasticId}")
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
   @JWTRequired(acceptedTokens={Audience.API}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
-  public Response startTensorBoard(@PathParam("elasticId") String elasticId, @Context SecurityContext sc) throws
-      ServiceException, DatasetException, ProjectException, TensorBoardException {
+  public Response startTensorBoard(@Context SecurityContext sc) throws DatasetException, ProjectException,
+      TensorBoardException {
 
+    DsPath dsPath = pathValidator.validatePath(this.project, "Experiments/" + experimentId);
+    String fullPath = dsPath.getFullPath().toString();
     Users user = jWTHelper.getUserPrincipal(sc);
 
-    String hdfsLogdir = null;
-    hdfsLogdir = elasticController.getLogdirFromElastic(project, elasticId);
-    hdfsLogdir = tensorBoardController.replaceNN(hdfsLogdir);
-
-    DsPath tbPath = pathValidator.validatePath(this.project, hdfsLogdir);
-    tbPath.validatePathExists(inodesFacade, true);
-
-    TensorBoardDTO tensorBoardDTO = null;
-    tensorBoardDTO = tensorBoardController.startTensorBoard(elasticId, this.project, user, hdfsLogdir);
+    TensorBoardDTO tensorBoardDTO = tensorBoardController.startTensorBoard(experimentId, project, user, fullPath);
     waitForTensorBoardLoaded(tensorBoardDTO);
     return noCacheResponse.getNoCacheResponseBuilder(Response.Status.CREATED).entity(tensorBoardDTO).build();
   }
 
-  @ApiOperation("Stop the running TensorBoard for the logged in user")
+  @ApiOperation("Stop the running TensorBoard")
   @DELETE
   @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
   @JWTRequired(acceptedTokens={Audience.API}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})

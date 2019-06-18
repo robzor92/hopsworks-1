@@ -1210,6 +1210,8 @@ public class Settings implements Serializable {
   public static final String SPARK_LOCALIZED_PYTHON_DIR = "__pyfiles__";
   public static final String SPARK_LOCRSC_APP_JAR = "__app__.jar";
 
+  public static final String HOPS_EXPERIMENTS_DATASET = "Experiments";
+
   public static final String HOPS_TOUR_DATASET = "TestJob";
   public static final String HOPS_DL_TOUR_DATASET = "TourData";
   public static final String HOPS_TOUR_DATASET_JUPYTER = "Jupyter";
@@ -1914,7 +1916,6 @@ public class Settings implements Serializable {
   public static final String ELASTIC_KAGENT_INDEX = "kagent";
   public static final String ELASTIC_SERVING_INDEX_PATTERN = "_" + ELASTIC_SERVING_INDEX + "-*";
   public static final String ELASTIC_KAGENT_INDEX_PATTERN = "_" + ELASTIC_KAGENT_INDEX + "-*";
-  public static final String ELASTIC_EXPERIMENTS_INDEX = "experiments";
   public static final String ELASTIC_SAVED_OBJECTS = "saved_objects";
   public static final String ELASTIC_VISUALIZATION = "visualization";
   public static final String ELASTIC_SAVED_SEARCH = "search";

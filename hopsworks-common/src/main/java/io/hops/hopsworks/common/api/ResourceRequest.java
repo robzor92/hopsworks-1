@@ -155,7 +155,9 @@ public class ResourceRequest {
     COMMANDS,
     MACHINETYPES,
     LIBRARIES,
-    DATASETREQUESTS;
+    DATASETREQUESTS,
+    EXPERIMENTS,
+    TENSORBOARD;
     
     public static Name fromString(String name) {
       return valueOf(name.toUpperCase());

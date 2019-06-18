@@ -42,6 +42,8 @@ import io.hops.hopsworks.api.activities.ProjectActivitiesResource;
 import io.hops.hopsworks.api.airflow.AirflowService;
 import io.hops.hopsworks.api.dela.DelaClusterProjectService;
 import io.hops.hopsworks.api.dela.DelaProjectService;
+import io.hops.hopsworks.api.experiments.ExperimentsResource;
+import io.hops.hopsworks.api.experiments.tensorboard.TensorBoardResource;
 import io.hops.hopsworks.api.featurestore.FeaturestoreService;
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
@@ -54,7 +56,6 @@ import io.hops.hopsworks.api.provenance.ProjectProvenanceResource;
 import io.hops.hopsworks.api.python.PythonResource;
 import io.hops.hopsworks.api.serving.ServingService;
 import io.hops.hopsworks.api.serving.inference.InferenceResource;
-import io.hops.hopsworks.api.tensorflow.TensorBoardService;
 import io.hops.hopsworks.api.util.LocalFsService;
 import io.hops.hopsworks.api.util.RESTApiJsonResponse;
 import io.hops.hopsworks.common.constants.message.ResponseMessages;
@@ -155,9 +156,11 @@ public class ProjectService {
   @Inject
   private AirflowService airflow;
   @Inject
-  private TensorBoardService tensorboard;
+  private TensorBoardResource tensorboard;
   @Inject
   private ServingService servingService;
+  @Inject
+  private ExperimentsResource experiments;
   @Inject
   private DataSetService dataSet;
   @Inject
@@ -745,11 +748,12 @@ public class ProjectService {
     return this.jupyter;
   }
 
-  @Path("{projectId}/tensorboard")
-  public TensorBoardService tensorboard(@PathParam("projectId") Integer id) {
-    this.tensorboard.setProjectId(id);
-    return this.tensorboard;
+  @Path("{projectId}/experiments")
+  public ExperimentsResource experiments(@PathParam("projectId") Integer id) {
+    this.experiments.setProjectId(id);
+    return this.experiments;
   }
+
   @Path("{projectId}/airflow")
   public AirflowService airflow(@PathParam("projectId") Integer id)  {
     this.airflow.setProjectId(id);
