@@ -1840,5 +1840,32 @@ angular.module('hopsWorksApp')
                 });
                 return modalInstance.result;
             },
+            viewTrainingDatasetDependencies: function (size, projectId, trainingDataset) {
+                var modalInstance = $uibModal.open({
+                    templateUrl: 'views/trainingDatasetDependencies.html',
+                    controller: 'trainingDatasetDependenciesCtrl as trainingDatasetDependenciesCtrl',
+                    size: size,
+                    resolve: {
+                        auth: ['$q', '$location', 'AuthService',
+                            function ($q, $location, AuthService) {
+                                return AuthService.session().then(
+                                    function (success) {
+                                    },
+                                    function (err) {
+                                        $location.path('/login');
+                                        $location.replace();
+                                        return $q.reject(err);
+                                    });
+                            }],
+                        projectId: function () {
+                            return projectId;
+                        },
+                        trainingDataset: function () {
+                            return trainingDataset;
+                        }
+                    }
+                });
+                return modalInstance.result;
+            }
         };
     }]);
