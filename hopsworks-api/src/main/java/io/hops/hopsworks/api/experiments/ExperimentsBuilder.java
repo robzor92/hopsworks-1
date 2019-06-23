@@ -5,7 +5,7 @@ import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
-import io.hops.hopsworks.common.provenance.FileProvenanceHit;
+import io.hops.hopsworks.common.provenance.FProvMLAssetHit;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
 
@@ -54,7 +54,7 @@ public class ExperimentsBuilder {
 
     if(dto.isExpand()) {
 
-      GenericEntity<List<FileProvenanceHit>> searchResults = new GenericEntity<List<FileProvenanceHit>>(
+      GenericEntity<List<FProvMLAssetHit>> searchResults = new GenericEntity<List<FProvMLAssetHit>>(
           elasticController.fileProvenanceByMLType(ProvenanceService.MLType.EXPERIMENT.name(), project.getId())) {
       };
 
@@ -69,7 +69,7 @@ public class ExperimentsBuilder {
 
   //Build specific
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest,
-                             FileProvenanceHit fileProvenanceHit) {
+                             FProvMLAssetHit fileProvenanceHit) {
 
     LOGGER.log(Level.SEVERE, fileProvenanceHit.getMlType());
     LOGGER.log(Level.SEVERE, fileProvenanceHit.toString());
