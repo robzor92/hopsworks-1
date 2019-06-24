@@ -58,16 +58,18 @@ public class AppProvenanceHit implements Comparator<AppProvenanceHit> {
   public static final String TIMESTAMP_FIELD = "timestamp";
   public static final String APP_NAME_FIELD = "app_name";
   public static final String APP_USER_FIELD = "app_user";
+  public static final String READABLE_TIMESTAMP_FIELD = "readable_timestamp";
 
   private String id;
   private float score;
   private Map<String, Object> map;
 
-  private String app_id;
-  private String app_state;
-  private String timestamp;
-  private String app_name;
-  private String app_user;
+  private String appId;
+  private Provenance.AppState appState = null;
+  private long appStateTimestamp;
+  private String readableTimestamp;
+  private String appName;
+  private String appUser;
 
   public AppProvenanceHit() {
   }
@@ -83,19 +85,30 @@ public class AppProvenanceHit implements Comparator<AppProvenanceHit> {
       //set the name explicitly so that it's easily accessible in the frontend
       switch (entry.getKey()) {
         case APP_ID_FIELD:
-          this.app_id = entry.getValue().toString();
+          this.appId = entry.getValue().toString();
           break;
         case APP_STATE_FIELD:
-          this.app_state = entry.getValue().toString();
+          if (entry.getValue() != null) {
+            try {
+              this.appState = Provenance.AppState.valueOf(entry.getValue().toString());
+            } catch (IllegalArgumentException ex) {
+              this.appState = Provenance.AppState.UNKNOWN;
+            }
+          } else {
+            this.appState = Provenance.AppState.UNKNOWN;
+          }
           break;
         case TIMESTAMP_FIELD:
-          this.timestamp = entry.getValue().toString();
+          this.appStateTimestamp = ((Number) entry.getValue()).longValue();
           break;
         case APP_NAME_FIELD:
-          this.app_name = entry.getValue().toString();
+          this.appName = entry.getValue().toString();
           break;
         case APP_USER_FIELD:
-          this.app_user = entry.getValue().toString();
+          this.appUser = entry.getValue().toString();
+          break;
+        case READABLE_TIMESTAMP_FIELD:
+          this.readableTimestamp = entry.getValue().toString();
           break;
         default:
           LOG.log(Level.WARNING, "unknown key:{0}", new Object[]{entry.getKey()});
@@ -144,43 +157,43 @@ public class AppProvenanceHit implements Comparator<AppProvenanceHit> {
     this.id = id;
   }
 
-  public String getApp_id() {
-    return app_id;
+  public String getAppId() {
+    return appId;
   }
 
-  public void setApp_id(String app_id) {
-    this.app_id = app_id;
+  public void setAppId(String appId) {
+    this.appId = appId;
   }
 
-  public String getApp_state() {
-    return app_state;
+  public Provenance.AppState getAppState() {
+    return appState;
   }
 
-  public void setApp_state(String app_state) {
-    this.app_state = app_state;
+  public void setAppState(Provenance.AppState appState) {
+    this.appState = appState;
   }
 
-  public String getTimestamp() {
-    return timestamp;
+  public Long getAppStateTimestamp() {
+    return appStateTimestamp;
   }
 
-  public void setTimestamp(String timestamp) {
-    this.timestamp = timestamp;
+  public void setAppStateTimestamp(long appStateTimestamp) {
+    this.appStateTimestamp = appStateTimestamp;
   }
 
-  public String getApp_name() {
-    return app_name;
+  public String getAppName() {
+    return appName;
   }
 
-  public void setApp_name(String app_name) {
-    this.app_name = app_name;
+  public void setAppName(String appName) {
+    this.appName = appName;
   }
 
-  public String getApp_user() {
-    return app_user;
+  public String getAppUser() {
+    return appUser;
   }
 
-  public void setApp_user(String app_user) {
-    this.app_user = app_user;
+  public void setAppUser(String appUser) {
+    this.appUser = appUser;
   }
 }
