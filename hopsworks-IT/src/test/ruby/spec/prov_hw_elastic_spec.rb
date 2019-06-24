@@ -18,8 +18,10 @@ require 'pp'
 
 describe "On #{ENV['OS']}" do
   describe 'provenance tests - experiments' do
-    def create_dir(project, dirname) 
+    before :all do
       with_valid_session
+    end
+    def create_dir(project, dirname) 
       target = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/dataset"
       payload_string = '{"name": "' + dirname + '"}'
       payload = JSON.parse(payload_string)
@@ -28,14 +30,12 @@ describe "On #{ENV['OS']}" do
     end
 
     def delete_dir(project, dirname) 
-      with_valid_session
       target = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/dataset/file/#{dirname}"
       delete target
       expect_status(200)
     end
 
     def get_experiments() 
-      with_valid_session
       ml_type = "EXPERIMENT"
       target = "#{ENV['HOPSWORKS_API']}/provenance/mlType/#{ml_type}"
       result = get target
@@ -44,7 +44,6 @@ describe "On #{ENV['OS']}" do
     end
 
     def get_experiments_in_project(project) 
-      with_valid_session
       ml_type = "EXPERIMENT"
       target = "#{ENV['HOPSWORKS_API']}/provenance/mlType/#{ml_type}/project/#{project[:id]}"
       result = get target
@@ -53,7 +52,6 @@ describe "On #{ENV['OS']}" do
     end
 
     def get_experiment_by_id(project, mlId) 
-      with_valid_session
       ml_type = "EXPERIMENT"
       target = "#{ENV['HOPSWORKS_API']}/provenance/mlType/#{ml_type}/project/#{project[:id]}/mlId/#{mlId}"
       result = get target

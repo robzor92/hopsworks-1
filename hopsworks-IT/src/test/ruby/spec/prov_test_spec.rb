@@ -18,9 +18,13 @@ require 'pp'
 
 describe "On #{ENV['OS']}" do
   before :all do
+    $stdout.sync = true
     with_valid_session
     @project1_name = "prov_proj_#{short_random_id}"
     @project2_name = "prov_proj_#{short_random_id}"
+    @experiment1_name = "experiment_a_v_1"
+    @experiment2_name = "experiment_a_v_2"
+    @experiment3_name = "experiment_a_v_3"
     @model1_name = "model_a"
     @model2_name = "model_b"
     @model_version1 = "1"
@@ -60,23 +64,11 @@ describe "On #{ENV['OS']}" do
   end
 
   def get_ml_asset_by_id(project, ml_type, ml_id) 
-    target = "#{ENV['HOPSWORKS_API']}/provenance/mlType/#{ml_type}/project/#{project[:id]}/ml_id/#{ml_id}"
+    target = "#{ENV['HOPSWORKS_API']}/provenance/mlType/#{ml_type}/project/#{project[:id]}/mlId/#{ml_id}"
     pp "#{target}"
     result = get target
     expect_status(200)
     parsed_result = JSON.parse(result)
-  end
-
-  def check_experiment(experiments, project, experiment_name) 
-    experiment = experiments.select {|exp| exp["inode_name"] == experiment_name}
-    expect(experiment.length).to eq 1
-    pp experiment
-  end
-
-  def get_experiment_id(experiments, experiment_name)
-    experiment = experiments.select {|exp| exp["inode_name"] == experiment_name}
-    expect(experiment.length).to eq 1
-    experiment[0]["mlId"]
   end
 
   def xattr_add(original, xattr_name, xattr_value, increment)
@@ -99,32 +91,99 @@ describe "On #{ENV['OS']}" do
       sleep(5)
       sleepCounter += 1
     end
+    sleep(5)
     expect(sleepCounter).to be < 10
     pp "done waiting"
   end
   
-  describe 'provenance tests - models' do
-    def create_model1(project, name) 
-      pp "create model #{name} in project #{project[:inode_name]}"
-      create_dir(project, "Models/#{name}")
-    end
-
-    def create_model2(project, name, version) 
-      pp "create model #{name}_#{version} in project #{project[:inode_name]}"
-      create_dir(project, "Models/#{name}/#{version}")
+  describe 'provenance tests - experiments' do
+    def create_experiment(project, experiment_name) 
+      pp "create experiment #{experiment_name} in project #{project[:inode_name]}"
+      create_dir(project, "Experiments/#{experiment_name}")
     end
     
-    def delete_model(project, name) 
-      pp "delete model #{name} in project #{project[:inode_name]}"
-      create_dir(project, "Models/#{name}")
+    def delete_experiment(project, experiment_name) 
+      pp "delete experiment #{experiment_name} in project #{project[:inode_name]}"
+      delete_dir(project, "Experiments/#{experiment_name}")
+    end
+    
+    def experiment_ml_id(experiment_name)
+      id = "#{experiment_name}"
+      pp id
+      id
+    end
+
+    def check_experiment(experiments, experiment_id) 
+      experiment = experiments.select {|e| e[:mlId] == experiment_id }
+      expect(experiment.length).to eq 1
+      pp experiment
+    end
+    
+    describe 'simple experiment' do
+      it "create experiments" do
+        create_experiment(@project1, @experiment1_name)
+        create_experiment(@project1, @experiment2_name)
+        create_experiment(@project2, @experiment3_name)
+      end
+
+      it "check experiments" do 
+        wait_for_epipe() 
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT")
+        expect(result1.length).to eq 2
+        check_experiment(result1, experiment_ml_id(@experiment1_name))
+        check_experiment(result1, experiment_ml_id(@experiment2_name))
+
+        result2 = get_ml_asset_in_project(@project2, "EXPERIMENT")
+        expect(result2.length).to eq 1
+        check_experiment(result2, experiment_ml_id(@experiment3_name))
+        
+        result3 = get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_ml_id(@experiment1_name))
+        expect(result3.length).to eq 1
+        check_experiment(result3, experiment_ml_id(@experiment1_name))
+      end
+
+      it "delete experiments" do
+        delete_experiment(@project1, @experiment1_name)
+        delete_experiment(@project1, @experiment2_name)
+        delete_experiment(@project2, @experiment3_name)
+      end
+      
+      it "check experiments" do 
+        wait_for_epipe() 
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT")
+        expect(result1.length).to eq 0
+
+        result2 = get_ml_asset_in_project(@project2, "EXPERIMENT")
+        expect(result2.length).to eq 0
+        
+        result3 = get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_ml_id(@experiment1_name))
+        expect(result3.length).to eq 0
+      end
+    end
+  end
+
+  describe 'provenance tests - models' do
+    def create_model1(project, model_name) 
+      pp "create model #{model_name} in project #{project[:inode_name]}"
+      create_dir(project, "Models/#{model_name}")
+    end
+
+    def create_model2(project, model_name, model_version) 
+      pp "create model #{model_name}_#{model_version} in project #{project[:inode_name]}"
+      create_dir(project, "Models/#{model_name}/#{model_version}")
+    end
+    
+    def delete_model(project, model_name) 
+      pp "delete model #{model_name} in project #{project[:inode_name]}"
+      delete_dir(project, "Models/#{model_name}")
     end
     
     def model_ml_id(model_name, model_version)
       "#{model_name}_#{model_version}"
     end
 
-    def check_model(models, model_name, model_version) 
-      model = models.select {|m| m["ml_id"] == model_ml_id(model_name, model_version) }
+    def check_model(models, model_id) 
+      model = models.select {|m| m[:mlId] == model_id }
       expect(model.length).to eq 1
       pp model
     end
@@ -141,20 +200,20 @@ describe "On #{ENV['OS']}" do
       end
 
       it "check models" do 
+        wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "MODEL")
-        pp result1
         expect(result1.length).to eq 3
-        check_model(result1, @model1_name, @model_version1)
-        check_model(result1, @model1_name, @model_version2)
-        check_model(result1, @model2_name, @model_version1)
+        check_model(result1, model_ml_id(@model1_name, @model_version1))
+        check_model(result1, model_ml_id(@model1_name, @model_version2))
+        check_model(result1, model_ml_id(@model2_name, @model_version1))
 
         result2 = get_ml_asset_in_project(@project2, "MODEL")
         expect(result2.length).to eq 1
-        check_model(result2, @model2_name, @model_version1)
+        check_model(result2, model_ml_id(@model1_name, @model_version1))
         
         result3 = get_ml_asset_by_id(@project1, "MODEL", model_ml_id(@model1_name, @model_version2))
         expect(result3.length).to eq 1
-        check_model(result3, @model1_name, @model_version2)
+        check_model(result3, model_ml_id(@model1_name, @model_version2))
       end
 
       it "delete models" do
@@ -164,6 +223,7 @@ describe "On #{ENV['OS']}" do
       end
       
       it "check models" do 
+        wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "MODEL")
         expect(result1.length).to eq 0
 
