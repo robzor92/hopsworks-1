@@ -1089,7 +1089,9 @@ public class ElasticController {
   }
   private List<FProvMLAssetHit> liveMLAssetQuery(QueryBuilder query) throws ServiceException {
     List<FProvMLAssetHit> result = new LinkedList<>();
-    for (SearchHit rawHit : rawQuery(query)) {
+    SearchHit[]  rawHits = rawQuery(query);
+    LOG.log(Level.WARNING, "query hits: {0}", rawHits.length);
+    for (SearchHit rawHit : rawHits) {
       FProvMLAssetHit hit = new FProvMLAssetHit(rawHit);
       result.add(hit);
     }
