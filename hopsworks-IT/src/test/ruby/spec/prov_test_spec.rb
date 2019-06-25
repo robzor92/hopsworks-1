@@ -108,18 +108,16 @@ describe "On #{ENV['OS']}" do
     end
     
     def experiment_ml_id(experiment_name)
-      id = "#{experiment_name}"
-      pp id
-      id
+      "#{experiment_name}"
     end
 
     def check_experiment(experiments, experiment_id) 
-      experiment = experiments.select {|e| e[:mlId] == experiment_id }
+      experiment = experiments.select {|e| e["mlId"] == experiment_id }
       expect(experiment.length).to eq 1
-      pp experiment
+      #pp experiment
     end
     
-    describe 'simple experiment' do
+    describe 'simple experiments' do
       it "create experiments" do
         create_experiment(@project1, @experiment1_name)
         create_experiment(@project1, @experiment2_name)
@@ -160,6 +158,41 @@ describe "On #{ENV['OS']}" do
         expect(result3.length).to eq 0
       end
     end
+
+    describe 'experiment with xattr' do
+      it "stop epipe" do
+        execute_remotely @hostname, "sudo systemctl stop epipe"
+      end
+
+      it "create experiment with xattr" do
+        create_experiment(@project1, @experiment1_name)
+        experimentRecord = FileProv.where("ml_id": experiment_ml_id(@experiment1_name))
+        expect(experimentRecord.length).to eq 1
+        xattr_add(experimentRecord[0], "xattr_key_1", "xattr_value_1", 1)
+        xattr_add(experimentRecord[0], "xattr_key_2", "xattr_value_2", 2)
+      end
+
+      it "restart epipe" do
+        execute_remotely @hostname, "sudo systemctl restart epipe"
+      end
+
+      it "check experiment" do 
+        wait_for_epipe() 
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT")
+        expect(result1.length).to eq 1
+        check_experiment(result1, experiment_ml_id(@experiment1_name))
+      end
+
+      it "delete experiments" do
+        delete_experiment(@project1, @experiment1_name)
+      end
+
+      it "check experiments" do 
+        wait_for_epipe() 
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT")
+        expect(result1.length).to eq 0
+      end
+    end
   end
 
   describe 'provenance tests - models' do
@@ -183,9 +216,9 @@ describe "On #{ENV['OS']}" do
     end
 
     def check_model(models, model_id) 
-      model = models.select {|m| m[:mlId] == model_id }
+      model = models.select {|m| m["mlId"] == model_id }
       expect(model.length).to eq 1
-      pp model
+      #pp model
     end
     
     describe 'simple models' do
@@ -232,6 +265,41 @@ describe "On #{ENV['OS']}" do
         
         result3 = get_ml_asset_by_id(@project1, "MODEL", model_ml_id(@model1_name, @model_version2))
         expect(result3.length).to eq 0
+      end
+    end
+    describe 'model with xattr' do
+      it "stop epipe" do
+        execute_remotely @hostname, "sudo systemctl stop epipe"
+      end
+
+      it "create model with xattr" do
+        create_model1(@project1, @model1_name)
+        create_model2(@project1, @model1_name, @model_version1)
+        modelRecord = FileProv.where("ml_id": model_ml_id(@model1_name, @model_version1))
+        expect(modelRecord.length).to eq 1
+        xattr_add(modelRecord[0], "xattr_key_1", "xattr_value_1", 1)
+        xattr_add(modelRecord[0], "xattr_key_2", "xattr_value_2", 2)
+      end
+
+      it "restart epipe" do
+        execute_remotely @hostname, "sudo systemctl restart epipe"
+      end
+
+      it "check model" do 
+        wait_for_epipe() 
+        result1 = get_ml_asset_in_project(@project1, "MODEL")
+        expect(result1.length).to eq 1
+        check_model(result1, model_ml_id(@model1_name, @model_version1))
+      end
+
+      it "delete model" do
+        delete_model(@project1, @model1_name)
+      end
+
+      it "check models" do 
+        wait_for_epipe() 
+        result1 = get_ml_asset_in_project(@project1, "MODEL")
+        expect(result1.length).to eq 0
       end
     end
   end
