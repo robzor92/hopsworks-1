@@ -53,12 +53,12 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
   private float score;
   private Map<String, Object> map;
   
-  private long inode_id;
-  private String creator_app_id;
-  private int creator_user_id;
-  private long project_inode_id;
-  private String inode_name;
-  private String create_timestamp;
+  private long inodeId;
+  private String creatorAppId;
+  private int creatorUserId;
+  private long projectInodeId;
+  private String inodeName;
+  private String createTimestamp;
   private String mlType;
   private String mlId;
   private Map<String, String> xattrs = new HashMap<>();
@@ -77,22 +77,22 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
       //set the name explicitly so that it's easily accessible in the frontend
       switch (entry.getKey()) {
         case FileProvenanceHit.INODE_ID_FIELD:
-          this.inode_id = ((Number) entry.getValue()).longValue();
+          this.inodeId = ((Number) entry.getValue()).longValue();
           break;
         case FileProvenanceHit.APP_ID_FIELD:
-          this.creator_app_id = entry.getValue().toString();
+          this.creatorAppId = entry.getValue().toString();
           break;
         case FileProvenanceHit.USER_ID_FIELD:
-          this.creator_user_id = ((Number) entry.getValue()).intValue();
+          this.creatorUserId = ((Number) entry.getValue()).intValue();
           break;
         case FileProvenanceHit.PROJECT_INODE_ID_FIELD:
-          this.project_inode_id = ((Number) entry.getValue()).longValue();
+          this.projectInodeId = ((Number) entry.getValue()).longValue();
           break;
         case FileProvenanceHit.INODE_NAME_FIELD:
-          this.inode_name = entry.getValue().toString();
+          this.inodeName = entry.getValue().toString();
           break;
         case FileProvenanceHit.TIMESTAMP_FIELD:
-          this.create_timestamp = entry.getValue().toString();
+          this.createTimestamp = entry.getValue().toString();
           break;
         case FileProvenanceHit.ML_TYPE_FIELD:
           this.mlType = entry.getValue().toString();
@@ -149,52 +149,52 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
     this.map = map;
   }
 
-  public long getInode_id() {
-    return inode_id;
+  public long getInodeId() {
+    return inodeId;
   }
 
-  public void setInode_id(long inode_id) {
-    this.inode_id = inode_id;
+  public void setInodeId(long inodeId) {
+    this.inodeId = inodeId;
   }
 
-  public String getCreator_app_id() {
-    return creator_app_id;
+  public String getCreatorAppId() {
+    return creatorAppId;
   }
 
-  public void setCreator_app_id(String creator_app_id) {
-    this.creator_app_id = creator_app_id;
+  public void setCreatorAppId(String creatorAppId) {
+    this.creatorAppId = creatorAppId;
   }
 
-  public int getCreator_user_id() {
-    return creator_user_id;
+  public int getCreatorUserId() {
+    return creatorUserId;
   }
 
-  public void setCreator_user_id(int creator_user_id) {
-    this.creator_user_id = creator_user_id;
+  public void setCreatorUserId(int creatorUserId) {
+    this.creatorUserId = creatorUserId;
   }
 
-  public long getProject_inode_id() {
-    return project_inode_id;
+  public long getProjectInodeId() {
+    return projectInodeId;
   }
 
-  public void setProject_inode_id(long project_inode_id) {
-    this.project_inode_id = project_inode_id;
+  public void setProjectInodeId(long projectInodeId) {
+    this.projectInodeId = projectInodeId;
   }
 
-  public String getInode_name() {
-    return inode_name;
+  public String getInodeName() {
+    return inodeName;
   }
 
-  public void setInode_name(String inode_name) {
-    this.inode_name = inode_name;
+  public void setInodeName(String inodeName) {
+    this.inodeName = inodeName;
   }
 
-  public String getCreate_timestamp() {
-    return create_timestamp;
+  public String getCreateTimestamp() {
+    return createTimestamp;
   }
 
-  public void setCreate_timestamp(String create_timestamp) {
-    this.create_timestamp = create_timestamp;
+  public void setCreateTimestamp(String createTimestamp) {
+    this.createTimestamp = createTimestamp;
   }
 
   public String getMlType() {

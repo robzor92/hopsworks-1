@@ -69,13 +69,13 @@ public class FileProvenanceHit implements Comparator<FileProvenanceHit> {
   private float score;
   private Map<String, Object> map;
 
-  private long inode_id;
-  private String inode_operation;
-  private String app_id;
-  private int user_id;
-  private long project_inode_id;
-  private long dataset_inode_id;
-  private String inode_name;
+  private long inodeId;
+  private String inodeOperation;
+  private String appId;
+  private int userId;
+  private long projectInodeId;
+  private long datasetInodeId;
+  private String inodeName;
   private String timestamp;
   private String mlType;
   private String mlId;
@@ -95,25 +95,25 @@ public class FileProvenanceHit implements Comparator<FileProvenanceHit> {
       //set the name explicitly so that it's easily accessible in the frontend
       switch (entry.getKey()) {
         case INODE_ID_FIELD:
-          this.inode_id = ((Number) entry.getValue()).longValue();
+          this.inodeId = ((Number) entry.getValue()).longValue();
           break;
         case INODE_OPERATION_NAME_FIELD:
-          this.inode_operation = entry.getValue().toString();
+          this.inodeOperation = entry.getValue().toString();
           break;
         case APP_ID_FIELD:
-          this.app_id = entry.getValue().toString();
+          this.appId = entry.getValue().toString();
           break;
         case USER_ID_FIELD:
-          this.user_id = ((Number) entry.getValue()).intValue();
+          this.userId = ((Number) entry.getValue()).intValue();
           break;
         case PROJECT_INODE_ID_FIELD:
-          this.project_inode_id = ((Number) entry.getValue()).longValue();
+          this.projectInodeId = ((Number) entry.getValue()).longValue();
           break;
         case DATASET_INODE_ID_FIELD:
-          this.dataset_inode_id = ((Number) entry.getValue()).longValue();
+          this.datasetInodeId = ((Number) entry.getValue()).longValue();
           break;
         case INODE_NAME_FIELD:
-          this.inode_name = entry.getValue().toString();
+          this.inodeName = entry.getValue().toString();
           break;
         case TIMESTAMP_FIELD:
           this.timestamp = entry.getValue().toString();
@@ -174,60 +174,60 @@ public class FileProvenanceHit implements Comparator<FileProvenanceHit> {
     return refined;
   }
 
-  public long getInode_id() {
-    return inode_id;
+  public long getInodeId() {
+    return inodeId;
   }
 
-  public void setInode_id(long inode_id) {
-    this.inode_id = inode_id;
+  public void setInodeId(long inodeId) {
+    this.inodeId = inodeId;
   }
 
-  public String getInode_operation() {
-    return inode_operation;
+  public String getInodeOperation() {
+    return inodeOperation;
   }
 
-  public void setInode_operation(String inode_operation) {
-    this.inode_operation = inode_operation;
-  }
-  
-  public long getProject_inode_id() {
-    return project_inode_id;
+  public void setInodeOperation(String inodeOperation) {
+    this.inodeOperation = inodeOperation;
   }
 
-  public void setProject_inode_id(long project_inode_id) {
-    this.project_inode_id = project_inode_id;
+  public String getAppId() {
+    return appId;
   }
 
-  public long getDataset_inode_id() {
-    return dataset_inode_id;
+  public void setAppId(String appId) {
+    this.appId = appId;
   }
 
-  public void setDataset_inode_id(long dataset_inode_id) {
-    this.dataset_inode_id = dataset_inode_id;
+  public int getUserId() {
+    return userId;
   }
 
-  public int getUser_id() {
-    return user_id;
+  public void setUserId(int userId) {
+    this.userId = userId;
   }
 
-  public void setUser_id(int user_id) {
-    this.user_id = user_id;
+  public long getProjectInodeId() {
+    return projectInodeId;
   }
 
-  public String getApp_id() {
-    return app_id;
+  public void setProjectInodeId(long projectInodeId) {
+    this.projectInodeId = projectInodeId;
   }
 
-  public void setApp_id(String app_id) {
-    this.app_id = app_id;
-  }
-  
-  public String getInode_name() {
-    return inode_name;
+  public long getDatasetInodeId() {
+    return datasetInodeId;
   }
 
-  public void setInode_name(String inode_name) {
-    this.inode_name = inode_name;
+  public void setDatasetInodeId(long datasetInodeId) {
+    this.datasetInodeId = datasetInodeId;
+  }
+
+  public String getInodeName() {
+    return inodeName;
+  }
+
+  public void setInodeName(String inodeName) {
+    this.inodeName = inodeName;
   }
 
   public String getTimestamp() {
@@ -261,6 +261,4 @@ public class FileProvenanceHit implements Comparator<FileProvenanceHit> {
   public void setMlDeps(String mlDeps) {
     this.mlDeps = mlDeps;
   }
-
-  
 }
