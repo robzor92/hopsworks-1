@@ -166,7 +166,7 @@ describe "On #{ENV['OS']}" do
 
       it "create experiment with xattr" do
         create_experiment(@project1, @experiment1_name)
-        experimentRecord = FileProv.where("ml_id": experiment_ml_id(@experiment1_name))
+        experimentRecord = FileProv.where("i_name": @experiment1_name)
         expect(experimentRecord.length).to eq 1
         xattr_add(experimentRecord[0], "xattr_key_1", "xattr_value_1", 1)
         xattr_add(experimentRecord[0], "xattr_key_2", "xattr_value_2", 2)
