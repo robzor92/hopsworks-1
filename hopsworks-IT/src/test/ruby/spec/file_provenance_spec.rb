@@ -111,10 +111,18 @@ describe "On #{ENV['OS']}" do
       "#{experiment_name}"
     end
 
-    def check_experiment(experiments, experiment_id) 
-      experiment = experiments.select {|e| e["mlId"] == experiment_id }
+    def check_experiment(experiments, experiment_id, xattrs) 
+      experiment = experiments.select { |e| e["mlId"] == experiment_id }
       expect(experiment.length).to eq 1
       #pp experiment
+      xattrs.each do |key, value|
+        pp experiment[0]["xattrs"]["entry"]
+        xattr = experiment[0]["xattrs"]["entry"].select do |e| 
+          e["key"] == key && e["value"] == value
+        end
+        expect(xattr.length).to eq 1
+        pp xattr
+      end
     end
     
     describe 'simple experiments' do
@@ -128,16 +136,16 @@ describe "On #{ENV['OS']}" do
         wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "EXPERIMENT")
         expect(result1.length).to eq 2
-        check_experiment(result1, experiment_ml_id(@experiment1_name))
-        check_experiment(result1, experiment_ml_id(@experiment2_name))
+        check_experiment(result1, experiment_ml_id(@experiment1_name), Hash.new)
+        check_experiment(result1, experiment_ml_id(@experiment2_name), Hash.new)
 
         result2 = get_ml_asset_in_project(@project2, "EXPERIMENT")
         expect(result2.length).to eq 1
-        check_experiment(result2, experiment_ml_id(@experiment3_name))
+        check_experiment(result2, experiment_ml_id(@experiment3_name), Hash.new)
         
         result3 = get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_ml_id(@experiment1_name))
         expect(result3.length).to eq 1
-        check_experiment(result3, experiment_ml_id(@experiment1_name))
+        check_experiment(result3, experiment_ml_id(@experiment1_name), Hash.new)
       end
 
       it "delete experiments" do
@@ -166,7 +174,7 @@ describe "On #{ENV['OS']}" do
 
       it "create experiment with xattr" do
         create_experiment(@project1, @experiment1_name)
-        experimentRecord = FileProv.where("i_name": @experiment1_name)
+        experimentRecord = FileProv.where("project_name": @project1["inode_name"], "i_name": @experiment1_name)
         expect(experimentRecord.length).to eq 1
         xattr_add(experimentRecord[0], "xattr_key_1", "xattr_value_1", 1)
         xattr_add(experimentRecord[0], "xattr_key_2", "xattr_value_2", 2)
@@ -180,7 +188,10 @@ describe "On #{ENV['OS']}" do
         wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "EXPERIMENT")
         expect(result1.length).to eq 1
-        check_experiment(result1, experiment_ml_id(@experiment1_name))
+        xattrs = Hash.new
+        xattrs["xattr_key_1"] = "xattr_value_1"
+        xattrs["xattr_key_2"] = "xattr_value_2"
+        check_experiment(result1, experiment_ml_id(@experiment1_name), xattrs)
       end
 
       it "delete experiments" do
@@ -215,10 +226,18 @@ describe "On #{ENV['OS']}" do
       "#{model_name}_#{model_version}"
     end
 
-    def check_model(models, model_id) 
+    def check_model(models, model_id, xattr) 
       model = models.select {|m| m["mlId"] == model_id }
       expect(model.length).to eq 1
       #pp model
+      xattrs.each do |key, value|
+        pp experiment[0]["xattrs"]["entry"]
+        xattr = experiment[0]["xattrs"]["entry"].select do |e| 
+          e["key"] == key && e["value"] == value
+        end
+        expect(xattr.length).to eq 1
+        pp xattr
+      end
     end
     
     describe 'simple models' do
@@ -236,17 +255,17 @@ describe "On #{ENV['OS']}" do
         wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "MODEL")
         expect(result1.length).to eq 3
-        check_model(result1, model_ml_id(@model1_name, @model_version1))
-        check_model(result1, model_ml_id(@model1_name, @model_version2))
-        check_model(result1, model_ml_id(@model2_name, @model_version1))
+        check_model(result1, model_ml_id(@model1_name, @model_version1), Hash.new)
+        check_model(result1, model_ml_id(@model1_name, @model_version2), Hash.new)
+        check_model(result1, model_ml_id(@model2_name, @model_version1), Hash.new)
 
         result2 = get_ml_asset_in_project(@project2, "MODEL")
         expect(result2.length).to eq 1
-        check_model(result2, model_ml_id(@model1_name, @model_version1))
+        check_model(result2, model_ml_id(@model1_name, @model_version1), Hash.new)
         
         result3 = get_ml_asset_by_id(@project1, "MODEL", model_ml_id(@model1_name, @model_version2))
         expect(result3.length).to eq 1
-        check_model(result3, model_ml_id(@model1_name, @model_version2))
+        check_model(result3, model_ml_id(@model1_name, @model_version2), Hash.new)
       end
 
       it "delete models" do
@@ -275,7 +294,7 @@ describe "On #{ENV['OS']}" do
       it "create model with xattr" do
         create_model1(@project1, @model1_name)
         create_model2(@project1, @model1_name, @model_version1)
-        modelRecord = FileProv.where("ml_id": model_ml_id(@model1_name, @model_version1))
+        modelRecord = FileProv.where("project_name": @project1["inode_name"], "i_parent_name": @model1_name, "i_name": @model_version1)
         expect(modelRecord.length).to eq 1
         xattr_add(modelRecord[0], "xattr_key_1", "xattr_value_1", 1)
         xattr_add(modelRecord[0], "xattr_key_2", "xattr_value_2", 2)
@@ -289,7 +308,10 @@ describe "On #{ENV['OS']}" do
         wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "MODEL")
         expect(result1.length).to eq 1
-        check_model(result1, model_ml_id(@model1_name, @model_version1))
+        xattrs = Hash.new
+        xattrs["xattr_key_1"] = "xattr_value_1"
+        xattrs["xattr_key_2"] = "xattr_value_2"
+        check_model(result1, model_ml_id(@model1_name, @model_version1), xattrs)
       end
 
       it "delete model" do
