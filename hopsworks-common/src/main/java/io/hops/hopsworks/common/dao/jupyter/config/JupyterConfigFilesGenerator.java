@@ -91,7 +91,7 @@ public class JupyterConfigFilesGenerator {
     return new JupyterPaths(settings.getJupyterDir(), project.getName(), hdfsUser, secretConfig);
   }
   
-  public JupyterPaths generateConfiguration(Project project, String secretConfig, String hdfsUser, String usersFullName,
+  public JupyterPaths generateConfiguration(Project project, String secretConfig, String hdfsUser,
     String nameNodeEndpoint, JupyterSettings js, Integer port, String allowOrigin)
     throws ServiceException {
     boolean newDir = false;
@@ -100,7 +100,7 @@ public class JupyterConfigFilesGenerator {
     
     try {
       newDir = createJupyterDirs(jp);
-      createConfigFiles(jp, hdfsUser, usersFullName, project, nameNodeEndpoint,
+      createConfigFiles(jp, hdfsUser, project, nameNodeEndpoint,
         port, js, allowOrigin);
     } catch (Exception e) {
       if (newDir) { // if the folder was newly created delete it
@@ -270,10 +270,9 @@ public class JupyterConfigFilesGenerator {
       "hadoop_home", this.settings.getHadoopSymbolicLinkDir()).toString();
   }
   
-  // returns true if one of the conf files were created anew 
+  // returns true if one of the conf files were created anew
   private boolean createConfigFiles(JupyterPaths jp, String hdfsUser, String usersFullName, Project project,
       String nameNodeEndpoint, Integer port, JupyterSettings js, String allowOrigin) throws IOException {
-    
     String confDirPath = jp.getConfDirPath();
     String kernelsDir = jp.getKernelsDir();
     String certsDir = jp.getCertificatesDir();

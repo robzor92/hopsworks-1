@@ -43,7 +43,6 @@ import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.exceptions.JobException;
-import io.hops.hopsworks.exceptions.ServiceException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map.Entry;
@@ -116,24 +115,12 @@ public class SparkJob extends YarnJob {
     setStdErrFinalDestination(stdErrFinalDestination);
 
     try {
-
-      String firstName = user.getFname();
-      String lastName = user.getLname();
-      String usersFullName = null;
-      if(firstName != null && !firstName.isEmpty()) {
-        usersFullName = firstName;
-      }
-      if(lastName != null && !lastName.isEmpty()) {
-        usersFullName += " " + lastName;
-        usersFullName = usersFullName.trim();
-      }
-
       runner = runnerbuilder.
           getYarnRunner(jobs.getProject(),
-              jobUser, usersFullName,
+              jobUser,
               services, services.getFileOperations(hdfsUser.getUserName()), yarnClient, settings);
 
-    } catch (ServiceException | IOException e) {
+    } catch (IOException e) {
       LOG.log(Level.WARNING,
           "Failed to create YarnRunner.", e);
       try {

@@ -274,20 +274,19 @@
                                 <td> {{serving.created | date:'short'}}</td>
                                 </td>
                                 <td> {{serving.status}}</td>
-                                <td>
+                                <td class="fs-table">
+                                    <div class="btn-group fs-btn" role="group">
                                     <button class="btn btn-info glyphicon glyphicon-edit" uib-tooltip="Edit"
-                                            style="margin-right:-3px"
                                             ng-click="servingCtrl.updateServing(serving); $event.stopPropagation();"></button>
                                     <button class="btn btn-danger glyphicon glyphicon-trash" uib-tooltip="Delete"
-                                            style="margin-right: -3px;"
                                             ng-click="servingCtrl.deleteServing(serving); $event.stopPropagation();"></button>
-                                    <button class="btn btn-warning glyphicon glyphicon-list" uib-tooltip="Show logs"
-                                            style="margin-right: -3px;"
+                                    <button class="btn btn-warning glyphicon glyphicon-list" uib-tooltip="Show Logs"
                                             ng-click="servingCtrl.showServingLogs(serving); $event.stopPropagation();"></button>
                                     <button class="btn btn-primary glyphicon glyphicon-eye-open"
-                                            uib-tooltip="Show Detailed Information" style="margin-right: -3px;"
+                                            uib-tooltip="Show Detailed Information"
                                             ng-click="servingCtrl.showDetailedInformation(serving); $event.stopPropagation();">
                                     </button>
+                                    </div>
                                 </td>
                             </tr>
                             </tbody>
