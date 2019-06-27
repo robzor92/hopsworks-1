@@ -275,7 +275,6 @@ public class JupyterService {
 
     Users hopsworksUser = jWTHelper.getUserPrincipal(sc);
     String hdfsUser = hdfsUsersController.getHdfsUserName(project, hopsworksUser);
-    String realName = hopsworksUser.getFname() + " " + hopsworksUser.getLname();
 
     if (project.getPaymentType().equals(PaymentType.PREPAID)) {
       YarnProjectsQuota projectQuota = yarnProjectsQuotaFacade.findByProjectName(project.getName());
@@ -304,7 +303,7 @@ public class JupyterService {
       String allowOrigin = allowOriginScheme + "://" + allowOriginHost + allowOriginPortStr;
       try {
         jupyterSettingsFacade.update(jupyterSettings);
-        dto = jupyterProcessFacade.startServerAsJupyterUser(project, configSecret, hdfsUser, realName,
+        dto = jupyterProcessFacade.startServerAsJupyterUser(project, configSecret, hdfsUser,
           jupyterSettings, allowOrigin);
         HopsUtils.materializeCertificatesForUserCustomDir(project.getName(), user.getUsername(),
             settings.getHdfsTmpCertDir(), dfso, certificateMaterializer, settings, dto.getCertificatesDir());

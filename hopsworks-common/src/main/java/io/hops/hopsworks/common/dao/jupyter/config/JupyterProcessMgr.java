@@ -114,13 +114,13 @@ public class JupyterProcessMgr {
   }
   
   @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-  public JupyterDTO startServerAsJupyterUser(Project project, String secretConfig, String hdfsUser, String realName,
+  public JupyterDTO startServerAsJupyterUser(Project project, String secretConfig, String hdfsUser,
       JupyterSettings js, String allowOrigin) throws ServiceException {
     
     String prog = settings.getHopsworksDomainDir() + "/bin/jupyter.sh";
     
     Integer port = ThreadLocalRandom.current().nextInt(40000, 59999);
-    JupyterPaths jp = jupyterConfigFilesGenerator.generateConfiguration(project, secretConfig, hdfsUser, realName,
+    JupyterPaths jp = jupyterConfigFilesGenerator.generateConfiguration(project, secretConfig, hdfsUser,
         hdfsLeFacade.getRPCEndpoint(), js, port, allowOrigin);
     String secretDir = settings.getStagingDir() + Settings.PRIVATE_DIRS + js.getSecret();
     String logfile = jp.getLogDirPath() + "/" + hdfsUser + "-" + port + ".log";
