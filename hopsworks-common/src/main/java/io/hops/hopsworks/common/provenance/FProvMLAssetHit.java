@@ -62,6 +62,7 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
   private String mlType;
   private String mlId;
   private Map<String, String> xattrs = new HashMap<>();
+  private Map<Provenance.AppState, Long> appStates = new HashMap<>();
   
   public FProvMLAssetHit(){
   }
@@ -219,5 +220,13 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
 
   public void setXattrs(Map<String, String> xattrs) {
     this.xattrs = xattrs;
+  }
+
+  public Map<Provenance.AppState, Long> getAppStates() {
+    return appStates;
+  }
+
+  public void setAppStates(Map<Provenance.AppState, Long> appStates) {
+    this.appStates = appStates;
   }
 }

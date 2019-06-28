@@ -1,11 +1,11 @@
 package io.hops.hopsworks.api.experiments;
 
-import io.hops.hopsworks.api.provenance.ProvenanceService;
 import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.provenance.FProvMLAssetHit;
+import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
 
@@ -55,7 +55,7 @@ public class ExperimentsBuilder {
     if(dto.isExpand()) {
 
       GenericEntity<List<FProvMLAssetHit>> searchResults = new GenericEntity<List<FProvMLAssetHit>>(
-          elasticController.fileProvenanceByMLType(ProvenanceService.MLType.EXPERIMENT.name(), project.getId())) {
+          elasticController.fileProvenanceByMLType(Provenance.MLType.EXPERIMENT.name(), project.getId(), true)) {
       };
 
       searchResults.getEntity().forEach((experiment) ->
