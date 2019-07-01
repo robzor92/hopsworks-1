@@ -36,6 +36,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -91,7 +92,7 @@ public class ExperimentsResource {
     return Response.ok().entity(dto).build();
   }
 
-  @ApiOperation( value = "Create or update an experiment", response = JobDTO.class)
+  @ApiOperation( value = "Create or update an experiment", response = ExperimentDTO.class)
   @POST
   @Path("{id}")
   @Produces(MediaType.APPLICATION_JSON)
@@ -101,6 +102,7 @@ public class ExperimentsResource {
   public Response post (
         @PathParam("id") String id,
         ExperimentConfiguration experimentConfiguration,
+        @QueryParam("xattr") ExperimentDTO.XAttrSetFlag xAttrSetFlag,
         @Context HttpServletRequest req,
         @Context UriInfo uriInfo,
         @Context SecurityContext sc) throws DatasetException {
@@ -109,7 +111,7 @@ public class ExperimentsResource {
       throw new IllegalArgumentException("Experiment configuration was not provided.");
     }
     Users user = jwtHelper.getUserPrincipal(sc);
-    experimentsController.publish(id, project, user, experimentConfiguration);
+    experimentsController.publish(id, project, user, experimentConfiguration, xAttrSetFlag);
     return Response.ok().entity(experimentConfiguration).build();
   }
 

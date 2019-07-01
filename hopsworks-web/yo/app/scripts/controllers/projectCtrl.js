@@ -386,11 +386,6 @@ angular.module('hopsWorksApp')
               self.goToUrl('experiments');
             };
 
-            self.goToML = function () {
-              self.toggleKibanaNavBar();
-              self.goToUrl('machineLearning');
-            };
-
             self.goToKafka = function () {
               self.goToUrl('kafka');
               if (self.tourService.currentStep_TourTwo > -1) {

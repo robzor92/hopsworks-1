@@ -16,6 +16,7 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.UriInfo;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -87,24 +88,46 @@ public class ExperimentsBuilder {
     experimentDTO.setType(fileProvenanceHit.getMlType());
     experimentDTO.setId(fileProvenanceHit.getMlId());
     experimentDTO.setStarted(fileProvenanceHit.getCreateTimestamp());
-    experimentDTO.setStarted(new Date().toString());
+    experimentDTO.setFinished(new Date().toString());
 
     if(fileProvenanceHit.getXattrs().containsKey("config")) {
       JSONObject config = new JSONObject(fileProvenanceHit.getXattrs().get("config"));
-      experimentDTO.setName(config.get("name").toString());
-      experimentDTO.setUserFullName(config.get("userFullName").toString());
+      if(config.has("name")) {
+        experimentDTO.setName(config.get("name").toString());
+      }
+      if(config.has("userFullName")) {
+        experimentDTO.setUserFullName(config.get("userFullName").toString());
+      }
+      LOGGER.log(Level.SEVERE, "config");
+      LOGGER.log(Level.SEVERE, Arrays.toString(config.keySet().toArray()));
+      if(config.has("metric")) {
+        //LOGGER.log(Level.SEVERE, "before metric");
+        experimentDTO.setMetric(config.get("metric").toString());
+      }
     }
 
+    Provenance.AppState currentState = Provenance.AppState.UNKNOWN;
+    Long maxTimestamp = 0L;
+    Map<Provenance.AppState, Long> states = fileProvenanceHit.getAppStates();
+    for (Map.Entry<Provenance.AppState, Long> entry : states.entrySet()) {
+      if(entry.getValue() > maxTimestamp) {
+        maxTimestamp = entry.getValue();
+        currentState = entry.getKey();
+      }
+      //LOGGER.log(Level.SEVERE, "entry " + entry.getKey() + " " + entry.getValue());
+    }
+
+    experimentDTO.setState(currentState);
 
 
-    LOGGER.log(Level.SEVERE, "xattrs " + fileProvenanceHit.getXattrs().size());
+    //LOGGER.log(Level.SEVERE, "xattrs " + fileProvenanceHit.getXattrs().size());
     for(Map.Entry<String, String> kv: fileProvenanceHit.getXattrs().entrySet()) {
-      LOGGER.log(Level.SEVERE,kv.getKey() + "   "  + kv.getValue());
+      //LOGGER.log(Level.SEVERE,kv.getKey() + "   "  + kv.getValue());
     }
 
-    LOGGER.log(Level.SEVERE, "map? " + fileProvenanceHit.getMap().size());
+    //LOGGER.log(Level.SEVERE, "map? " + fileProvenanceHit.getMap().size());
     for(Map.Entry<String, String> kv: fileProvenanceHit.getMap().entrySet()) {
-      LOGGER.log(Level.SEVERE,kv.getKey() + "   "  + kv.getValue());
+      //LOGGER.log(Level.SEVERE,kv.getKey() + "   "  + kv.getValue());
     }
 
     expand(experimentDTO, resourceRequest);

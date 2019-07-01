@@ -39,15 +39,13 @@
 
 
 <div class="modal-header">
-  <button class="close" ng-click="experimentsProvenanceCtrl.close()" data-dismiss="modal" aria-hidden="true"
+  <button class="close" ng-click="experimentDetailCtrl.close()" data-dismiss="modal" aria-hidden="true"
           type="button">&times;</button>
-  <h2 class="modal-title">Dependencies for Feature group: {{experimentsProvenanceCtrl.trainingDataset.name}}</h2>
+  <h2 class="modal-title">Experiment Detailed Information</h2>
 </div>
 
 <div class="modal-body" style="overflow: auto">
 
-  <div class="row">
-    <div google-chart chart="experimentsProvenanceCtrl.dependencyChart"/>
-  </div>
+  <div ng-include="'views/sparkConfig.html'"></div>
 
 </div>

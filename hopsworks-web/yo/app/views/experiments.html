@@ -34,23 +34,37 @@
                         {{experimentCtrl.loadingText}}
                     </div>
                 </div>
+                <div class="row">
+                    <div class="sm-6"></div>
+                    <div class="sm-6">
+                        <span style="float: right; margin-right:30px; " class="glyphicon glyphicon-refresh fa-2x" ng-click="experimentCtrl.getAll()" role="button" tabindex="0"> </span>
+                    </div>
+                </div>
             <table class="table table-hover">
                 <thead style="border:none;">
-                <th style="width: 16%">Name</th>
-                <th style="width: 16%">State</th>
-                <th style="width: 16%">User</th>
-                <th style="width: 16%">Start</th>
-                <th style="width: 16%">End</th>
-                <th style="width: 16%">Actions</th>
+                <th style="width: 14%">Name</th>
+                <th style="width: 14%">Metric</th>
+                <th style="width: 14%">User</th>
+                <th style="width: 14%">Start</th>
+                <th style="width: 14%">End</th>
+                <th style="width: 14%">State</th>
+                <th style="width: 14%">Actions</th>
                 </thead>
                 <tbody>
                 <tr dir-paginate="experiment in experimentCtrl.experiments| orderBy :sortKey:reverse| itemsPerPage:pageSize">
                     <td> {{experiment.name}} </td>
-                    <td> {{experiment.state}} </td>
+                    <td> {{experiment.metric}} </td>
                     <td> {{experiment.userFullName}} </td>
-                    <td> {{experiment.created}} </td>
-                    <td> {{experiment.end}} </td>
-
+                    <td> {{experiment.started}} </td>
+                    <td> {{experiment.finished}} </td>
+                    <td>
+                        <span ng-if="experiment.state === 'NEW' || experiment.state === 'RUNNING'" style="color: #0066bb">
+                          {{experiment.state}}
+                        </span>
+                        <span ng-if="experiment.state === 'FINISHED'" style="color: #00A000 ">
+                          {{experiment.state}}
+                        </span>
+                    </td>
                     <td class="fs-table">
                         <div class="btn-group fs-btn" role="group">
 
@@ -60,10 +74,15 @@
                                 <img src="images/tf-175x200.png" height="20" />
                             </button>
                             <button class="btn btn-primary glyphicon glyphicon-eye-open" style="background-color: rgb(51, 122, 183)"
-                                    uib-tooltip="Show Provenance"
-                                    ng-click="experimentCtrl.showProvenance(experiment.id); $event.stopPropagation();">
+                                    uib-tooltip="Show Detailed Information"
+                                    ng-click="experimentCtrl.viewExperiment(experiment); $event.stopPropagation();">
                             </button>
-                            <button class="btn btn-danger glyphicon glyphicon-trash" uib-tooltip="Delete"
+                            <button class="btn btn-primary glyphicon glyphicon-folder-open" style="background-color: orange"
+                                    uib-tooltip="Show Experiment Folder"
+                                    ng-click="experimentCtrl.goToExperiment(experiment.id); $event.stopPropagation();">
+                            </button>
+
+                            <button class="btn btn-danger glyphicon glyphicon-trash" uib-tooltip="Delete Experiment Folder"
                                     ng-click="experimentCtrl.deleteExperiment(experiment.id); $event.stopPropagation();"></button>
                         </div>
                     </td>
