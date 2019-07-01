@@ -6,15 +6,16 @@ import io.hops.hopsworks.api.filter.Audience;
 import io.hops.hopsworks.api.jobs.JobDTO;
 import io.hops.hopsworks.api.jobs.JobsBeanParam;
 import io.hops.hopsworks.api.jwt.JWTHelper;
-import io.hops.hopsworks.api.project.util.DsPath;
 import io.hops.hopsworks.api.project.util.PathValidator;
 import io.hops.hopsworks.api.util.Pagination;
 import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
+import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.experiments.ExperimentsController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentConfiguration;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
+import io.hops.hopsworks.common.hdfs.HdfsUsersController;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
@@ -28,15 +29,17 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BeanParam;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.Produces;
 import javax.ws.rs.Path;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import java.util.logging.Logger;
 
@@ -59,6 +62,9 @@ public class ExperimentsResource {
   private ExperimentsController experimentsController;
   @EJB
   private PathValidator pathValidator;
+  @EJB
+  private HdfsUsersController hdfsUsersController;
+
 
   private Project project;
   public ExperimentsResource setProjectId(Integer projectId) {
@@ -96,14 +102,34 @@ public class ExperimentsResource {
         @PathParam("id") String id,
         ExperimentConfiguration experimentConfiguration,
         @Context HttpServletRequest req,
-        @Context UriInfo uriInfo) throws DatasetException, ProjectException {
+        @Context UriInfo uriInfo,
+        @Context SecurityContext sc) throws DatasetException {
+
     if (experimentConfiguration == null) {
       throw new IllegalArgumentException("Experiment configuration was not provided.");
     }
-    DsPath dsPath = pathValidator.validatePath(this.project, "Experiments/" + id);
-    String fullPath = dsPath.getFullPath().toString();
+    Users user = jwtHelper.getUserPrincipal(sc);
+    experimentsController.publish(id, project, user, experimentConfiguration);
+    return Response.ok().entity(experimentConfiguration).build();
+  }
 
-    experimentsController.publish(fullPath, experimentConfiguration);
+  @ApiOperation( value = "Delete an experiment")
+  @DELETE
+  @Path("{id}")
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
+  @JWTRequired(acceptedTokens={Audience.API, Audience.JOB}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
+  public Response delete (
+      @PathParam("id") String id,
+      ExperimentConfiguration experimentConfiguration,
+      @Context HttpServletRequest req,
+      @Context UriInfo uriInfo,
+      @Context SecurityContext sc) {
+
+    Users hopsworksUser = jwtHelper.getUserPrincipal(sc);
+    String hdfsUser = hdfsUsersController.getHdfsUserName(project, hopsworksUser);
+
+    experimentsController.delete(id, project, hdfsUser);
+
     return Response.ok().entity(experimentConfiguration).build();
   }
 
@@ -113,4 +139,5 @@ public class ExperimentsResource {
   public TensorBoardResource tensorboard(@PathParam("id") String id) {
     return this.tensorBoardResource.setProject(project, id);
   }
+
 }

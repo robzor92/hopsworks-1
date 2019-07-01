@@ -4,7 +4,6 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.Date;
 
 /**
  * Contains configuration and other information about an experiment
@@ -17,10 +16,10 @@ public class ExperimentConfiguration {
   private String name;
 
   @XmlElement
-  private Date start;
+  private String description;
 
   @XmlElement
-  private Date finished;
+  private String userFullName;
 
   public String getName() {
     return name;
@@ -30,19 +29,20 @@ public class ExperimentConfiguration {
     this.name = name;
   }
 
-  public Date getStart() {
-    return start;
+  public String getUserFullName() {
+    return userFullName;
   }
 
-  public void setStart(Date start) {
-    this.start = start;
+  public void setUserFullName(String userFullName) {
+    this.userFullName = userFullName;
   }
 
-  public Date getFinished() {
-    return finished;
+  public String getDescription() {
+    return description;
   }
 
-  public void setFinished(Date finished) {
-    this.finished = finished;
+  public void setDescription(String description) {
+    this.description = description;
   }
+
 }

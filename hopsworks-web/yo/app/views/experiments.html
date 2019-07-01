@@ -28,6 +28,12 @@
                         {{tensorBoardCtrl.loadingText}}
                     </div>
                 </div>
+                <div ng-if="experimentCtrl.loading" class="loadingwrap">
+                    <div class="loading-content">
+                        <div class="loader-in-wrap"></div>
+                        {{experimentCtrl.loadingText}}
+                    </div>
+                </div>
             <table class="table table-hover">
                 <thead style="border:none;">
                 <th style="width: 16%">Name</th>
@@ -41,31 +47,30 @@
                 <tr dir-paginate="experiment in experimentCtrl.experiments| orderBy :sortKey:reverse| itemsPerPage:pageSize">
                     <td> {{experiment.name}} </td>
                     <td> {{experiment.state}} </td>
-                    <td> {{experiment.user}} </td>
-                    <td> {{experiment.start}} </td>
+                    <td> {{experiment.userFullName}} </td>
+                    <td> {{experiment.created}} </td>
                     <td> {{experiment.end}} </td>
-                    <td>
-                        <button uib-tooltip="View TensorBoard"
-                                tooltip-placement="auto top"
-                                ng-click="tensorBoardCtrl.start(experiment.id);
-                              $event.stopPropagation();"
-                                type="button" class="btn btn-md" style="padding:2px 5px; border:1px solid gray;"
-                                onmouseover="this.style.backgroundColor='lightgray'" onmouseout="this.style.backgroundColor='white'">
-                            <img src="images/tf-175x200.png" height="28" />
-                        </button>
-                        <button class="btn btn-primary glyphicon glyphicon-eye-open"
-                                uib-tooltip="Show Provenance" style="margin-right: -3px; margin-top:-2px;"
-                                ng-click="experimentCtrl.showProvenance(experiment.app_id); $event.stopPropagation();">
-                        </button>
+
+                    <td class="fs-table">
+                        <div class="btn-group fs-btn" role="group">
+
+
+                            <button uib-tooltip="View TensorBoard" tooltip-placement="auto top" ng-click="tensorBoardCtrl.start(experiment.id);
+                              $event.stopPropagation();" class="btn btn-info glyphicon">
+                                <img src="images/tf-175x200.png" height="20" />
+                            </button>
+                            <button class="btn btn-primary glyphicon glyphicon-eye-open" style="background-color: rgb(51, 122, 183)"
+                                    uib-tooltip="Show Provenance"
+                                    ng-click="experimentCtrl.showProvenance(experiment.id); $event.stopPropagation();">
+                            </button>
+                            <button class="btn btn-danger glyphicon glyphicon-trash" uib-tooltip="Delete"
+                                    ng-click="experimentCtrl.deleteExperiment(experiment.id); $event.stopPropagation();"></button>
+                        </div>
                     </td>
                 </tr>
                 </tbody>
             </table>
             </div>
-            <h3 class="text-muted" style="padding: 120px 0; text-align: center;"
-                ng-show="experimentCtrl.experiments.length < 1">
-                No experiments to show.
-            </h3>
         </div>
     </div>
 </div>

@@ -30,8 +30,43 @@ angular.module('hopsWorksApp')
             $scope.reverse = true;
             self.projectId = $routeParams.projectID;
 
-            self.experiments = [{'id': 'app_id_3232','name': 'resnet20', 'state': 'running', 'user': 'derp', 'start': 'tolo', 'end': 'dwad'},
-            {'id': 'app_id_1337','name': 'resnet50', 'state': 'running', 'user': 'derp', 'start': 'tolo', 'end': 'dwad'}]
+            self.experiments = []
+
+            self.loading = false;
+            self.loadingText = "";
+
+            var startLoading = function(label) {
+                self.loading = true;
+                self.loadingText = label;
+            };
+            var stopLoading = function() {
+                self.loading = false;
+                self.loadingText = "";
+            };
+
+            self.deleteExperiment = function (id) {
+                startLoading("Deleting Experiment...");
+                ExperimentService.deleteExperiment(self.projectId, id).then(
+                    function(success) {
+                          stopLoading();
+                          for(var i = 0; self.experiments.length > i; i++) {
+                            if(self.experiments[i].id === id) {
+                               console.log('removed exp')
+                               self.experiments.splice(i, 1);
+                               return;
+                            }
+                          }
+                    },
+                    function(error) {
+                        stopLoading();
+                        if (typeof error.data.usrMsg !== 'undefined') {
+                            growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 8000});
+                        } else {
+                            growl.error("", {title: error.data.errorMsg, ttl: 8000});
+                        }
+                    });
+
+            };
 
             self.showProvenance = function (app_id) {
                 ModalService.viewTrainingDatasetDependencies('lg', self.projectId, trainingDataset).then(
@@ -43,9 +78,12 @@ angular.module('hopsWorksApp')
             };
 
             self.getAll = function() {
+                startLoading("Fetching Experiments...");
                 ExperimentService.getAll(self.projectId).then(
                     function(success) {
-                        self.experiments = success.data;
+                        stopLoading();
+                        self.experiments = success.data.items;
+                        console.log(self.experiments)
                     },
                     function(error) {
                         stopLoading();

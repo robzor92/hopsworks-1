@@ -25,14 +25,14 @@ angular.module('hopsWorksApp')
 
             var self = this;
 
-            self.appIds = [];
+            self.appIds = [{}];
             self.ui = "";
             self.id = "";
             self.current = "";
             self.projectId = $routeParams.projectID;
             self.tb = "";
             self.reloadedOnce = false;
-            self.experiment_id = "";
+            self.mlId = "";
 
             self.loading = false;
             self.loadingText = "";
@@ -46,14 +46,13 @@ angular.module('hopsWorksApp')
                 self.loadingText = "";
             };
 
-            self.start = function(experiment_id) {
-
+            self.start = function(mlId) {
 
                 startLoading("Starting TensorBoard...");
 
-                TensorBoardService.startTensorBoard(self.projectId, experiment_id).then(
+                TensorBoardService.startTensorBoard(self.projectId, mlId).then(
                     function(success) {
-                        self.experiment_id = experiment_id;
+                        self.mlId = mlId;
                         self.tb = success.data;
                         self.ui = "/hopsworks-api/tensorboard/experiments/" + self.tb.endpoint + "/";
                         self.newWindow();
@@ -90,21 +89,6 @@ angular.module('hopsWorksApp')
                     });
                 };
             });
-
-            $scope.$on('$destroy', function () {
-               if(self.experiment_id !== "") {
-                TensorBoardService.stopTensorBoard(self.projectId, self.experiment_id).then(
-                    function(success) {
-                    },
-                    function(error) {
-                        if (typeof error.data.usrMsg !== 'undefined') {
-                            growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 8000});
-                        } else {
-                            growl.error("", {title: error.data.errorMsg, ttl: 8000});
-                        }
-                    });
-               }
-           });
 
            self.newWindow = function () {
              $window.open(self.ui, '_blank');
