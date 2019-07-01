@@ -18,9 +18,9 @@
  * Controller for the job UI dialog.
  */
 angular.module('hopsWorksApp')
-    .controller('ExperimentCtrl', ['$scope', '$timeout', 'growl', 'ProjectService','ExperimentService', 'TensorBoardService', '$interval',
+    .controller('ExperimentCtrl', ['$scope', '$timeout', 'growl', '$location', 'ModalService', 'ProjectService', 'ExperimentService', 'TensorBoardService', '$interval',
         '$routeParams', '$route', '$sce', '$window',
-        function($scope, $timeout, growl, ProjectService, ExperimentService, TensorBoardService, $interval,
+        function($scope, $timeout, growl, $location, ModalService, ProjectService, ExperimentService, TensorBoardService, $interval,
             $routeParams, $route, $sce, $window) {
 
             var self = this;
@@ -68,12 +68,12 @@ angular.module('hopsWorksApp')
 
             };
 
-            self.showProvenance = function (app_id) {
-                ModalService.viewTrainingDatasetDependencies('lg', self.projectId, trainingDataset).then(
+            self.viewExperiment = function (experiment) {
+                ModalService.viewExperimentInfo('lg', self.projectId, experiment).then(
                 function (success) {
-                    self.showTrainingDatasets()
+                    self.getAll();
                 }, function (error) {
-                    self.showTrainingDatasets()
+                    self.getAll();
                 });
             };
 
@@ -93,6 +93,15 @@ angular.module('hopsWorksApp')
                             growl.error("", {title: error.data.errorMsg, ttl: 8000});
                         }
                     });
+            };
+
+            /**
+             * Helper function for redirecting to another project page
+             *
+             * @param serviceName project page
+             */
+            self.goToExperiment = function (experiment_id) {
+                $location.path('project/' + self.projectId + '/datasets/Experiments/' + experiment_id);
             };
             self.getAll();
         }

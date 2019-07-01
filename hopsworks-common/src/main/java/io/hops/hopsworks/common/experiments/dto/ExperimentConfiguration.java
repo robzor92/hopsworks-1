@@ -16,6 +16,9 @@ public class ExperimentConfiguration {
   private String name;
 
   @XmlElement
+  private String metric;
+
+  @XmlElement
   private String description;
 
   @XmlElement
@@ -45,4 +48,11 @@ public class ExperimentConfiguration {
     this.description = description;
   }
 
+  public String getMetric() {
+    return metric;
+  }
+
+  public void setMetric(String metric) {
+    this.metric = metric;
+  }
 }

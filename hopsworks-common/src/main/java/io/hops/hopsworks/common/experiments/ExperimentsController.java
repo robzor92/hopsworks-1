@@ -3,6 +3,7 @@ package io.hops.hopsworks.common.experiments;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.experiments.dto.ExperimentConfiguration;
+import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
@@ -27,15 +28,19 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Stateless
 @TransactionAttribute(TransactionAttributeType.NEVER)
 public class ExperimentsController {
 
+  private static final Logger LOGGER = Logger.getLogger(ExperimentsController.class.getName());
+
   @EJB
   private DistributedFsService dfs;
 
-  public void publish(String id, Project project, Users user, ExperimentConfiguration experimentConfiguration)
+  public void publish(String id, Project project, Users user, ExperimentConfiguration experimentConfiguration,
+                      ExperimentDTO.XAttrSetFlag xAttrSetFlag)
       throws DatasetException {
 
     String realName = user.getFname() + " " + user.getLname();
@@ -56,7 +61,10 @@ public class ExperimentsController {
       dfso = dfs.getDfsOps();
 
       EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
-      flags.add(XAttrSetFlag.CREATE);
+
+      LOGGER.log(Level.SEVERE, "attaching xattr " + xAttrSetFlag.name());
+
+      flags.add(XAttrSetFlag.valueOf(xAttrSetFlag.name()));
 
       dfso.setXAttr(experimentPath, "provenance.config", experiment, flags);
     } catch(IOException | JAXBException ex) {
