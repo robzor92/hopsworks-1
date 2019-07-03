@@ -47,7 +47,7 @@ public class Provenance {
     NONE
   }
   public static enum AppState {
-    NEW,
+    SUBMITTED,
     RUNNING,
     FINISHED,
     KILLED,

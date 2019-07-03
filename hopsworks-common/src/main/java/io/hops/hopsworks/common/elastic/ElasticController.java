@@ -1058,9 +1058,9 @@ public class ElasticController {
       }
     }
     if(withAppState && mlType.equals("EXPERIMENT")) {
-      Map<String, Map<Provenance.AppState, Long>> applicationsStates = appStates(appIds);
+      Map<String, Map<Provenance.AppState, AppProvenanceHit>> applicationsStates = appStates(appIds);
       for(FProvMLAssetHit mlAsset : result) {
-        Map<Provenance.AppState, Long> appStates = applicationsStates.get(getExperimentAppId(mlAsset));
+        Map<Provenance.AppState, AppProvenanceHit> appStates = applicationsStates.get(getExperimentAppId(mlAsset));
         if(appStates != null) {
           mlAsset.setAppStates(appStates);
         }
@@ -1079,39 +1079,20 @@ public class ElasticController {
     }
   }
   
-  private Map<String, Map<Provenance.AppState, Long>> appStates(Set<String> appIds) throws ServiceException {
+  private Map<String, Map<Provenance.AppState, AppProvenanceHit>> appStates(Set<String> appIds) 
+    throws ServiceException {
     SearchHit[]  rawHits = rawQuery(Settings.ELASTIC_INDEX_APP_PROVENANCE, 
       Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE, appProvenanceByAppIdQuery(appIds));
     LOG.log(Level.WARNING, "query hits: {0}", rawHits.length);
-    Map<String, Map<Provenance.AppState, Long>> result = new HashMap<>();
-    Map<String, Map<Long, AppProvenanceHit>> aux = new HashMap<>();
+    Map<String, Map<Provenance.AppState, AppProvenanceHit>> result = new HashMap<>();
     for(SearchHit h : rawHits) {
       AppProvenanceHit hit = new AppProvenanceHit(h);
-      Map<Long, AppProvenanceHit> appStates = aux.get(hit.getAppId());
+      Map<Provenance.AppState, AppProvenanceHit> appStates = result.get(hit.getAppId());
       if(appStates == null) {
         appStates = new TreeMap<>();
-        aux.put(hit.getAppId(), appStates);
+        result.put(hit.getAppId(), appStates);
       }
-      appStates.put(hit.getAppStateTimestamp(), hit);
-    }
-    //temporary fix - YARN returns null states - we try to infer UNKNOWN states from timestamps
-    for(Map.Entry<String, Map<Long, AppProvenanceHit>> appStates : aux.entrySet()) {
-      boolean first = true;
-      Map<Provenance.AppState, Long> rAppStates = new HashMap<>();
-      result.put(appStates.getKey(), rAppStates);
-      //this is a tree map - ordered by timestamp
-      for (Map.Entry<Long, AppProvenanceHit> appState : appStates.getValue().entrySet()) {
-        if (Provenance.AppState.UNKNOWN.equals(appState.getValue().getAppState())) {
-          if (first) {
-            first = false;
-            rAppStates.put(Provenance.AppState.NEW, appState.getKey());
-          } else {
-            rAppStates.put(Provenance.AppState.RUNNING, appState.getKey());
-          }
-        } else {
-          rAppStates.put(appState.getValue().getAppState(), appState.getKey());
-        }
-      }
+      appStates.put(hit.getAppState(), hit);
     }
     return result;
   }

@@ -62,7 +62,7 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
   private String mlType;
   private String mlId;
   private Map<String, String> xattrs = new HashMap<>();
-  private Map<Provenance.AppState, Long> appStates = new HashMap<>();
+  private Map<Provenance.AppState, AppProvenanceHit> appStates = new HashMap<>();
   
   public FProvMLAssetHit(){
   }
@@ -107,7 +107,10 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
           if(entry.getValue() == null) {
             LOG.log(Level.WARNING, "empty key:{0}", new Object[]{entry.getKey()});
           } else {
-            xattrs.put(entry.getKey(), entry.getValue().toString());
+            String value = entry.getValue().toString();
+            if (!value.equals("")) {
+              xattrs.put(entry.getKey(), entry.getValue().toString());
+            }
           }
           break;
       }
@@ -222,11 +225,11 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
     this.xattrs = xattrs;
   }
 
-  public Map<Provenance.AppState, Long> getAppStates() {
+  public Map<Provenance.AppState, AppProvenanceHit> getAppStates() {
     return appStates;
   }
 
-  public void setAppStates(Map<Provenance.AppState, Long> appStates) {
+  public void setAppStates(Map<Provenance.AppState, AppProvenanceHit> appStates) {
     this.appStates = appStates;
   }
 }

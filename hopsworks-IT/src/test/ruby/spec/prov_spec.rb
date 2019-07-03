@@ -76,9 +76,9 @@ describe "On #{ENV['OS']}" do
     parsed_result = JSON.parse(result)
   end
 
-  def add_xattr(original, xattr_name, xattr_value, increment)
+  def add_xattr(original, xattr_name, xattr_value, xattr_op, increment)
     xattrRecord = original.dup
-    xattrRecord["inode_operation"] = "XATTR_ADD"
+    xattrRecord["inode_operation"] = xattr_op
     xattrRecord["io_logical_time"] = original["io_logical_time"]+increment
     xattrRecord["io_timestamp"] = original["io_timestamp"]+increment
     xattrRecord["i_xattr_name"] = xattr_name
@@ -91,9 +91,9 @@ describe "On #{ENV['OS']}" do
 
   def add_app_states(app_id, user)
     timestamp = Time.now
-    AppProv.create(id: app_id, state: "null", timestamp: timestamp, name: app_id, user: user)
-    AppProv.create(id: app_id, state: "null", timestamp: timestamp+5, name: app_id, user: user)
-    AppProv.create(id: app_id, state: "FINISHED", timestamp: timestamp+10, name: app_id, user: user)
+    AppProv.create(id: app_id, state: "null", timestamp: timestamp, name: app_id, user: user, submit_time: timestamp-10, start_time: timestamp-5, finish_time: 0)
+    AppProv.create(id: app_id, state: "null", timestamp: timestamp+5, name: app_id, user: user, submit_time: timestamp-10, start_time: timestamp-5, finish_time: 0)
+    AppProv.create(id: app_id, state: "FINISHED", timestamp: timestamp+10, name: app_id, user: user, submit_time: timestamp-10, start_time: timestamp-5, finish_time: timestamp+50)
   end
 
   def wait_for_epipe() 
@@ -133,6 +133,7 @@ describe "On #{ENV['OS']}" do
       experiment = experiments.select { |e| e["mlId"] == experiment_id }
       expect(experiment.length).to eq 1
       #pp experiment
+      expect(experiment[0]["xattrs"]["entry"].length).to eq xattrs.length
       xattrs.each do |key, value|
         # pp experiment[0]["xattrs"]["entry"]
         xattr = experiment[0]["xattrs"]["entry"].select do |e| 
@@ -141,6 +142,7 @@ describe "On #{ENV['OS']}" do
         expect(xattr.length).to eq 1
         #pp xattr
       end
+      expect(experiment[0]["appStates"]["entry"].length).to eq app_states.length
       app_states.each do | key |
         #pp experiment[0]["appStates"]["entry"]
         state = experiment[0]["appStates"]["entry"].select do |e|
@@ -202,8 +204,8 @@ describe "On #{ENV['OS']}" do
         create_experiment(@project1, @experiment_app1_name1)
         experimentRecord = FileProv.where("project_name": @project1["inode_name"], "i_name": @experiment_app1_name1)
         expect(experimentRecord.length).to eq 1
-        add_xattr(experimentRecord[0], "xattr_key_1", "xattr_value_1", 1)
-        add_xattr(experimentRecord[0], "xattr_key_2", "xattr_value_2", 2)
+        add_xattr(experimentRecord[0], "xattr_key_1", "xattr_value_1", "XATTR_ADD", 1)
+        add_xattr(experimentRecord[0], "xattr_key_2", "xattr_value_2", "XATTR_ADD", 2)
       end
 
       it "restart epipe" do
@@ -217,6 +219,47 @@ describe "On #{ENV['OS']}" do
         xattrs = Hash.new
         xattrs["xattr_key_1"] = "xattr_value_1"
         xattrs["xattr_key_2"] = "xattr_value_2"
+        check_experiment(result1, experiment_ml_id(@experiment_app1_name1), xattrs, [])
+      end
+
+      it "delete experiments" do
+        delete_experiment(@project1, @experiment_app1_name1)
+      end
+
+      it "check experiments" do 
+        wait_for_epipe() 
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
+        expect(result1.length).to eq 0
+      end
+    end
+
+    describe 'experiment with xattr add, update and delete' do
+      it "stop epipe" do
+        execute_remotely @hostname, "sudo systemctl stop epipe"
+      end
+
+      it "create experiment with xattr" do
+        create_experiment(@project1, @experiment_app1_name1)
+        experimentRecord = FileProv.where("project_name": @project1["inode_name"], "i_name": @experiment_app1_name1)
+        expect(experimentRecord.length).to eq 1
+        add_xattr(experimentRecord[0], "xattr_key_1", "xattr_value_1", "XATTR_ADD", 1)
+        add_xattr(experimentRecord[0], "xattr_key_2", "xattr_value_2", "XATTR_ADD", 2)
+        add_xattr(experimentRecord[0], "xattr_key_3", "xattr_value_3", "XATTR_ADD", 3)
+        add_xattr(experimentRecord[0], "xattr_key_1", "xattr_value_1_updated", "XATTR_UPDATE", 4)
+        add_xattr(experimentRecord[0], "xattr_key_2", "", "XATTR_DELETE", 5)
+      end
+
+      it "restart epipe" do
+        execute_remotely @hostname, "sudo systemctl restart epipe"
+      end
+
+      it "check experiment" do 
+        wait_for_epipe() 
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
+        expect(result1.length).to eq 1
+        xattrs = Hash.new
+        xattrs["xattr_key_1"] = "xattr_value_1_updated"
+        xattrs["xattr_key_3"] = "xattr_value_3"
         check_experiment(result1, experiment_ml_id(@experiment_app1_name1), xattrs, [])
       end
 
@@ -253,7 +296,7 @@ describe "On #{ENV['OS']}" do
         wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", true)
         expect(result1.length).to eq 2
-        app_states = [ "NEW", "RUNNING", "FINISHED" ]
+        app_states = [ "SUBMITTED", "RUNNING", "FINISHED" ]
         check_experiment(result1, experiment_ml_id(@experiment_app1_name1), Hash.new, app_states)
         check_experiment(result1, experiment_ml_id(@experiment_app1_name2), Hash.new, app_states)
       end
@@ -310,13 +353,14 @@ describe "On #{ENV['OS']}" do
       model = models.select {|m| m["mlId"] == model_id }
       expect(model.length).to eq 1
       #pp model
+      expect(model[0]["xattrs"]["entry"].length).to eq xattrs.length
       xattrs.each do |key, value|
-        pp model[0]["xattrs"]["entry"]
+        #pp model[0]["xattrs"]["entry"]
         xattr = model[0]["xattrs"]["entry"].select do |e| 
           e["key"] == key && e["value"] == value
         end
         expect(xattr.length).to eq 1
-        pp xattr
+        #pp xattr
       end
     end
     
@@ -376,8 +420,8 @@ describe "On #{ENV['OS']}" do
         create_model2(@project1, @model1_name, @model_version1)
         modelRecord = FileProv.where("project_name": @project1["inode_name"], "i_parent_name": @model1_name, "i_name": @model_version1)
         expect(modelRecord.length).to eq 1
-        add_xattr(modelRecord[0], "xattr_key_1", "xattr_value_1", 1)
-        add_xattr(modelRecord[0], "xattr_key_2", "xattr_value_2", 2)
+        add_xattr(modelRecord[0], "xattr_key_1", "xattr_value_1", "XATTR_ADD", 1)
+        add_xattr(modelRecord[0], "xattr_key_2", "xattr_value_2", "XATTR_ADD", 2)
       end
 
       it "restart epipe" do
