@@ -5,7 +5,9 @@ import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
-import io.hops.hopsworks.common.provenance.FileProvenanceHit;
+import io.hops.hopsworks.common.provenance.AppProvenanceHit;
+import io.hops.hopsworks.common.provenance.FProvMLAssetHit;
+import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import org.json.JSONObject;
@@ -108,10 +110,10 @@ public class ExperimentsBuilder {
 
     Provenance.AppState currentState = Provenance.AppState.UNKNOWN;
     Long maxTimestamp = 0L;
-    Map<Provenance.AppState, Long> states = fileProvenanceHit.getAppStates();
-    for (Map.Entry<Provenance.AppState, Long> entry : states.entrySet()) {
-      if(entry.getValue() > maxTimestamp) {
-        maxTimestamp = entry.getValue();
+    Map<Provenance.AppState, AppProvenanceHit> states = fileProvenanceHit.getAppStates();
+    for (Map.Entry<Provenance.AppState, AppProvenanceHit> entry : states.entrySet()) {
+      if(entry.getValue().getAppStateTimestamp() > maxTimestamp) {
+        maxTimestamp = entry.getValue().getAppStateTimestamp();
         currentState = entry.getKey();
       }
       //LOGGER.log(Level.SEVERE, "entry " + entry.getKey() + " " + entry.getValue());
