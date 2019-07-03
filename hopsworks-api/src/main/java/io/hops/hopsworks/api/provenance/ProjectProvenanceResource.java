@@ -42,9 +42,11 @@ import com.google.common.base.Strings;
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
 import io.hops.hopsworks.api.filter.NoCacheResponse;
+import io.hops.hopsworks.common.dao.project.Project;
+import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.provenance.AppProvenanceHit;
-import io.hops.hopsworks.common.provenance.FProvMLAssetHit;
+import io.hops.hopsworks.common.provenance.MLAssetHit;
 import io.hops.hopsworks.common.provenance.FileProvenanceHit;
 import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.exceptions.GenericException;
@@ -57,38 +59,40 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
-import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.context.RequestScoped;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-@Path("/provenance")
-@Stateless
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
-@Api(value = "Provenance Service",
-  description = "Provenance Service")
+@RequestScoped
 @TransactionAttribute(TransactionAttributeType.NEVER)
-public class ProvenanceService {
+@Api(value = "Project Provenance Service", description = "Project Provenance Service")
+public class ProjectProvenanceResource {
 
-  private static final Logger logger = Logger.getLogger(ProvenanceService.class.getName());
+  private static final Logger logger = Logger.getLogger(ProjectProvenanceResource.class.getName());
 
   @EJB
   private NoCacheResponse noCacheResponse;
   @EJB
   private ElasticController elasticController;
+  @EJB
+  private ProjectFacade projectFacade;
+  
+  private Project project;
 
+  public void setProjectId(Integer projectId) {
+    this.project = projectFacade.find(projectId);
+  }
+  
   @GET
   @Path("fileEntriesBy/field/{field}/value/{value}")
   @Produces(MediaType.APPLICATION_JSON)
@@ -219,73 +223,49 @@ public class ProvenanceService {
   }
 
   @GET
-  @Path("mlType/{mlType}")
+  @Path("mlType/{mlType}/list")
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
-  @JWTRequired(acceptedTokens = {Audience.API},
-    allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response getMLAssets(@PathParam("mlType") Provenance.MLType mlType,
-    @DefaultValue("false") @QueryParam("withAppState") boolean withAppState, @Context HttpServletRequest req)
-    throws ServiceException, GenericException {
-    logger.log(Level.INFO, "Local content path {0}", req.getRequestURL().toString());
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response getMLAssets(@PathParam("mlType") Provenance.MLType mlType, 
+    @BeanParam MLAssetListQueryParamsBean queryParams, 
+    @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
+    logger.log(Level.INFO, "Local content path {0} query params:{1}", 
+      new Object[]{req.getRequestURL().toString(), queryParams});
     if (mlType == null) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
-        "ml asset type is not set");
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO, "ml asset type is not set");
     }
-    GenericEntity<List<FProvMLAssetHit>> searchResults = new GenericEntity<List<FProvMLAssetHit>>(
-      elasticController.fileProvenanceByMLType(mlType.toString(), withAppState)) {
+    GenericEntity<List<MLAssetHit>> searchResults = new GenericEntity<List<MLAssetHit>>(
+      elasticController.fileProvenanceByMLType(mlType.toString(), queryParams.params(project.getId()))) {
     };
 
     return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();
   }
 
   @GET
-  @Path("mlType/{mlType}/project/{projectId}")
+  @Path("mlType/{mlType}/exact")
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
-  @JWTRequired(acceptedTokens = {Audience.API},
-    allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response getMLAssets(@PathParam("mlType") Provenance.MLType mlType, @PathParam("projectId") Integer projectId,
-    @DefaultValue("false") @QueryParam("withAppState") boolean withAppState,
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response getMLAssets(@PathParam("mlType") Provenance.MLType mlType, 
+    @BeanParam MLAssetQueryParamsBean queryParams,
     @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
-    logger.log(Level.INFO, "Local content path {0}", req.getRequestURL().toString());
+    logger.log(Level.INFO, "Local content path {0} query params:{1}", 
+      new Object[]{req.getRequestURL().toString(), queryParams});
     if (mlType == null) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO, "ml asset type is not set");
     }
-    if (projectId == null) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO, "project id is not set");
-    }
-    GenericEntity<List<FProvMLAssetHit>> searchResults = new GenericEntity<List<FProvMLAssetHit>>(
-      elasticController.fileProvenanceByMLType(mlType.toString(), projectId, withAppState)) {
+    GenericEntity<List<MLAssetHit>> searchResults = new GenericEntity<List<MLAssetHit>>(
+      elasticController.fileProvenanceByMLType(mlType.toString(), queryParams.params(project.getId()))) {
     };
-
-    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();
-  }
-
-  @GET
-  @Path("mlType/{mlType}/project/{projectId}/mlId/{mlId}")
-  @Produces(MediaType.APPLICATION_JSON)
-  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
-  @JWTRequired(acceptedTokens = {Audience.API},
-    allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response getMLAssets(@PathParam("mlType") Provenance.MLType mlType, @PathParam("projectId") Integer projectId,
-    @PathParam("mlId") String mlId, @DefaultValue("false") @QueryParam("withAppState") boolean withAppState,
-    @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
-    logger.log(Level.INFO, "Local content path {0}", req.getRequestURL().toString());
-    if (mlType == null) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO, "ml asset type is not set");
+    if(searchResults.getEntity().isEmpty()) {
+      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.NOT_FOUND).build();
+    } else if(searchResults.getEntity().size() > 1){
+      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.INTERNAL_SERVER_ERROR).build();
+    } else {
+      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
+        .entity(searchResults.getEntity().get(0)).build();
     }
-    if (projectId == null) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO, "project id is not set");
-    }
-    if (mlId == null || mlId.equals("")) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO, "ml asset id is not set");
-    }
-    GenericEntity<List<FProvMLAssetHit>> searchResults = new GenericEntity<List<FProvMLAssetHit>>(
-      elasticController.fileProvenanceByMLType(mlType.toString(), projectId, mlId, withAppState)) {
-    };
-
-    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();
   }
 
   public static enum FileProvenanceField {

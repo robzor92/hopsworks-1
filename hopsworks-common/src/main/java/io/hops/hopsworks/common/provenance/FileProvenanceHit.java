@@ -61,10 +61,6 @@ public class FileProvenanceHit implements Comparator<FileProvenanceHit> {
   public static final String DATASET_INODE_ID_FIELD = "dataset_i_id"; 
   public static final String INODE_NAME_FIELD = "i_name";
   public static final String TIMESTAMP_FIELD = "i_readable_t";
-  public static final String ML_TYPE_FIELD = "ml_type";
-  public static final String ML_ID_FIELD = "ml_id";
-  public static final String ML_DEPS = "ml_deps";
-  public static final String ALIVE = "alive";
   private String id;
   private float score;
   private Map<String, Object> map;
@@ -117,15 +113,6 @@ public class FileProvenanceHit implements Comparator<FileProvenanceHit> {
           break;
         case TIMESTAMP_FIELD:
           this.timestamp = entry.getValue().toString();
-          break;
-        case ML_TYPE_FIELD:
-          this.mlType = entry.getValue().toString();
-          break;
-        case ML_ID_FIELD:
-          this.mlId = entry.getValue().toString();
-          break;
-        case ML_DEPS:
-          this.mlDeps = entry.getValue().toString();
           break;
         default:
           LOG.log(Level.WARNING, "unknown key:{0}", new Object[]{entry.getKey()});

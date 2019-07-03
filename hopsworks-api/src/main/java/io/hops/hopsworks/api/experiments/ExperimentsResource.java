@@ -17,6 +17,7 @@ import io.hops.hopsworks.common.experiments.dto.ExperimentConfiguration;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
 import io.hops.hopsworks.exceptions.DatasetException;
+import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
@@ -81,7 +82,7 @@ public class ExperimentsResource {
   public Response getAll(
           @BeanParam Pagination pagination,
           @BeanParam JobsBeanParam jobsBeanParam,
-          @Context UriInfo uriInfo) throws ServiceException, ProjectException {
+          @Context UriInfo uriInfo) throws ServiceException, ProjectException, GenericException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.EXPERIMENTS);
     resourceRequest.setOffset(pagination.getOffset());
     resourceRequest.setLimit(pagination.getLimit());

@@ -53,5 +53,16 @@ public class Provenance {
     KILLED,
     FAILED,
     UNKNOWN;
+    
+    public boolean isFinalState() {
+      switch(this) {
+        case FINISHED:
+        case KILLED:
+        case FAILED:
+          return true;
+        default: 
+          return false;
+      } 
+    }
   }
 }

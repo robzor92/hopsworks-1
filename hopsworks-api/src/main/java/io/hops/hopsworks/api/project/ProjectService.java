@@ -52,6 +52,7 @@ import io.hops.hopsworks.api.jobs.JobsResource;
 import io.hops.hopsworks.api.jobs.KafkaService;
 import io.hops.hopsworks.api.jupyter.JupyterService;
 import io.hops.hopsworks.api.jwt.JWTHelper;
+import io.hops.hopsworks.api.provenance.ProjectProvenanceResource;
 import io.hops.hopsworks.api.python.PythonResource;
 import io.hops.hopsworks.api.serving.ServingService;
 import io.hops.hopsworks.api.serving.inference.InferenceResource;
@@ -200,6 +201,8 @@ public class ProjectService {
   private ProjectActivitiesResource activitiesResource;
   @Inject
   private FeaturestoreService featurestoreService;
+  @Inject
+  private ProjectProvenanceResource provenance;
 
   private final static Logger LOGGER = Logger.getLogger(ProjectService.class.getName());
 
@@ -827,5 +830,10 @@ public class ProjectService {
     featurestoreService.setProjectId(projectId);
     return featurestoreService;
   }
-
+  
+  @Path("{projectId}/provenance")
+  public ProjectProvenanceResource provenance(@PathParam("projectId") Integer id) {
+    this.provenance.setProjectId(id);
+    return this.provenance;
+  }
 }

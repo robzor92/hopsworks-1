@@ -61,19 +61,21 @@ describe "On #{ENV['OS']}" do
   end
 
   def get_ml_asset_in_project(project, ml_type, withAppState) 
-    target = "#{ENV['HOPSWORKS_API']}/provenance/mlType/#{ml_type}/project/#{project[:id]}?withAppState=#{withAppState}"
-    pp "#{target}"
-    result = get target
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/mlType/#{ml_type}/list"
+    query_params = "?withAppState=#{withAppState}"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
   end
 
-  def get_ml_asset_by_id(project, ml_type, ml_id, withAppState) 
-    target = "#{ENV['HOPSWORKS_API']}/provenance/mlType/#{ml_type}/project/#{project[:id]}/mlId/#{ml_id}?withAppState=#{withAppState}"
-    pp "#{target}"
-    result = get target
-    expect_status(200)
-    parsed_result = JSON.parse(result)
+  def get_ml_asset_by_id(project, ml_type, ml_id, withAppState, status) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/mlType/#{ml_type}/exact"
+    query_params = "?mlId=#{ml_id}&withAppState=#{withAppState}"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(status)
+    result
   end
 
   def add_xattr(original, xattr_name, xattr_value, xattr_op, increment)
@@ -89,7 +91,12 @@ describe "On #{ENV['OS']}" do
     FileProvXAttr.create(inode_id: xattrRecord["inode_id"], namespace: 5, name: xattr_name, inode_logical_time: xattrRecord["io_logical_time"], value: xattr_value)
   end
 
-  def add_app_states(app_id, user)
+  def add_app_states1(app_id, user)
+    timestamp = Time.now
+    AppProv.create(id: app_id, state: "null", timestamp: timestamp, name: app_id, user: user, submit_time: timestamp-10, start_time: timestamp-5, finish_time: 0)
+    AppProv.create(id: app_id, state: "null", timestamp: timestamp+5, name: app_id, user: user, submit_time: timestamp-10, start_time: timestamp-5, finish_time: 0)
+  end
+  def add_app_states2(app_id, user)
     timestamp = Time.now
     AppProv.create(id: app_id, state: "null", timestamp: timestamp, name: app_id, user: user, submit_time: timestamp-10, start_time: timestamp-5, finish_time: 0)
     AppProv.create(id: app_id, state: "null", timestamp: timestamp+5, name: app_id, user: user, submit_time: timestamp-10, start_time: timestamp-5, finish_time: 0)
@@ -129,7 +136,12 @@ describe "On #{ENV['OS']}" do
       "#{experiment_name}"
     end
 
-    def check_experiment(experiments, experiment_id, xattrs, app_states) 
+    def check_experiment1(experiments, experiment_id) 
+      experiment = experiments.select { |e| e["mlId"] == experiment_id }
+      expect(experiment.length).to eq 1
+    end
+
+    def check_experiment2(experiments, experiment_id, xattrs) 
       experiment = experiments.select { |e| e["mlId"] == experiment_id }
       expect(experiment.length).to eq 1
       #pp experiment
@@ -142,14 +154,55 @@ describe "On #{ENV['OS']}" do
         expect(xattr.length).to eq 1
         #pp xattr
       end
-      expect(experiment[0]["appStates"]["entry"].length).to eq app_states.length
-      app_states.each do | key |
-        #pp experiment[0]["appStates"]["entry"]
-        state = experiment[0]["appStates"]["entry"].select do |e|
-          e["key"] == key
-        end
-        expect(state.length).to eq 1
-        #pp state
+    end
+
+    def check_experiment3(experiments, experiment_id, currentState) 
+      experiment = experiments.select { |e| e["mlId"] == experiment_id }
+      expect(experiment.length).to eq 1
+
+      pp experiment[0]["appState"]
+      expect(experiment[0]["appState"]["currentState"]).to eq currentState
+    end
+
+    describe 'experiment with app states' do
+      it "stop epipe" do
+        execute_remotely @hostname, "sudo systemctl stop epipe"
+      end
+
+      it "create experiment with app states" do
+        create_experiment(@project1, @experiment_app1_name1)
+        create_experiment(@project1, @experiment_app1_name2)
+        create_experiment(@project1, @experiment_app2_name1)
+        experiment_record = FileProv.where("project_name": @project1["inode_name"], "i_name": @experiment_app1_name1)
+        user_name = experiment_record[0]["io_user_name"]
+        expect(experiment_record.length).to eq 1
+        add_app_states1(@app1_id, user_name)
+        add_app_states2(@app2_id, user_name)
+      end
+
+      it "restart epipe" do
+        execute_remotely @hostname, "sudo systemctl restart epipe"
+      end
+
+      it "check experiment" do 
+        wait_for_epipe() 
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", true)
+        expect(result1.length).to eq 2
+        check_experiment3(result1, experiment_ml_id(@experiment_app1_name1), "RUNNING")
+        check_experiment3(result1, experiment_ml_id(@experiment_app1_name2), "RUNNING")
+        check_experiment3(result1, experiment_ml_id(@experiment_app2_name1), "FINISHED")
+      end
+
+      it "delete experiments" do
+        delete_experiment(@project1, @experiment_app1_name1)
+        delete_experiment(@project1, @experiment_app1_name2)
+        delete_experiment(@project1, @experiment_app2_name1)
+      end
+
+      it "check experiments" do 
+        wait_for_epipe() 
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", true)
+        expect(result1.length).to eq 0
       end
     end
   end
@@ -178,13 +231,14 @@ describe "On #{ENV['OS']}" do
       model = models.select {|m| m["mlId"] == model_id }
       expect(model.length).to eq 1
       #pp model
+      expect(model[0]["xattrs"]["entry"].length).to eq xattrs.length
       xattrs.each do |key, value|
-        pp model[0]["xattrs"]["entry"]
+        #pp model[0]["xattrs"]["entry"]
         xattr = model[0]["xattrs"]["entry"].select do |e| 
           e["key"] == key && e["value"] == value
         end
         expect(xattr.length).to eq 1
-        pp xattr
+        #pp xattr
       end
     end
   end

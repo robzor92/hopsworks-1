@@ -1,7 +1,4 @@
 /*
- * Changes to this file committed after and not including commit-id: ccc0d2c5f9a5ac661e60e6eaf138de7889928b8b
- * are released under the following license:
- *
  * This file is part of Hopsworks
  * Copyright (C) 2018, Logical Clocks AB. All rights reserved
  *
@@ -15,26 +12,6 @@
  *
  * You should have received a copy of the GNU Affero General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
- *
- * Changes to this file committed before and including commit-id: ccc0d2c5f9a5ac661e60e6eaf138de7889928b8b
- * are released under the following license:
- *
- * Copyright (C) 2013 - 2018, Logical Clocks AB and RISE SICS AB. All rights reserved
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this
- * software and associated documentation files (the "Software"), to deal in the Software
- * without restriction, including without limitation the rights to use, copy, modify, merge,
- * publish, distribute, sublicense, and/or sell copies of the Software, and to permit
- * persons to whom the Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS  OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR  OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package io.hops.hopsworks.common.provenance;
 
@@ -47,27 +24,43 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.elasticsearch.search.SearchHit;
 
 @XmlRootElement
-public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
-  private static final Logger LOG = Logger.getLogger(FProvMLAssetHit.class.getName());
+public class MLAssetHit implements Comparator<MLAssetHit> {
+  public static final String ML_INODE_ID_FIELD = "inode_id";
+  public static final String ML_USER_ID_FIELD = "user_id";
+  public static final String ML_APP_ID_FIELD = "app_id";
+  public static final String ML_PROJECT_INODE_ID_FIELD = "project_i_id";
+  public static final String ML_INODE_NAME_FIELD = "inode_name";
+  public static final String ML_ID_FIELD = "ml_id";
+  public static final String ML_TYPE_FIELD = "ml_type";
+  public static final String ML_USER_NAME_FIELD = "user_name";
+  public static final String ML_PROJECT_NAME_FIELD = "project_name";
+  public static final String ML_CREATE_TIME_FIELD = "timestamp";
+  public static final String ML_R_CREATE_TIME_FIELD = "readable_timestamp";
+  public static final String ML_ALIVE_FIELD = "alive";
+  
+  private static final Logger LOG = Logger.getLogger(MLAssetHit.class.getName());
   private String id;
   private float score;
   private Map<String, Object> map;
   
   private long inodeId;
-  private String creatorAppId;
-  private int creatorUserId;
+  private String appId;
+  private int userId;
   private long projectInodeId;
   private String inodeName;
-  private String createTimestamp;
   private String mlType;
   private String mlId;
+  private long createTime;
+  private String readableCreateTime;
+  private String userName;
+  private String projectName;
   private Map<String, String> xattrs = new HashMap<>();
-  private Map<Provenance.AppState, AppProvenanceHit> appStates = new HashMap<>();
+  private MLAssetAppState appState;
   
-  public FProvMLAssetHit(){
+  public MLAssetHit(){
   }
   
-  public FProvMLAssetHit(SearchHit hit) {
+  public MLAssetHit(SearchHit hit) {
     this.id = hit.getId();
     this.score = hit.getScore();
     //the source of the retrieved record (i.e. all the indexed information)
@@ -77,31 +70,40 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       //set the name explicitly so that it's easily accessible in the frontend
       switch (entry.getKey()) {
-        case FileProvenanceHit.INODE_ID_FIELD:
+        case ML_INODE_ID_FIELD:
           this.inodeId = ((Number) entry.getValue()).longValue();
           break;
-        case FileProvenanceHit.APP_ID_FIELD:
-          this.creatorAppId = entry.getValue().toString();
+        case ML_APP_ID_FIELD:
+          this.appId = entry.getValue().toString();
           break;
-        case FileProvenanceHit.USER_ID_FIELD:
-          this.creatorUserId = ((Number) entry.getValue()).intValue();
+        case ML_USER_ID_FIELD:
+          this.userId = ((Number) entry.getValue()).intValue();
           break;
-        case FileProvenanceHit.PROJECT_INODE_ID_FIELD:
+        case ML_PROJECT_INODE_ID_FIELD:
           this.projectInodeId = ((Number) entry.getValue()).longValue();
           break;
-        case FileProvenanceHit.INODE_NAME_FIELD:
+        case ML_INODE_NAME_FIELD:
           this.inodeName = entry.getValue().toString();
           break;
-        case FileProvenanceHit.TIMESTAMP_FIELD:
-          this.createTimestamp = entry.getValue().toString();
-          break;
-        case FileProvenanceHit.ML_TYPE_FIELD:
+        case ML_TYPE_FIELD:
           this.mlType = entry.getValue().toString();
           break;
-        case FileProvenanceHit.ML_ID_FIELD:
+        case ML_ID_FIELD:
           this.mlId = entry.getValue().toString();
           break;
-        case FileProvenanceHit.ALIVE:
+        case ML_CREATE_TIME_FIELD:
+          this.createTime = ((Number) entry.getValue()).longValue();
+          break;
+        case ML_R_CREATE_TIME_FIELD:
+          this.readableCreateTime = entry.getValue().toString();
+          break;
+        case ML_PROJECT_NAME_FIELD:
+          this.projectName = entry.getValue().toString();
+          break;
+        case ML_USER_NAME_FIELD:
+          this.userName = entry.getValue().toString();
+          break;
+        case ML_ALIVE_FIELD:
           break;
         default:
           if(entry.getValue() == null) {
@@ -122,7 +124,7 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
   }
   
   @Override
-  public int compare(FProvMLAssetHit o1, FProvMLAssetHit o2) {
+  public int compare(MLAssetHit o1, MLAssetHit o2) {
     return Float.compare(o2.getScore(), o1.getScore());
   }
 
@@ -161,20 +163,20 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
     this.inodeId = inodeId;
   }
 
-  public String getCreatorAppId() {
-    return creatorAppId;
+  public String getAppId() {
+    return appId;
   }
 
-  public void setCreatorAppId(String creatorAppId) {
-    this.creatorAppId = creatorAppId;
+  public void setAppId(String appId) {
+    this.appId = appId;
   }
 
-  public int getCreatorUserId() {
-    return creatorUserId;
+  public int getUserId() {
+    return userId;
   }
 
-  public void setCreatorUserId(int creatorUserId) {
-    this.creatorUserId = creatorUserId;
+  public void setUserId(int userId) {
+    this.userId = userId;
   }
 
   public long getProjectInodeId() {
@@ -193,14 +195,6 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
     this.inodeName = inodeName;
   }
 
-  public String getCreateTimestamp() {
-    return createTimestamp;
-  }
-
-  public void setCreateTimestamp(String createTimestamp) {
-    this.createTimestamp = createTimestamp;
-  }
-
   public String getMlType() {
     return mlType;
   }
@@ -217,6 +211,38 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
     this.mlId = mlId;
   }
 
+  public long getCreateTime() {
+    return createTime;
+  }
+
+  public void setCreateTime(long createTime) {
+    this.createTime = createTime;
+  }
+
+  public String getReadableCreateTime() {
+    return readableCreateTime;
+  }
+
+  public void setReadableCreateTime(String readableCreateTime) {
+    this.readableCreateTime = readableCreateTime;
+  }
+
+  public String getUserName() {
+    return userName;
+  }
+
+  public void setUserName(String userName) {
+    this.userName = userName;
+  }
+
+  public String getProjectName() {
+    return projectName;
+  }
+
+  public void setProjectName(String projectName) {
+    this.projectName = projectName;
+  }
+
   public Map<String, String> getXattrs() {
     return xattrs;
   }
@@ -225,11 +251,12 @@ public class FProvMLAssetHit implements Comparator<FProvMLAssetHit> {
     this.xattrs = xattrs;
   }
 
-  public Map<Provenance.AppState, AppProvenanceHit> getAppStates() {
-    return appStates;
+  public MLAssetAppState getAppState() {
+    return appState;
   }
 
-  public void setAppStates(Map<Provenance.AppState, AppProvenanceHit> appStates) {
-    this.appStates = appStates;
+  public void setAppState(MLAssetAppState appState) {
+    this.appState = appState;
   }
+  
 }
