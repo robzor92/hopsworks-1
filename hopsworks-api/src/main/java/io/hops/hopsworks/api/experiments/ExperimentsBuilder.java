@@ -5,9 +5,11 @@ import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
+import io.hops.hopsworks.common.jobs.jobhistory.JobState;
 import io.hops.hopsworks.common.provenance.AppProvenanceHit;
 import io.hops.hopsworks.common.provenance.FProvMLAssetHit;
 import io.hops.hopsworks.common.provenance.Provenance;
+import io.hops.hopsworks.common.util.DateUtils;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import org.json.JSONObject;
@@ -19,7 +21,6 @@ import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.UriInfo;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -89,8 +90,6 @@ public class ExperimentsBuilder {
 
     experimentDTO.setType(fileProvenanceHit.getMlType());
     experimentDTO.setId(fileProvenanceHit.getMlId());
-    experimentDTO.setStarted(fileProvenanceHit.getCreateTimestamp());
-    experimentDTO.setFinished(new Date().toString());
 
     if(fileProvenanceHit.getXattrs().containsKey("config")) {
       JSONObject config = new JSONObject(fileProvenanceHit.getXattrs().get("config"));
@@ -109,18 +108,28 @@ public class ExperimentsBuilder {
     }
 
     Provenance.AppState currentState = Provenance.AppState.UNKNOWN;
-    Long maxTimestamp = 0L;
+    Long startTimestamp = Long.MAX_VALUE;
+    Long endTimestamp = Long.MIN_VALUE;
     Map<Provenance.AppState, AppProvenanceHit> states = fileProvenanceHit.getAppStates();
     for (Map.Entry<Provenance.AppState, AppProvenanceHit> entry : states.entrySet()) {
-      if(entry.getValue().getAppStateTimestamp() > maxTimestamp) {
-        maxTimestamp = entry.getValue().getAppStateTimestamp();
-        currentState = entry.getKey();
+      Long timestamp = entry.getValue().getAppStateTimestamp();
+      Provenance.AppState state = entry.getValue().getAppState();
+      if(timestamp > endTimestamp) {
+        endTimestamp = timestamp;
+        currentState = state;
       }
-      //LOGGER.log(Level.SEVERE, "entry " + entry.getKey() + " " + entry.getValue());
+      if(timestamp < startTimestamp) {
+        startTimestamp = timestamp;
+      }
     }
+
+    experimentDTO.setStarted(DateUtils.millis2LocalDateTime(startTimestamp).toString());
 
     experimentDTO.setState(currentState);
 
+    if(JobState.valueOf(currentState.name()).isFinalState()) {
+      experimentDTO.setFinished(DateUtils.millis2LocalDateTime(endTimestamp).toString());
+    }
 
     //LOGGER.log(Level.SEVERE, "xattrs " + fileProvenanceHit.getXattrs().size());
     for(Map.Entry<String, String> kv: fileProvenanceHit.getXattrs().entrySet()) {
@@ -134,9 +143,6 @@ public class ExperimentsBuilder {
 
     expand(experimentDTO, resourceRequest);
     if (experimentDTO.isExpand()) {
-
-
-
 
       //dto.setId(job.getId());
     }
