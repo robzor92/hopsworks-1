@@ -1,15 +1,15 @@
 package io.hops.hopsworks.api.experiments;
 
-import io.hops.hopsworks.api.provenance.ProvenanceService;
 import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
-import io.hops.hopsworks.common.jobs.jobhistory.JobState;
-import io.hops.hopsworks.common.provenance.AppProvenanceHit;
-import io.hops.hopsworks.common.provenance.FProvMLAssetHit;
+import io.hops.hopsworks.common.provenance.MLAssetAppState;
+import io.hops.hopsworks.common.provenance.MLAssetHit;
+import io.hops.hopsworks.common.provenance.MLAssetListQueryParams;
 import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.common.util.DateUtils;
+import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import org.json.JSONObject;
@@ -20,10 +20,8 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.UriInfo;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @Stateless
@@ -43,7 +41,7 @@ public class ExperimentsBuilder {
     return dto;
   }
 
-  public ExperimentDTO uri(ExperimentDTO dto, UriInfo uriInfo, Project project, FProvMLAssetHit fileProvenanceHit) {
+  public ExperimentDTO uri(ExperimentDTO dto, UriInfo uriInfo, Project project, MLAssetHit fileProvenanceHit) {
     dto.setHref(uriInfo.getBaseUriBuilder().path(ResourceRequest.Name.PROJECT.toString().toLowerCase())
         .path(Integer.toString(project.getId()))
         .path(ResourceRequest.Name.EXPERIMENTS.toString().toLowerCase())
@@ -61,15 +59,15 @@ public class ExperimentsBuilder {
 
   //Build collection
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project)
-      throws ServiceException, ProjectException {
+      throws ServiceException, ProjectException, GenericException {
     ExperimentDTO dto = new ExperimentDTO();
     uri(dto, uriInfo, project);
     expand(dto, resourceRequest);
 
     if(dto.isExpand()) {
-
-      GenericEntity<List<FileProvenanceHit>> searchResults = new GenericEntity<List<FileProvenanceHit>>(
-          elasticController.fileProvenanceByMLType(ProvenanceService.MLType.EXPERIMENT.name(), project.getId())) {
+      MLAssetListQueryParams queryParams = MLAssetListQueryParams.projectMLAssets(project.getId(), true);
+      GenericEntity<List<MLAssetHit>> searchResults = new GenericEntity<List<MLAssetHit>>(
+          elasticController.fileProvenanceByMLType(Provenance.MLType.EXPERIMENT.name(), queryParams)) {
       };
 
       searchResults.getEntity().forEach((fileProvenanceHit) ->
@@ -79,10 +77,9 @@ public class ExperimentsBuilder {
     return dto;
   }
 
-
   //Build specific
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
-                             FProvMLAssetHit fileProvenanceHit) {
+                             MLAssetHit fileProvenanceHit) {
 
     ExperimentDTO experimentDTO = new ExperimentDTO();
 
@@ -90,46 +87,52 @@ public class ExperimentsBuilder {
 
     experimentDTO.setType(fileProvenanceHit.getMlType());
     experimentDTO.setId(fileProvenanceHit.getMlId());
+    experimentDTO.setStarted("");
 
     if(fileProvenanceHit.getXattrs().containsKey("config")) {
       JSONObject config = new JSONObject(fileProvenanceHit.getXattrs().get("config"));
-      if(config.has("name")) {
+      if (config.has("name")) {
         experimentDTO.setName(config.get("name").toString());
       }
-      if(config.has("userFullName")) {
+      if (config.has("userFullName")) {
         experimentDTO.setUserFullName(config.get("userFullName").toString());
       }
-      LOGGER.log(Level.SEVERE, "config");
-      LOGGER.log(Level.SEVERE, Arrays.toString(config.keySet().toArray()));
-      if(config.has("metric")) {
-        //LOGGER.log(Level.SEVERE, "before metric");
+      if (config.has("metric")) {
         experimentDTO.setMetric(config.get("metric").toString());
       }
-    }
-
-    Provenance.AppState currentState = Provenance.AppState.UNKNOWN;
-    Long startTimestamp = Long.MAX_VALUE;
-    Long endTimestamp = Long.MIN_VALUE;
-    Map<Provenance.AppState, AppProvenanceHit> states = fileProvenanceHit.getAppStates();
-    for (Map.Entry<Provenance.AppState, AppProvenanceHit> entry : states.entrySet()) {
-      Long timestamp = entry.getValue().getAppStateTimestamp();
-      Provenance.AppState state = entry.getValue().getAppState();
-      if(timestamp > endTimestamp) {
-        endTimestamp = timestamp;
-        currentState = state;
+      if (config.has("description")) {
+        experimentDTO.setDescription(config.get("description").toString());
       }
-      if(timestamp < startTimestamp) {
-        startTimestamp = timestamp;
+      Long creationTime = fileProvenanceHit.getCreateTime();
+
+      experimentDTO.setStarted(DateUtils.millis2LocalDateTime(creationTime).toString());
+      Long finishTime = null;
+      if (config.has("duration")) {
+        finishTime = creationTime + Long.valueOf((String) config.get("duration"));
+        experimentDTO.setFinished(DateUtils.millis2LocalDateTime(finishTime).toString());
+      }
+      if (config.has("state")) {
+        Provenance.AppState state = Provenance.AppState.valueOf(config.get("state").toString());
+        experimentDTO.setState(state.name());
+
+        if (1 == 3) {
+          if (state.equals(Provenance.AppState.RUNNING)) {
+            MLAssetAppState appState = fileProvenanceHit.getAppState();
+            Provenance.AppState currentState = appState.getCurrentState();
+            if (appState != null && currentState != null) {
+              experimentDTO.setStarted(fileProvenanceHit.getAppState().getReadableStartTime());
+              experimentDTO.setState(currentState.name());
+              if (currentState.isFinalState()) {
+                experimentDTO.setFinished(fileProvenanceHit.getAppState().getReadableFinishTime());
+              }
+            }
+          } else {
+          }
+        }
       }
     }
 
-    experimentDTO.setStarted(DateUtils.millis2LocalDateTime(startTimestamp).toString());
-
-    experimentDTO.setState(currentState);
-
-    if(JobState.valueOf(currentState.name()).isFinalState()) {
-      experimentDTO.setFinished(DateUtils.millis2LocalDateTime(endTimestamp).toString());
-    }
+    // Fallback mechanism if experiment did not publish final state and finish time
 
     //LOGGER.log(Level.SEVERE, "xattrs " + fileProvenanceHit.getXattrs().size());
     for(Map.Entry<String, String> kv: fileProvenanceHit.getXattrs().entrySet()) {
