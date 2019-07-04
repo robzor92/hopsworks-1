@@ -1,5 +1,7 @@
 package io.hops.hopsworks.common.experiments.dto;
 
+import io.hops.hopsworks.common.provenance.Provenance;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -10,7 +12,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
-public class ExperimentConfiguration {
+public class ExperimentDescription {
 
   @XmlElement
   private String name;
@@ -23,6 +25,12 @@ public class ExperimentConfiguration {
 
   @XmlElement
   private String userFullName;
+
+  @XmlElement
+  private String duration;
+
+  @XmlElement
+  private Provenance.AppState state;
 
   public String getName() {
     return name;
@@ -54,5 +62,21 @@ public class ExperimentConfiguration {
 
   public void setMetric(String metric) {
     this.metric = metric;
+  }
+
+  public String duration() {
+    return duration;
+  }
+
+  public void duration(String duration) {
+    this.duration = duration;
+  }
+
+  public Provenance.AppState getState() {
+    return state;
+  }
+
+  public void setState(Provenance.AppState state) {
+    this.state = state;
   }
 }

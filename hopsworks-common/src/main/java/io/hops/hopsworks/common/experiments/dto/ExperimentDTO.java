@@ -1,7 +1,6 @@
 package io.hops.hopsworks.common.experiments.dto;
 
 import io.hops.hopsworks.common.api.RestDTO;
-import io.hops.hopsworks.common.provenance.Provenance;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -28,10 +27,13 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
   private String finished;
 
   @XmlElement
-  private Provenance.AppState state;
+  private String state;
 
   @XmlElement
   private String name;
+
+  @XmlElement
+  private String description;
 
   @XmlElement
   private String metric;
@@ -88,11 +90,11 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
     this.userFullName = userFullName;
   }
 
-  public Provenance.AppState getState() {
+  public String getState() {
     return state;
   }
 
-  public void setState(Provenance.AppState state) {
+  public void setState(String state) {
     this.state = state;
   }
 
@@ -102,6 +104,14 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   public void setMetric(String metric) {
     this.metric = metric;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
   }
 
   public enum XAttrSetFlag {

@@ -13,7 +13,7 @@ import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.experiments.ExperimentsController;
-import io.hops.hopsworks.common.experiments.dto.ExperimentConfiguration;
+import io.hops.hopsworks.common.experiments.dto.ExperimentDescription;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
 import io.hops.hopsworks.exceptions.DatasetException;
@@ -102,18 +102,18 @@ public class ExperimentsResource {
   @JWTRequired(acceptedTokens={Audience.API, Audience.JOB}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
   public Response post (
         @PathParam("id") String id,
-        ExperimentConfiguration experimentConfiguration,
+        ExperimentDescription experimentDescription,
         @QueryParam("xattr") ExperimentDTO.XAttrSetFlag xAttrSetFlag,
         @Context HttpServletRequest req,
         @Context UriInfo uriInfo,
         @Context SecurityContext sc) throws DatasetException {
 
-    if (experimentConfiguration == null) {
+    if (experimentDescription == null) {
       throw new IllegalArgumentException("Experiment configuration was not provided.");
     }
     Users user = jwtHelper.getUserPrincipal(sc);
-    experimentsController.publish(id, project, user, experimentConfiguration, xAttrSetFlag);
-    return Response.ok().entity(experimentConfiguration).build();
+    experimentsController.publish(id, project, user, experimentDescription, xAttrSetFlag);
+    return Response.ok().entity(experimentDescription).build();
   }
 
   @ApiOperation( value = "Delete an experiment")
@@ -123,7 +123,7 @@ public class ExperimentsResource {
   @JWTRequired(acceptedTokens={Audience.API, Audience.JOB}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
   public Response delete (
       @PathParam("id") String id,
-      ExperimentConfiguration experimentConfiguration,
+      ExperimentDescription experimentDescription,
       @Context HttpServletRequest req,
       @Context UriInfo uriInfo,
       @Context SecurityContext sc) {
@@ -133,7 +133,7 @@ public class ExperimentsResource {
 
     experimentsController.delete(id, project, hdfsUser);
 
-    return Response.ok().entity(experimentConfiguration).build();
+    return Response.ok().entity(experimentDescription).build();
   }
 
   @ApiOperation(value = "TensorBoard sub-resource", tags = {"TensorBoardResource"})
