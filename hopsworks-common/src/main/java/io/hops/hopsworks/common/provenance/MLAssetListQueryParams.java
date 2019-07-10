@@ -17,6 +17,8 @@ package io.hops.hopsworks.common.provenance;
 
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
+
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -30,12 +32,14 @@ public class MLAssetListQueryParams {
   public final Long createdAfterTimestamp;
   public final boolean withAppState;
   public final Optional<Provenance.AppState> currentState;
+  public final Map<String, String> xattrs;
 
   private MLAssetListQueryParams(Integer projectId, 
     String assetName, String likeAssetName,
     String userName, String likeUserName, 
     Long createdBeforeTimestamp, Long createdAfterTimestamp,
-    boolean withAppState, Provenance.AppState currentState) {
+    boolean withAppState, Provenance.AppState currentState,
+    Map<String, String> xattrs) {
     this.projectId = projectId;
     this.assetName = assetName;
     this.likeAssetName = likeAssetName;
@@ -45,13 +49,15 @@ public class MLAssetListQueryParams {
     this.createdAfterTimestamp = createdAfterTimestamp;
     this.withAppState = withAppState;
     this.currentState = Optional.ofNullable(currentState);
+    this.xattrs = xattrs;
   }
 
   public static MLAssetListQueryParams instance(Integer projectId, 
     String assetName, String likeAssetName,
     String userName, String likeUserName, 
     Long createdBeforeTimestamp, Long createdAfterTimestamp,
-    boolean withAppState, Provenance.AppState currentState) throws GenericException {
+    boolean withAppState, Provenance.AppState currentState,
+    Map<String, String> xattrs) throws GenericException {
     if (assetName != null && likeAssetName != null) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
         "provenance query - set only one - either like or exact - assetName");
@@ -68,12 +74,13 @@ public class MLAssetListQueryParams {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
         "provenance query - in order to filter by current state - withAppState has to be enabled");
     }
-    return new MLAssetListQueryParams(projectId, assetName, likeAssetName, 
-      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, withAppState, currentState);
+    return new MLAssetListQueryParams(projectId, assetName, likeAssetName, userName, likeUserName,
+      createdBeforeTimestamp, createdAfterTimestamp, withAppState, currentState, xattrs);
   }
   
   public static MLAssetListQueryParams projectMLAssets(Integer projectId, boolean withAppState) 
     throws GenericException {
-    return instance(projectId, null, null, null, null, null, null, withAppState, null);
+    return instance(projectId, null, null, null, null,
+      null, null, withAppState, null, null);
   }
 }

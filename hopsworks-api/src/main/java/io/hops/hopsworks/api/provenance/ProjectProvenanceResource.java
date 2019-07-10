@@ -228,18 +228,25 @@ public class ProjectProvenanceResource {
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response getMLAssets(@PathParam("mlType") Provenance.MLType mlType, 
-    @BeanParam MLAssetListQueryParamsBean queryParams, 
+    @BeanParam MLAssetListQueryParamsBean mlAssetsParams,
+    @BeanParam GeneralQueryParamsBean queryParams,
     @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
-    logger.log(Level.INFO, "Local content path {0} query params:{1}", 
-      new Object[]{req.getRequestURL().toString(), queryParams});
+    logger.log(Level.INFO, "Local content path {0} mlassets params:{1} query params:{2}",
+      new Object[]{req.getRequestURL().toString(), mlAssetsParams, queryParams});
     if (mlType == null) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO, "ml asset type is not set");
     }
-    GenericEntity<List<MLAssetHit>> searchResults = new GenericEntity<List<MLAssetHit>>(
-      elasticController.fileProvenanceByMLType(mlType.toString(), queryParams.params(project.getId()))) {
-    };
-
-    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();
+    if(queryParams.isCount()) {
+      int countResult = elasticController.fileProvenanceByMLTypeCount(mlType.toString(),
+        mlAssetsParams.params(project.getId()), queryParams.params());
+      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(countResult).build();
+    } else {
+      GenericEntity<List<MLAssetHit>> searchResults = new GenericEntity<List<MLAssetHit>>(
+        elasticController.fileProvenanceByMLType(mlType.toString(), mlAssetsParams.params(project.getId()),
+          queryParams.params())) {
+      };
+      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();
+    }
   }
 
   @GET
@@ -248,15 +255,15 @@ public class ProjectProvenanceResource {
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response getMLAssets(@PathParam("mlType") Provenance.MLType mlType, 
-    @BeanParam MLAssetQueryParamsBean queryParams,
+    @BeanParam MLAssetQueryParamsBean mlAssetsParams, @BeanParam GeneralQueryParamsBean queryParams,
     @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
-    logger.log(Level.INFO, "Local content path {0} query params:{1}", 
-      new Object[]{req.getRequestURL().toString(), queryParams});
+    logger.log(Level.INFO, "Local content path {0} mlassets params:{1} query params:{2}",
+      new Object[]{req.getRequestURL().toString(), mlAssetsParams, queryParams});
     if (mlType == null) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO, "ml asset type is not set");
     }
     GenericEntity<List<MLAssetHit>> searchResults = new GenericEntity<List<MLAssetHit>>(
-      elasticController.fileProvenanceByMLType(mlType.toString(), queryParams.params(project.getId()))) {
+      elasticController.fileProvenanceByMLType(mlType.toString(), mlAssetsParams.params(project.getId()))) {
     };
     if(searchResults.getEntity().isEmpty()) {
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.NOT_FOUND).build();
