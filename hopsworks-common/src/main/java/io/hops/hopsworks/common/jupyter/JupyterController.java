@@ -192,9 +192,6 @@ public class JupyterController {
       }
       FileUtils.deleteQuietly(new File(jupyterHomePath));
       jupyterJWTManager.cleanJWT(pid, port);
-      for(LivyMsg.Session session: sessions) {
-        updateRunningExperimentAsKilled(project, session);
-      }
       livyController.deleteAllLivySessions(hdfsUser);
     }
   }
