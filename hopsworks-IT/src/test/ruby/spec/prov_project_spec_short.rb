@@ -38,17 +38,18 @@ describe "On #{ENV['OS']}" do
     @td2_name = "td_b"
     @td_version1 = "1"
     @td_version2 = "2"
+    @xattrV1 = JSON['{"f1_1":"v1","f1_2":{"f2_1":"val1"}}']
+    @xattrV2 = JSON['{"f1_1":"v1","f1_2":{"f2_2":"val2"}}']
+    @xattrV3 = JSON['[{"f3_1":"val1","f3_2":"val2"},{"f4_1":"val3","f4_2":"val4"}]']
+    @xattrV4 = "notJson"
     pp "create project: #{@project1_name}"
     @project1 = create_project_by_name(@project1_name)
-    pp "create project: #{@project2_name}"
-    @project2 = create_project_by_name(@project2_name)
+    #pp "create project: #{@project2_name}"
+    #@project2 = create_project_by_name(@project2_name)
   end
 
   after :all do 
     pp "delete projects"
     delete_project(@project1)
-    delete_project(@project2)
   end
-
-  
 end

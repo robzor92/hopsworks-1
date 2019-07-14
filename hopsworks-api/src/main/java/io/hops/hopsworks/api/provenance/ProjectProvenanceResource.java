@@ -49,6 +49,7 @@ import io.hops.hopsworks.common.provenance.AppProvenanceHit;
 import io.hops.hopsworks.common.provenance.MLAssetHit;
 import io.hops.hopsworks.common.provenance.FileProvenanceHit;
 import io.hops.hopsworks.common.provenance.Provenance;
+import io.hops.hopsworks.common.provenance.SimpleResult;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
@@ -237,9 +238,10 @@ public class ProjectProvenanceResource {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO, "ml asset type is not set");
     }
     if(queryParams.isCount()) {
-      int countResult = elasticController.fileProvenanceByMLTypeCount(mlType.toString(),
+      Long countResult = elasticController.fileProvenanceByMLTypeCount(mlType.toString(),
         mlAssetsParams.params(project.getId()), queryParams.params());
-      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(countResult).build();
+      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
+        .entity(new SimpleResult<>(countResult)).build();
     } else {
       GenericEntity<List<MLAssetHit>> searchResults = new GenericEntity<List<MLAssetHit>>(
         elasticController.fileProvenanceByMLType(mlType.toString(), mlAssetsParams.params(project.getId()),

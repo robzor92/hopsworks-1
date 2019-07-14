@@ -19,6 +19,7 @@ module ProvenanceHelper
     target = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/dataset"
     payload_string = '{"name": "' + dirname + '"}'
     payload = JSON.parse(payload_string)
+    pp "post #{target}, #{payload}"
     post target, payload
     expect_status(200)
   end
@@ -88,6 +89,11 @@ module ProvenanceHelper
     FileProv.where("project_name": project["inode_name"], "i_parent_name": training_datasets, "i_name": training_dataset)
   end
 
+  def prov_get_experiment_record(project, experiment_name) 
+    experiment_parent = "Experiments"
+    FileProv.where("project_name": project["inode_name"], "i_parent_name": experiment_parent, "i_name": experiment_name)
+  end
+
   def prov_add_xattr(original, xattr_name, xattr_value, xattr_op, increment)
     xattrRecord = original.dup
     xattrRecord["inode_operation"] = xattr_op
@@ -118,14 +124,14 @@ module ProvenanceHelper
     sleepCounter1 = 0
     sleepCounter2 = 0
     until FileProv.all.empty? || sleepCounter1 == 10 do
-      sleep(5)
+      sleep(1)
       sleepCounter1 += 1
     end
     until AppProv.all.empty? || sleepCounter2 == 10 do
-      sleep(5)
+      sleep(1)
       sleepCounter2 += 1
     end
-    sleep(5)
+    sleep(3)
     expect(sleepCounter1).to be < 10
     expect(sleepCounter2).to be < 10
     pp "done waiting"
@@ -178,4 +184,41 @@ module ProvenanceHelper
     result
   end
 
+  def get_ml_asset_by_id_2(project, ml_type, ml_id, withAppState) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/mlType/#{ml_type}/exact"
+    query_params = "?mlId=#{ml_id}&withAppState=#{withAppState}"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+  end
+
+  def get_ml_asset_by_xattr_count(project, ml_type, xattr_key, xattr_val, count) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/mlType/#{ml_type}/list"
+    query_params = "?xattrs=#{xattr_key}:#{xattr_val}&count=true"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+    expect(parsed_result["result"]["value"]).to eq count
+    parsed_result
+  end
+
+  def get_ml_td_count_using_feature_project(project, feature_name) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/mlType/TRAINING_DATASET/list"
+    query_params = "?xattrs=features.name:#{feature_name}&count=true"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+  end
+
+  def get_ml_td_count_using_feature_global(feature_name) 
+    resource = "#{ENV['HOPSWORKS_API']}/provenance/mlType/TRAINING_DATASET/list"
+    query_params = "?xattrs=features.name:#{feature_name}&count=true"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+  end
 end

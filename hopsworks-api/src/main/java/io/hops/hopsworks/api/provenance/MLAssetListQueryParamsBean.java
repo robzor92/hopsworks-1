@@ -18,14 +18,11 @@ package io.hops.hopsworks.api.provenance;
 import io.hops.hopsworks.common.provenance.MLAssetListQueryParams;
 import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.exceptions.GenericException;
-import io.hops.hopsworks.restutils.RESTCodes;
 import io.swagger.annotations.ApiParam;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import java.util.Map;
-import java.util.TreeMap;
-import java.util.logging.Level;
 
 public class MLAssetListQueryParamsBean {
   @QueryParam("assetName")
@@ -152,24 +149,6 @@ public class MLAssetListQueryParamsBean {
     this.xattrs = xattrs;
   }
 
-  private Map<String, String> getXAttrsMap(String param) throws GenericException {
-    Map<String, String> result = new TreeMap<String, String>();
-    if (param == null || param.isEmpty()) {
-      return result;
-    }
-    String[] params = param.split(",");
-
-    for (String p : params) {
-      String[] aux = p.split(":");
-      if(aux.length != 2) {
-        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
-          "malformed xattrs:" + xattrs);
-      }
-      result.put(aux[0], aux[1]);
-    }
-    return result;
-  }
-
   @Override
   public String toString() {
     return "MLAssetListQueryParamsBean{" 
@@ -188,9 +167,18 @@ public class MLAssetListQueryParamsBean {
   public MLAssetListQueryParams params(Integer projectId) throws GenericException {
     Map<String, String> xattrsMap = null;
     if(xattrs != null) {
-      xattrsMap = getXAttrsMap(xattrs);
+      xattrsMap = MLAssetListQueryParams.getXAttrsMap(xattrs);
     }
     return MLAssetListQueryParams.instance(projectId, assetName, likeAssetName,
+      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, withAppState, currentState, xattrsMap);
+  }
+  
+  public MLAssetListQueryParams params() throws GenericException {
+    Map<String, String> xattrsMap = null;
+    if(xattrs != null) {
+      xattrsMap = MLAssetListQueryParams.getXAttrsMap(xattrs);
+    }
+    return MLAssetListQueryParams.instance(null, assetName, likeAssetName,
       userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, withAppState, currentState, xattrsMap);
   }
 }

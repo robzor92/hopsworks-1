@@ -20,6 +20,8 @@ import io.hops.hopsworks.restutils.RESTCodes;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.StringJoiner;
+import java.util.TreeMap;
 import java.util.logging.Level;
 
 public class MLAssetListQueryParams {
@@ -82,5 +84,31 @@ public class MLAssetListQueryParams {
     throws GenericException {
     return instance(projectId, null, null, null, null,
       null, null, withAppState, null, null);
+  }
+  
+  public static Map<String, String> getXAttrsMap(String xattrs) throws GenericException {
+    Map<String, String> result = new TreeMap<String, String>();
+    if (xattrs == null || xattrs.isEmpty()) {
+      return result;
+    }
+    String[] params = xattrs.split(",");
+    
+    for (String p : params) {
+      String[] aux = p.split(":");
+      if(aux.length != 2 || aux[0].isEmpty()) {
+        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
+          "malformed xattrs:" + xattrs);
+      }
+      String keyParts[] = aux[0].split("\\.");
+      StringJoiner keyj = new StringJoiner(".");
+      if(keyParts.length == 1) {
+        keyj.add(keyParts[0]).add("raw");
+      } else {
+        keyj.add(keyParts[0]).add("value");
+        for(int i = 1; i < keyParts.length; i++) keyj.add(keyParts[i]);
+      }
+      result.put(keyj.toString(), aux[1]);
+    }
+    return result;
   }
 }

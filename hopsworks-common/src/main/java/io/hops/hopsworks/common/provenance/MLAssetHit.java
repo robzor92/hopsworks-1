@@ -109,9 +109,21 @@ public class MLAssetHit implements Comparator<MLAssetHit> {
           if(entry.getValue() == null) {
             LOG.log(Level.WARNING, "empty key:{0}", new Object[]{entry.getKey()});
           } else {
+            if(entry.getValue() instanceof Map) {
+              try {
+                Map<String, Object> e = (Map<String, Object>) entry.getValue();
+                if(e.containsKey("raw")) {
+                  String xattrKey = entry.getKey();
+                  String xattrVal = (String) e.get("raw");
+                  xattrs.put(xattrKey, xattrVal);
+                }
+              } catch (ClassCastException e) {
+                break;
+              }
+            }
             String value = entry.getValue().toString();
             if (!value.equals("")) {
-              xattrs.put(entry.getKey(), entry.getValue().toString());
+            
             }
           }
           break;

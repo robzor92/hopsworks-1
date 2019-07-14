@@ -1008,6 +1008,7 @@ public class ElasticController {
   }
   
   //PROVENANCE
+  
   public List<FileProvenanceHit> fileProvenanceByUserId(int userId) throws ServiceException {
     return fileProvenanceQuery(fileProvenanceByUserIdQuery(userId));
   }
@@ -1047,7 +1048,7 @@ public class ElasticController {
     return liveMLAssetQuery(liveMLAsset(mlType, mlParams), mlType, mlParams.withAppState, mlParams.currentState);
   }
 
-  public int fileProvenanceByMLTypeCount(String mlType, MLAssetListQueryParams mlParams,
+  public long fileProvenanceByMLTypeCount(String mlType, MLAssetListQueryParams mlParams,
     GeneralQueryParams queryParams)
     throws ServiceException, ProjectException, GenericException {
     if(queryParams.count && mlParams.withAppState) {
@@ -1073,7 +1074,7 @@ public class ElasticController {
     return appProvenanceQuery(appProvenanceByAppUserQuery(appUser));
   }
     
-  private SearchHit[] rawQuery(String index, String docType, QueryBuilder query, boolean count)
+  private SearchResponse rawQuery(String index, String docType, QueryBuilder query, boolean count)
     throws ServiceException {
     //some necessary client settings
     Client client = getClient();
@@ -1096,7 +1097,7 @@ public class ElasticController {
     SearchResponse response = futureResponse.actionGet();
 
     if (response.status().getStatus() == 200) {
-      return response.getHits().getHits();
+      return response;
     } else {
       //something went wrong so throw an exception
       shutdownClient();
@@ -1105,12 +1106,12 @@ public class ElasticController {
     }
   }
 
-  private int liveMLAssetCountQuery(QueryBuilder query, String mlType) throws ServiceException {
-    List<MLAssetHit> result = new LinkedList<>();
-    SearchHit[]  rawHits = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, true);
-    LOG.log(Level.WARNING, "query hits: {0}", rawHits.length);
-    return rawHits.length;
+  private long liveMLAssetCountQuery(QueryBuilder query, String mlType) throws ServiceException {
+    long count = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
+      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, true)
+      .getHits().totalHits;
+    LOG.log(Level.WARNING, "query hits: {0}", count);
+    return count;
   }
   
   private List<MLAssetHit> liveMLAssetQuery(QueryBuilder query, String mlType, boolean withAppState,
@@ -1119,7 +1120,8 @@ public class ElasticController {
     List<MLAssetHit> result = new LinkedList<>();
     Set<String> appIds = new HashSet<>();
     SearchHit[]  rawHits = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, 
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, false);
+      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, false)
+      .getHits().getHits();
     LOG.log(Level.WARNING, "query hits: {0}", rawHits.length);
     for (SearchHit rawHit : rawHits) {
       MLAssetHit fpHit = new MLAssetHit(rawHit);
@@ -1177,7 +1179,8 @@ public class ElasticController {
   private Map<String, Map<Provenance.AppState, AppProvenanceHit>> appStates(Set<String> appIds)
     throws ServiceException {
     SearchHit[]  rawHits = rawQuery(Settings.ELASTIC_INDEX_APP_PROVENANCE, 
-      Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE, appProvenanceByAppIdQuery(appIds), false);
+      Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE, appProvenanceByAppIdQuery(appIds), false)
+      .getHits().getHits();
 //    LOG.log(Level.WARNING, "query hits: {0}", rawHits.length);
     Map<String, Map<Provenance.AppState, AppProvenanceHit>> result = new HashMap<>();
     for(SearchHit h : rawHits) {
@@ -1194,7 +1197,7 @@ public class ElasticController {
   private List<FileProvenanceHit> fileProvenanceQuery(QueryBuilder query) throws ServiceException {
     List<FileProvenanceHit> result = new LinkedList<>();
     for (SearchHit rawHit : rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, 
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, true)) {
+      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, true).getHits().getHits()) {
       FileProvenanceHit hit = new FileProvenanceHit(rawHit);
       result.add(hit);
     }
@@ -1204,7 +1207,7 @@ public class ElasticController {
   private List<AppProvenanceHit> appProvenanceQuery(QueryBuilder query) throws ServiceException {
     List<AppProvenanceHit> result = new LinkedList<>();
     for (SearchHit rawHit : rawQuery(Settings.ELASTIC_INDEX_APP_PROVENANCE, 
-      Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE, query, true)) {
+      Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE, query, true).getHits().getHits()) {
       AppProvenanceHit hit = new AppProvenanceHit(rawHit);
       result.add(hit);
     }
