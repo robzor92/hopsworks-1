@@ -4,6 +4,7 @@ import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
+import io.hops.hopsworks.common.provenance.GeneralQueryParams;
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
 import io.hops.hopsworks.common.provenance.MLAssetHit;
 import io.hops.hopsworks.common.provenance.MLAssetListQueryParams;
@@ -67,9 +68,9 @@ public class ExperimentsBuilder {
     if(dto.isExpand()) {
       MLAssetListQueryParams queryParams = MLAssetListQueryParams.projectMLAssets(project.getId(), true);
       GenericEntity<List<MLAssetHit>> searchResults = new GenericEntity<List<MLAssetHit>>(
-          elasticController.fileProvenanceByMLType(Provenance.MLType.EXPERIMENT.name(), queryParams)) {
+          elasticController.fileProvenanceByMLType(Provenance.MLType.EXPERIMENT.name(),
+              queryParams, new GeneralQueryParams(false))) {
       };
-
       searchResults.getEntity().forEach((fileProvenanceHit) ->
           dto.addItem(build(uriInfo, resourceRequest, project, fileProvenanceHit)));
     }

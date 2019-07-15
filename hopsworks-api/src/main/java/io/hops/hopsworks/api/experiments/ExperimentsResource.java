@@ -17,6 +17,7 @@ import io.hops.hopsworks.common.experiments.dto.ExperimentDescription;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
 import io.hops.hopsworks.exceptions.DatasetException;
+import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
@@ -79,9 +80,9 @@ public class ExperimentsResource {
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens={Audience.API, Audience.JOB}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
   public Response getAll(
-          @BeanParam Pagination pagination,
-          @BeanParam JobsBeanParam jobsBeanParam,
-          @Context UriInfo uriInfo) throws ServiceException, ProjectException {
+      @BeanParam Pagination pagination,
+      @BeanParam JobsBeanParam jobsBeanParam,
+      @Context UriInfo uriInfo) throws ServiceException, ProjectException, GenericException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.EXPERIMENTS);
     resourceRequest.setOffset(pagination.getOffset());
     resourceRequest.setLimit(pagination.getLimit());
@@ -100,12 +101,12 @@ public class ExperimentsResource {
   @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
   @JWTRequired(acceptedTokens={Audience.API, Audience.JOB}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
   public Response post (
-        @PathParam("id") String id,
-        ExperimentDescription experimentDescription,
-        @QueryParam("xattr") ExperimentDTO.XAttrSetFlag xAttrSetFlag,
-        @Context HttpServletRequest req,
-        @Context UriInfo uriInfo,
-        @Context SecurityContext sc) throws DatasetException {
+      @PathParam("id") String id,
+      ExperimentDescription experimentDescription,
+      @QueryParam("xattr") ExperimentDTO.XAttrSetFlag xAttrSetFlag,
+      @Context HttpServletRequest req,
+      @Context UriInfo uriInfo,
+      @Context SecurityContext sc) throws DatasetException {
 
     if (experimentDescription == null) {
       throw new IllegalArgumentException("Experiment configuration was not provided.");
