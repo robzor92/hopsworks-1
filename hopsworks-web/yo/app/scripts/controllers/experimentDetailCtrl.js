@@ -19,13 +19,15 @@
  */
 angular.module('hopsWorksApp')
     .controller('experimentDetailCtrl', ['$uibModalInstance', '$scope', 'ProjectService',
-        'growl', 'projectId',
-        function ($uibModalInstance, $scope, ProjectService, growl, projectId) {
+        'growl', 'projectId', 'experiment',
+        function ($uibModalInstance, $scope, ProjectService, growl, projectId, experiment) {
 
             /**
              * Initialize controller state
              */
             var self = this;
+            self.experiment = experiment;
+
             self.projectId = projectId;
             /**
              * Closes the modal

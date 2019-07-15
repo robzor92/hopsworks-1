@@ -58,10 +58,13 @@
                     <td> {{experiment.started}} </td>
                     <td> {{experiment.finished}} </td>
                     <td>
-                        <span ng-if="experiment.state === 'NEW' || experiment.state === 'RUNNING'" style="color: #0066bb">
+                        <span ng-if="experiment.state === 'NEW' || experiment.state === 'SUBMITTED' || experiment.state === 'RUNNING'" style="color: #0066bb">
                           {{experiment.state}}
                         </span>
-                        <span ng-if="experiment.state === 'FINISHED'" style="color: #00A000 ">
+                        <span ng-if="experiment.state === 'FINISHED'" style="color: #00A000">
+                          {{experiment.state}}
+                        </span>
+                        <span ng-if="experiment.state === 'KILLED' || experiment.state === 'FAILED' || experiment.state === 'UNKNOWN'" style="color: #880000">
                           {{experiment.state}}
                         </span>
                     </td>
