@@ -41,6 +41,9 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
   @XmlElement
   private String userFullName;
 
+  @XmlElement
+  private ExperimentResultsDTO[] results;
+
 
   public String getType() {
     return type;
@@ -112,6 +115,14 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   public void setDescription(String description) {
     this.description = description;
+  }
+
+  public ExperimentResultsDTO[] getResults() {
+    return results;
+  }
+
+  public void setResults(ExperimentResultsDTO[] results) {
+    this.results = results;
   }
 
   public enum XAttrSetFlag {

@@ -6,25 +6,18 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-public class MetricsDTO {
+public class ExperimentResult {
 
-  private String name;
+  private String key;
   private String value;
 
-  public MetricsDTO() {
+
+  public String getKey() {
+    return key;
   }
 
-  public MetricsDTO(String name, String value) {
-    this.setName(name);
-    this.value = value;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
+  public void setKey(String key) {
+    this.key = key;
   }
 
   public String getValue() {
@@ -33,10 +26,5 @@ public class MetricsDTO {
 
   public void setValue(String value) {
     this.value = value;
-  }
-
-  @Override
-  public String toString() {
-    return "MetricsDTO{" + "name=" + getName() + ", value=" + value + '}';
   }
 }
