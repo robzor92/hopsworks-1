@@ -30,6 +30,9 @@ public class ExperimentDescription {
   private String duration;
 
   @XmlElement
+  private ExperimentResultsDTO[] results;
+
+  @XmlElement
   private Provenance.AppState state;
 
   public String getName() {
@@ -78,5 +81,13 @@ public class ExperimentDescription {
 
   public void setState(Provenance.AppState state) {
     this.state = state;
+  }
+
+  public ExperimentResultsDTO[] getResults() {
+    return results;
+  }
+
+  public void setResults(ExperimentResultsDTO[] results) {
+    this.results = results;
   }
 }
