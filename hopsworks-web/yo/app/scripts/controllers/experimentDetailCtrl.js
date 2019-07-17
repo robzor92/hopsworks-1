@@ -56,6 +56,10 @@ angular.module('hopsWorksApp')
               self.values.push({'val': tmp})
             }
 
+            self.values.sort(function(a,b) {
+                    return a['val'][self.hp_headers.length] - b['val'][self.hp_headers.length];
+                });
+
             console.log(self.values)
 
 
