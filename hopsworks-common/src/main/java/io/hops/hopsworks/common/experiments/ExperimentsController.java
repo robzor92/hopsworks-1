@@ -4,6 +4,7 @@ import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDescription;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
+import io.hops.hopsworks.common.experiments.dto.ExperimentResult;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
@@ -63,6 +64,15 @@ public class ExperimentsController {
       EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
 
       LOGGER.log(Level.SEVERE, "attaching xattr " + xAttrSetFlag.name());
+
+      if(experimentDescription.getResults() == null) {
+        LOGGER.log(Level.SEVERE, "its null");
+      } else {
+        ExperimentResult[] res = experimentDescription.getResults()[0].getMetrics();
+        for(ExperimentResult res2: res) {
+          LOGGER.log(Level.SEVERE, res2.getKey() + " " + res2.getValue());
+        }
+      }
 
       flags.add(XAttrSetFlag.valueOf(xAttrSetFlag.name()));
 

@@ -4,6 +4,7 @@ import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
+import io.hops.hopsworks.common.experiments.dto.ExperimentResultsDTO;
 import io.hops.hopsworks.common.provenance.GeneralQueryParams;
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
 import io.hops.hopsworks.common.provenance.MLAssetHit;
@@ -13,6 +14,7 @@ import io.hops.hopsworks.common.util.DateUtils;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import javax.ejb.EJB;
@@ -23,6 +25,7 @@ import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @Stateless
@@ -130,6 +133,12 @@ public class ExperimentsBuilder {
           } else {
           }
         }
+      }
+      if (config.has("results")) {
+        ExperimentResultsDTO resultsDTO = new ExperimentResultsDTO();
+        JSONArray results = config.getJSONArray("results");
+        LOGGER.log(Level.SEVERE, " yolo " + results.toString(4));
+
       }
     }
 
