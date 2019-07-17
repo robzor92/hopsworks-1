@@ -6,15 +6,21 @@ import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.experiments.dto.ExperimentResult;
 import io.hops.hopsworks.common.experiments.dto.ExperimentResultsDTO;
+import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
+import io.hops.hopsworks.common.hdfs.DistributedFsService;
+import io.hops.hopsworks.common.hdfs.Utils;
+import io.hops.hopsworks.common.jobs.spark.ExperimentType;
 import io.hops.hopsworks.common.provenance.GeneralQueryParams;
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
 import io.hops.hopsworks.common.provenance.MLAssetHit;
 import io.hops.hopsworks.common.provenance.MLAssetListQueryParams;
 import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.common.util.DateUtils;
+import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
+import org.apache.hadoop.fs.Path;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -24,6 +30,7 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -35,6 +42,8 @@ public class ExperimentsBuilder {
 
   @EJB
   private ElasticController elasticController;
+  @EJB
+  private DistributedFsService dfs;
 
   public ExperimentDTO uri(ExperimentDTO dto, UriInfo uriInfo, Project project) {
     dto.setHref(uriInfo.getBaseUriBuilder().path(ResourceRequest.Name.PROJECT.toString().toLowerCase())
@@ -133,32 +142,55 @@ public class ExperimentsBuilder {
           }
         }
       }
-      if (config.has("results")) {
-        JSONArray results = config.getJSONArray("results");
-        ExperimentResultsDTO[] experimentResults = new ExperimentResultsDTO[results.length()];
-        for (int resultIndex = 0; resultIndex < results.length(); resultIndex++) {
-          ExperimentResultsDTO resultsDTO = new ExperimentResultsDTO();
-          JSONObject experiment = results.getJSONObject(resultIndex);
-          JSONArray metrics = experiment.getJSONArray("metrics");
-          ExperimentResult[] metricResults = new ExperimentResult[metrics.length()];
-          for(int metricIndex = 0; metricIndex < metrics.length(); metricIndex++) {
-            ExperimentResult metricResult = new ExperimentResult((JSONObject)metrics.get(metricIndex));
-            metricResults[metricIndex] = metricResult;
-          }
-          resultsDTO.setMetrics(metricResults);
 
-          JSONArray hyperparameters = experiment.getJSONArray("hyperparameters");
-          ExperimentResult[] hyperparameterResults = new ExperimentResult[hyperparameters.length()];
-          for(int hyperparameterIndex = 0; hyperparameterIndex < hyperparameters.length(); hyperparameterIndex++) {
-            ExperimentResult hyperparameterResult =
-                new ExperimentResult((JSONObject)hyperparameters.get(hyperparameterIndex));
-            hyperparameterResults[hyperparameterIndex] = hyperparameterResult;
-          }
-          resultsDTO.setHyperparameters(hyperparameterResults);
+      ExperimentType experimentType = null;
+      if(config.has("experimentType")) {
+        experimentType = ExperimentType.valueOf((String)config.get("experimentType"));
+      }
 
-          experimentResults[resultIndex] = resultsDTO;
+      if(experimentType.equals(ExperimentType.PARALLEL_EXPERIMENTS)) {
+        DistributedFileSystemOps dfso = null;
+        try {
+          dfso = dfs.getDfsOps();
+          String summaryPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/"
+              + fileProvenanceHit.getMlId() + "/.summary";
+          String summaryJson = dfso.cat(new Path(summaryPath));
+
+          JSONArray results = new JSONArray(summaryJson);
+          ExperimentResultsDTO[] experimentResults = new ExperimentResultsDTO[results.length()];
+          for (int resultIndex = 0; resultIndex < results.length(); resultIndex++) {
+            ExperimentResultsDTO resultsDTO = new ExperimentResultsDTO();
+            JSONObject experiment = results.getJSONObject(resultIndex);
+            JSONArray metrics = experiment.getJSONArray("metrics");
+            ExperimentResult[] metricResults = new ExperimentResult[metrics.length()];
+            for(int metricIndex = 0; metricIndex < metrics.length(); metricIndex++) {
+              ExperimentResult metricResult = new ExperimentResult((JSONObject)metrics.get(metricIndex));
+              metricResults[metricIndex] = metricResult;
+            }
+            resultsDTO.setMetrics(metricResults);
+
+            JSONArray hyperparameters = experiment.getJSONArray("hyperparameters");
+            ExperimentResult[] hyperparameterResults = new ExperimentResult[hyperparameters.length()];
+            for(int hyperparameterIndex = 0; hyperparameterIndex < hyperparameters.length(); hyperparameterIndex++) {
+              ExperimentResult hyperparameterResult =
+                  new ExperimentResult((JSONObject)hyperparameters.get(hyperparameterIndex));
+              hyperparameterResults[hyperparameterIndex] = hyperparameterResult;
+            }
+            resultsDTO.setHyperparameters(hyperparameterResults);
+
+            experimentResults[resultIndex] = resultsDTO;
+          }
+          experimentDTO.setResults(experimentResults);
+
+        } catch(IOException e) {
+
+        } finally {
+          if (dfso != null) {
+            dfs.closeDfsClient(dfso);
+          }
         }
-        experimentDTO.setResults(experimentResults);
+
+
       }
     }
 

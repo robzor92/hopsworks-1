@@ -1,5 +1,6 @@
 package io.hops.hopsworks.common.experiments.dto;
 
+import io.hops.hopsworks.common.jobs.spark.ExperimentType;
 import io.hops.hopsworks.common.provenance.Provenance;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -23,9 +24,9 @@ public class ExperimentDescription {
 
   private String duration;
 
-  private ExperimentResultsDTO[] results;
-
   private Provenance.AppState state;
+
+  private ExperimentType experimentType;
 
   public String getName() {
     return name;
@@ -75,11 +76,11 @@ public class ExperimentDescription {
     this.state = state;
   }
 
-  public ExperimentResultsDTO[] getResults() {
-    return results;
+  public ExperimentType getExperimentType() {
+    return experimentType;
   }
 
-  public void setResults(ExperimentResultsDTO[] results) {
-    this.results = results;
+  public void setExperimentType(ExperimentType experimentType) {
+    this.experimentType = experimentType;
   }
 }
