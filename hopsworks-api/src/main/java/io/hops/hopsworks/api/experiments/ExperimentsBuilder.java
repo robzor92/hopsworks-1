@@ -9,7 +9,6 @@ import io.hops.hopsworks.common.experiments.dto.ExperimentResultsDTO;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
-import io.hops.hopsworks.common.jobs.spark.ExperimentType;
 import io.hops.hopsworks.common.provenance.GeneralQueryParams;
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
 import io.hops.hopsworks.common.provenance.MLAssetHit;
@@ -143,55 +142,47 @@ public class ExperimentsBuilder {
         }
       }
 
-      ExperimentType experimentType = null;
-      if(config.has("experimentType")) {
-        experimentType = ExperimentType.valueOf((String)config.get("experimentType"));
-      }
+      DistributedFileSystemOps dfso = null;
+      try {
+        dfso = dfs.getDfsOps();
+        String summaryPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/"
+            + fileProvenanceHit.getMlId() + "/.summary";
+        String summaryJson = dfso.cat(new Path(summaryPath));
 
-      if(experimentType.equals(ExperimentType.PARALLEL_EXPERIMENTS)) {
-        DistributedFileSystemOps dfso = null;
-        try {
-          dfso = dfs.getDfsOps();
-          String summaryPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/"
-              + fileProvenanceHit.getMlId() + "/.summary";
-          String summaryJson = dfso.cat(new Path(summaryPath));
-
-          JSONArray results = new JSONArray(summaryJson);
-          ExperimentResultsDTO[] experimentResults = new ExperimentResultsDTO[results.length()];
-          for (int resultIndex = 0; resultIndex < results.length(); resultIndex++) {
-            ExperimentResultsDTO resultsDTO = new ExperimentResultsDTO();
-            JSONObject experiment = results.getJSONObject(resultIndex);
-            JSONArray metrics = experiment.getJSONArray("metrics");
-            ExperimentResult[] metricResults = new ExperimentResult[metrics.length()];
-            for(int metricIndex = 0; metricIndex < metrics.length(); metricIndex++) {
-              ExperimentResult metricResult = new ExperimentResult((JSONObject)metrics.get(metricIndex));
-              metricResults[metricIndex] = metricResult;
-            }
-            resultsDTO.setMetrics(metricResults);
-
-            JSONArray hyperparameters = experiment.getJSONArray("hyperparameters");
-            ExperimentResult[] hyperparameterResults = new ExperimentResult[hyperparameters.length()];
-            for(int hyperparameterIndex = 0; hyperparameterIndex < hyperparameters.length(); hyperparameterIndex++) {
-              ExperimentResult hyperparameterResult =
-                  new ExperimentResult((JSONObject)hyperparameters.get(hyperparameterIndex));
-              hyperparameterResults[hyperparameterIndex] = hyperparameterResult;
-            }
-            resultsDTO.setHyperparameters(hyperparameterResults);
-
-            experimentResults[resultIndex] = resultsDTO;
+        JSONObject summary = new JSONObject(summaryJson);
+        JSONArray results = (JSONArray)summary.get("results");
+        ExperimentResultsDTO[] experimentResults = new ExperimentResultsDTO[results.length()];
+        for (int resultIndex = 0; resultIndex < results.length(); resultIndex++) {
+          ExperimentResultsDTO resultsDTO = new ExperimentResultsDTO();
+          JSONObject experiment = results.getJSONObject(resultIndex);
+          JSONArray metrics = experiment.getJSONArray("metrics");
+          ExperimentResult[] metricResults = new ExperimentResult[metrics.length()];
+          for (int metricIndex = 0; metricIndex < metrics.length(); metricIndex++) {
+            ExperimentResult metricResult = new ExperimentResult((JSONObject) metrics.get(metricIndex));
+            metricResults[metricIndex] = metricResult;
           }
-          experimentDTO.setResults(experimentResults);
-
-        } catch(IOException e) {
-
-        } finally {
-          if (dfso != null) {
-            dfs.closeDfsClient(dfso);
+          resultsDTO.setMetrics(metricResults);
+          JSONArray hyperparameters = experiment.getJSONArray("hyperparameters");
+          ExperimentResult[] hyperparameterResults = new ExperimentResult[hyperparameters.length()];
+          for (int hyperparameterIndex = 0; hyperparameterIndex < hyperparameters.length(); hyperparameterIndex++) {
+            ExperimentResult hyperparameterResult =
+                new ExperimentResult((JSONObject) hyperparameters.get(hyperparameterIndex));
+            hyperparameterResults[hyperparameterIndex] = hyperparameterResult;
           }
+          resultsDTO.setHyperparameters(hyperparameterResults);
+          experimentResults[resultIndex] = resultsDTO;
         }
+        experimentDTO.setResults(experimentResults);
+      } catch (IOException e) {
 
-
+      } finally {
+        if (dfso != null) {
+          dfs.closeDfsClient(dfso);
+        }
       }
+
+
+
     }
 
     expand(experimentDTO, resourceRequest);
