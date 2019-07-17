@@ -1,15 +1,20 @@
 package io.hops.hopsworks.common.experiments.dto;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
+import org.json.JSONObject;
+
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
-@XmlAccessorType(XmlAccessType.FIELD)
 public class ExperimentResult {
 
   private String key;
+
   private String value;
+
+  public ExperimentResult(JSONObject json) {
+    this.key = json.getString("key");
+    this.value = json.getString("value");
+  }
 
   public String getKey() {
     return key;

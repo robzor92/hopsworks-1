@@ -2,48 +2,33 @@ package io.hops.hopsworks.common.experiments.dto;
 
 import io.hops.hopsworks.common.api.RestDTO;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * Contains configuration and other information about an experiment
  */
 @XmlRootElement
-@XmlAccessorType(XmlAccessType.NONE)
 public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
-  @XmlElement
   private String type;
 
-  @XmlElement
   private String id;
 
-  @XmlElement
   private String started;
 
-  @XmlElement
   private String finished;
 
-  @XmlElement
   private String state;
 
-  @XmlElement
   private String name;
 
-  @XmlElement
   private String description;
 
-  @XmlElement
   private String metric;
 
-  @XmlElement
   private String userFullName;
 
-  @XmlElement
   private ExperimentResultsDTO[] results;
-
 
   public String getType() {
     return type;

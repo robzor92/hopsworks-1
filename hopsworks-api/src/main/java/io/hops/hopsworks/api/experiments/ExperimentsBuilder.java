@@ -4,6 +4,7 @@ import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
+import io.hops.hopsworks.common.experiments.dto.ExperimentResult;
 import io.hops.hopsworks.common.experiments.dto.ExperimentResultsDTO;
 import io.hops.hopsworks.common.provenance.GeneralQueryParams;
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
@@ -24,8 +25,6 @@ import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @Stateless
@@ -135,23 +134,32 @@ public class ExperimentsBuilder {
         }
       }
       if (config.has("results")) {
-        ExperimentResultsDTO resultsDTO = new ExperimentResultsDTO();
         JSONArray results = config.getJSONArray("results");
-        LOGGER.log(Level.SEVERE, " yolo " + results.toString(4));
+        ExperimentResultsDTO[] experimentResults = new ExperimentResultsDTO[results.length()];
+        for (int resultIndex = 0; resultIndex < results.length(); resultIndex++) {
+          ExperimentResultsDTO resultsDTO = new ExperimentResultsDTO();
+          JSONObject experiment = results.getJSONObject(resultIndex);
+          JSONArray metrics = experiment.getJSONArray("metrics");
+          ExperimentResult[] metricResults = new ExperimentResult[metrics.length()];
+          for(int metricIndex = 0; metricIndex < metrics.length(); metricIndex++) {
+            ExperimentResult metricResult = new ExperimentResult((JSONObject)metrics.get(metricIndex));
+            metricResults[metricIndex] = metricResult;
+          }
+          resultsDTO.setMetrics(metricResults);
 
+          JSONArray hyperparameters = experiment.getJSONArray("hyperparameters");
+          ExperimentResult[] hyperparameterResults = new ExperimentResult[hyperparameters.length()];
+          for(int hyperparameterIndex = 0; hyperparameterIndex < hyperparameters.length(); hyperparameterIndex++) {
+            ExperimentResult hyperparameterResult =
+                new ExperimentResult((JSONObject)hyperparameters.get(hyperparameterIndex));
+            hyperparameterResults[hyperparameterIndex] = hyperparameterResult;
+          }
+          resultsDTO.setHyperparameters(hyperparameterResults);
+
+          experimentResults[resultIndex] = resultsDTO;
+        }
+        experimentDTO.setResults(experimentResults);
       }
-    }
-
-    // Fallback mechanism if experiment did not publish final state and finish time
-
-    //LOGGER.log(Level.SEVERE, "xattrs " + fileProvenanceHit.getXattrs().size());
-    for(Map.Entry<String, String> kv: fileProvenanceHit.getXattrs().entrySet()) {
-      //LOGGER.log(Level.SEVERE,kv.getKey() + "   "  + kv.getValue());
-    }
-
-    //LOGGER.log(Level.SEVERE, "map? " + fileProvenanceHit.getMap().size());
-    for(Map.Entry<String, String> kv: fileProvenanceHit.getMap().entrySet()) {
-      //LOGGER.log(Level.SEVERE,kv.getKey() + "   "  + kv.getValue());
     }
 
     expand(experimentDTO, resourceRequest);
