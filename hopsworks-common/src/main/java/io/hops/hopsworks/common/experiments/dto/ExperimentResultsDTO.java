@@ -5,6 +5,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 public class ExperimentResultsDTO {
 
+  public ExperimentResultsDTO() {
+    //Needed for JAXB
+  }
+
   private ExperimentResult[] hyperparameters;
 
   private ExperimentResult[] metrics;

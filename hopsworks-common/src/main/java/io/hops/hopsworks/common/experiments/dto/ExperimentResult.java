@@ -11,6 +11,10 @@ public class ExperimentResult {
 
   private String value;
 
+  public ExperimentResult() {
+    //Needed for JAXB
+  }
+
   public ExperimentResult(JSONObject json) {
     this.key = json.getString("key");
     this.value = json.getString("value");

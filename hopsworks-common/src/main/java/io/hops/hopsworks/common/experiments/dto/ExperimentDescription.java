@@ -4,35 +4,27 @@ import io.hops.hopsworks.common.provenance.Provenance;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * Contains configuration and other information about an experiment
  */
 @XmlRootElement
-@XmlAccessorType(XmlAccessType.NONE)
+@XmlAccessorType(XmlAccessType.FIELD)
 public class ExperimentDescription {
 
-  @XmlElement
   private String name;
 
-  @XmlElement
   private String metric;
 
-  @XmlElement
   private String description;
 
-  @XmlElement
   private String userFullName;
 
-  @XmlElement
   private String duration;
 
-  @XmlElement
   private ExperimentResultsDTO[] results;
 
-  @XmlElement
   private Provenance.AppState state;
 
   public String getName() {

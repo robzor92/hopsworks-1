@@ -10,6 +10,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
+  public ExperimentDTO() {
+    //Needed for JAXB
+  }
+
   private String type;
 
   private String id;
