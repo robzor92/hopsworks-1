@@ -41,7 +41,7 @@
 <div class="modal-header">
   <button class="close" ng-click="experimentDetailCtrl.close()" data-dismiss="modal" aria-hidden="true"
           type="button">&times;</button>
-  <h2 class="modal-title">Experiment Detailed Information</h2>
+  <h2 class="modal-title">Experiment - {{experimentDetailCtrl.experiment.name}} - Detailed Information</h2>
 </div>
 
 <div class="modal-body" style="overflow: auto">
@@ -55,6 +55,10 @@
 
       </thead>
       <tbody>
+      <tr>
+        <td>Id</td>
+        <td>{{experimentDetailCtrl.experiment.id}}</td>
+      </tr>
       <tr>
         <td>Name</td>
         <td>{{experimentDetailCtrl.experiment.name}}</td>
@@ -99,29 +103,29 @@
   </div>
 
   <div class="row">
-    <h3 style="text-align: center">Hyperparameters</h3>
+    <h3 style="text-align: center">Hyperparameter search results</h3>
     <table class="table table-hover" style="margin-left: 10px; overflow: auto">
-      <thead style="border:none;">
-      <th style="width: 33%">dropout</th>
-      <th style="width: 33%">learning_rate</th>
-      <th style="width: 33%">metric</th>
+      <thead>
+      <tr>
+        <th colspan="{{experimentDetailCtrl.hp_headers.length}}">Hyperparameters</th>
+        <th colspan="1">Results</th>
+      </tr>
 
+      <tr>
+        <th ng-repeat="header in experimentDetailCtrl.hp_headers" style="width: {{80/experimentDetailCtrl.hp_headers.length}}%">
+          {{header}}
+        </th>
+        <th style="width: 20%">
+          <a ng-click="sortBy('metric')">
+            metric
+            <span ng-show="sortType === 'metric'"
+                  ng-class="{'fa fa-caret-down': reverse, 'fa fa-caret-up': !reverse}"></span></a>
+        </th>
+      </tr>
       </thead>
       <tbody>
-      <tr>
-        <td>0.5543543</td>
-        <td>0.314543</td>
-        <td>0.394453</td>
-      </tr>
-      <tr>
-        <td>0.7543543</td>
-        <td>0.114543</td>
-        <td>0.294453</td>
-      </tr>
-      <tr>
-        <td>0.9543543</td>
-        <td>0.214543</td>
-        <td>0.594453</td>
+      <tr data-ng-repeat="experiment in experimentDetailCtrl.values | orderBy:sortType:reverse">
+        <td data-ng-repeat="val in experiment.val">{{val}}</td>
       </tr>
       </tbody>
     </table>

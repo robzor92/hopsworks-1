@@ -28,6 +28,38 @@ angular.module('hopsWorksApp')
             var self = this;
             self.experiment = experiment;
 
+            $scope.sortType = 'metric';
+
+            $scope.sortBy = function(sortType) {
+                console.log(sortType)
+                $scope.reverse = ($scope.sortType === sortType) ? !$scope.reverse : false;
+                $scope.sortType = sortType;
+            };
+
+            self.hp_headers = [];
+            var results = experiment['results'];
+            var hyperparameters = results[0]['hyperparameters'];
+            for (var i = 0; i < hyperparameters.length; i++) {
+              self.hp_headers.push(hyperparameters[i].key)
+            }
+
+            console.log(results)
+
+            self.values = []
+            for (var i = 0; i < results.length; i++) {
+            console.log('outer')
+             var tmp = []
+             for (var y = 0; y < results[i]['hyperparameters'].length; y++) {
+               tmp.push(results[i]['hyperparameters'][y].value)
+             }
+              tmp.push(results[i]['metrics'][0].value)
+              self.values.push({'val': tmp})
+            }
+
+            console.log(self.values)
+
+
+
             self.projectId = projectId;
             /**
              * Closes the modal
