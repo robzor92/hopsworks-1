@@ -62,8 +62,6 @@ angular.module('hopsWorksApp')
 
             console.log(self.values)
 
-
-
             self.projectId = projectId;
             /**
              * Closes the modal
@@ -71,6 +69,5 @@ angular.module('hopsWorksApp')
             self.close = function () {
                 $uibModalInstance.dismiss('cancel');
             };
-
         }]);
 
