@@ -24,7 +24,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.elasticsearch.search.SearchHit;
 
 @XmlRootElement
-public class MLAssetHit implements Comparator<MLAssetHit> {
+public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
   public static final String ML_INODE_ID_FIELD = "inode_id";
   public static final String ML_USER_ID_FIELD = "user_id";
   public static final String ML_APP_ID_FIELD = "app_id";
@@ -38,7 +38,7 @@ public class MLAssetHit implements Comparator<MLAssetHit> {
   public static final String ML_R_CREATE_TIME_FIELD = "readable_timestamp";
   public static final String ML_ALIVE_FIELD = "alive";
   
-  private static final Logger LOG = Logger.getLogger(MLAssetHit.class.getName());
+  private static final Logger LOG = Logger.getLogger(ProvFileStateHit.class.getName());
   private String id;
   private float score;
   private Map<String, Object> map;
@@ -57,10 +57,10 @@ public class MLAssetHit implements Comparator<MLAssetHit> {
   private Map<String, String> xattrs = new HashMap<>();
   private MLAssetAppState appState;
   
-  public MLAssetHit(){
+  public ProvFileStateHit(){
   }
   
-  public MLAssetHit(SearchHit hit) {
+  public ProvFileStateHit(SearchHit hit) {
     this.id = hit.getId();
     this.score = hit.getScore();
     //the source of the retrieved record (i.e. all the indexed information)
@@ -136,7 +136,7 @@ public class MLAssetHit implements Comparator<MLAssetHit> {
   }
   
   @Override
-  public int compare(MLAssetHit o1, MLAssetHit o2) {
+  public int compare(ProvFileStateHit o1, ProvFileStateHit o2) {
     return Float.compare(o2.getScore(), o1.getScore());
   }
 

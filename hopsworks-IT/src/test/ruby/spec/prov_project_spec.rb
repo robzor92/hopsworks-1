@@ -20,6 +20,7 @@ describe "On #{ENV['OS']}" do
   before :all do
     $stdout.sync = true
     with_valid_session
+    pp "user email: #{@user["email"]}"
     @project1_name = "prov_proj_#{short_random_id}"
     @project2_name = "prov_proj_#{short_random_id}"
     @app1_id = "application_#{short_random_id}_0001"
@@ -42,6 +43,7 @@ describe "On #{ENV['OS']}" do
     @xattrV2 = JSON['{"f1_1":"v1","f1_2":{"f2_2":"val2"}}']
     @xattrV3 = JSON['[{"f3_1":"val1","f3_2":"val2"},{"f4_1":"val3","f4_2":"val4"}]']
     @xattrV4 = "notJson"
+    @xattrV5 = JSON['[{"f3_1":"val1","f3_2":"val1"},{"f3_1":"val2","f3_2":"val2"}]']
     pp "create project: #{@project1_name}"
     @project1 = create_project_by_name(@project1_name)
     pp "create project: #{@project2_name}"
@@ -54,6 +56,16 @@ describe "On #{ENV['OS']}" do
     delete_project(@project2)
   end
   
+  describe "test epipe" do
+    it "restart epipe" do
+      execute_remotely @hostname, "sudo systemctl restart epipe"
+    end
+
+    it "wait for epipe" do 
+      prov_wait_for_epipe() 
+    end
+  end
+
   describe 'provenance tests - experiments' do
     describe 'simple experiments' do
       it "create experiments" do
@@ -180,11 +192,21 @@ describe "On #{ENV['OS']}" do
 
       it "create experiment with app states" do
         prov_create_experiment(@project1, @experiment_app1_name1)
+        experiment1_record = FileProv.where("project_name": @project1["inode_name"], "i_name": @experiment_app1_name1)
+        expect(experiment1_record.length).to eq 1
+        prov_add_xattr(experiment1_record[0], "appId", "#{@app1_id}", "XATTR_ADD", 1)
+
         prov_create_experiment(@project1, @experiment_app1_name2)
+        experiment2_record = FileProv.where("project_name": @project1["inode_name"], "i_name": @experiment_app1_name2)
+        expect(experiment2_record.length).to eq 1
+        prov_add_xattr(experiment2_record[0], "appId", "#{@app1_id}", "XATTR_ADD", 1)
+        
         prov_create_experiment(@project1, @experiment_app2_name1)
-        experiment_record = FileProv.where("project_name": @project1["inode_name"], "i_name": @experiment_app1_name1)
-        user_name = experiment_record[0]["io_user_name"]
-        expect(experiment_record.length).to eq 1
+        experiment3_record = FileProv.where("project_name": @project1["inode_name"], "i_name": @experiment_app2_name1)
+        expect(experiment3_record.length).to eq 1
+        prov_add_xattr(experiment3_record[0], "appId", "#{@app2_id}", "XATTR_ADD", 1)
+
+        user_name = experiment1_record[0]["io_user_name"]
         prov_add_app_states1(@app1_id, user_name)
         prov_add_app_states2(@app2_id, user_name)
       end
@@ -504,15 +526,15 @@ describe "On #{ENV['OS']}" do
 
   describe "ml asset (experiment) xattr tests" do
     def check_xattr(xattr, expected_xattr)
-      pp xattr
+      #pp xattr
       xattr1 = xattr.slice(xattr.index("value=")..-1)
       xattr2 = "{#{xattr1}"
       xattr3 = xattr2.gsub('=', ':')
       xattr4 = xattr3.gsub(/([a-z_1-9]+):/, '"\1":')
       xattr5 = xattr4.gsub(/:([a-z_1-9]+)/, ':"\1"')
       xattr6 = JSON.parse(xattr5)
-      pp xattr6["value"]
-      pp expected_xattr
+      #pp xattr6["value"]
+      #pp expected_xattr
       expect(xattr6["value"]).to eq expected_xattr
     end
 
@@ -643,26 +665,26 @@ describe "On #{ENV['OS']}" do
     end
 
     def check_not_json_xattr(xattr, expected_xattr)
-      pp xattr
+      #pp xattr
       xattr1 = xattr.gsub('=', ':')
       xattr2 = xattr1.gsub(/([a-zA-Z_1-9]+):/, '"\1":')
       xattr3 = xattr2.gsub(/:([a-zA-Z_1-9]+)/, ':"\1"')
       xattr4 = JSON.parse(xattr3)
-      pp xattr4["raw"]
-      pp expected_xattr
+      #pp xattr4["raw"]
+      #pp expected_xattr
       expect(xattr4["raw"]).to eq expected_xattr
     end
 
     def check_xattr(xattr, expected_xattr)
-      pp xattr
+      #pp xattr
       xattr1 = xattr.slice(xattr.index("value=")..-1)
       xattr2 = "{#{xattr1}"
       xattr3 = xattr2.gsub('=', ':')
       xattr4 = xattr3.gsub(/([a-zA-Z_1-9]+):/, '"\1":')
       xattr5 = xattr4.gsub(/:([a-zA-Z_1-9]+)/, ':"\1"')
       xattr6 = JSON.parse(xattr5)
-      pp xattr6["value"]
-      pp expected_xattr
+      #pp xattr6["value"]
+      #pp expected_xattr
       expect(xattr6["value"]).to eq expected_xattr
     end
 
@@ -739,5 +761,161 @@ describe "On #{ENV['OS']}" do
         get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false, 404)
       end
     end
-  end  
+
+    describe "search by xattr" do
+      it "stop epipe" do
+        execute_remotely @hostname, "sudo systemctl stop epipe"
+      end
+
+      it "create experiment with xattr" do
+        prov_create_experiment(@project1, @experiment_app1_name1)
+        experiment_record = prov_get_experiment_record(@project1, @experiment_app1_name1)
+        expect(experiment_record.length).to eq 1  
+        prov_add_xattr(experiment_record[0], "test_xattr1", JSON[@xattrV1], "XATTR_ADD", 1)
+        prov_add_xattr(experiment_record[0], "test_xattr2", JSON[@xattrV3], "XATTR_ADD", 2)
+        prov_add_xattr(experiment_record[0], "test_xattr4", @xattrV4, "XATTR_ADD", 3)
+        prov_add_xattr(experiment_record[0], "test_xattr5", JSON[@xattrV5], "XATTR_ADD", 4)
+      end
+
+      it "restart epipe" do
+        execute_remotely @hostname, "sudo systemctl restart epipe"
+      end
+
+      it "check simple json - ok - search result" do 
+        prov_wait_for_epipe()
+        experiment_id = prov_experiment_id(@experiment_app1_name1)
+
+        experiment = get_ml_asset_by_xattr(@project1, "EXPERIMENT", "test_xattr1.f1_1", "v1")
+        #pp experiment
+        expect(experiment.length).to eq 1
+        prov_check_asset_with_id(experiment, experiment_id)
+
+        experiment = get_ml_asset_by_xattr(@project1, "EXPERIMENT", "test_xattr1.f1_2.f2_1", "val1")
+        #pp experiment
+        expect(experiment.length).to eq 1
+        prov_check_asset_with_id(experiment, experiment_id)
+      end
+
+      it "check simple json - not ok - search result" do 
+        experiment_id = prov_experiment_id(@experiment_app1_name1)
+
+        #bad key
+        experiment = get_ml_asset_by_xattr(@project1, "EXPERIMENT", "test_xattr1.f1_1_1", "v1")
+        #pp experiment
+        expect(experiment.length).to eq 0
+
+        #bad value
+        experiment = get_ml_asset_by_xattr(@project1, "EXPERIMENT", "test_xattr1.f1_1", "val12")
+        #pp experiment
+        expect(experiment.length).to eq 0
+      end
+
+      it "check json array - ok - search result" do 
+        experiment_id = prov_experiment_id(@experiment_app1_name1)
+
+        experiment = get_ml_asset_by_xattr(@project1, "EXPERIMENT", "test_xattr2.f3_1", "val1")
+        #pp experiment
+        expect(experiment.length).to eq 1
+        prov_check_asset_with_id(experiment, experiment_id)
+
+        experiment = get_ml_asset_by_xattr(@project1, "EXPERIMENT", "test_xattr5.f3_1", "val1")
+        #pp experiment
+        expect(experiment.length).to eq 1
+        prov_check_asset_with_id(experiment, experiment_id)
+
+        experiment = get_ml_asset_by_xattr(@project1, "EXPERIMENT", "test_xattr5.f3_1", "val2")
+        #pp experiment
+        expect(experiment.length).to eq 1
+        prov_check_asset_with_id(experiment, experiment_id)
+      end
+
+      it "check not json - ok - search result" do 
+        experiment_id = prov_experiment_id(@experiment_app1_name1)
+
+        experiment = get_ml_asset_by_xattr(@project1, "EXPERIMENT", "test_xattr4", "notJson")
+        #pp experiment
+        expect(experiment.length).to eq 1
+        prov_check_asset_with_id(experiment, experiment_id)
+      end
+
+      it "check not json - not ok - search result" do 
+        experiment_id = prov_experiment_id(@experiment_app1_name1)
+
+        experiment = get_ml_asset_by_xattr(@project1, "EXPERIMENT", "test_xattr4", "notJson1")
+        #pp experiment
+        expect(experiment.length).to eq 0
+      end
+
+      it "delete experiment dataset" do
+        prov_delete_experiment(@project1, @experiment_app1_name1)
+      end
+
+      it "check cleanup" do 
+        prov_wait_for_epipe() 
+        experiment_id = prov_experiment_id(@experiment_app1_name1)
+        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false, 404)
+      end
+    end 
+  end
+
+  describe 'mock app footprint' do
+    it "stop epipe" do
+      execute_remotely @hostname, "sudo systemctl stop epipe"
+    end
+
+    it "create mock footprint" do
+      prov_create_experiment(@project1, @experiment_app1_name1)
+      experiment_record = FileProv.where("project_name": @project1["inode_name"], "i_name": @experiment_app1_name1)
+      expect(experiment_record.length).to eq 1
+      prov_add_xattr(experiment_record[0], "appId", "#{@app1_id}", "XATTR_ADD", 1)
+      #pp experiment_record
+
+      experiment_mock_file_1_op_1 = experiment_record[0].dup
+      experiment_mock_file_1_op_1["inode_operation"] = "CREATE"
+      experiment_mock_file_1_op_1["inode_id"] = 200000
+      experiment_mock_file_1_op_1["io_logical_time"] = 0
+      experiment_mock_file_1_op_1["io_timestamp"] = experiment_mock_file_1_op_1["io_timestamp"]+1
+      experiment_mock_file_1_op_1["io_app_id"] = @app1_id
+      experiment_mock_file_1_op_1["parent_i_id"] = experiment_record[0]["inode_id"]
+      experiment_mock_file_1_op_1["i_name"] = "mock_file_1"
+      experiment_mock_file_1_op_1["i_parent_name"] = experiment_record[0]["i_name"]
+      experiment_mock_file_1_op_1["i_p1_name"] = experiment_record[0]["i_parent_name"]
+      experiment_mock_file_1_op_1.save!
+
+      experiment_mock_file_1_op_2 = experiment_mock_file_1_op_1.dup
+      experiment_mock_file_1_op_2["inode_operation"] = "MODIFY_DATA"
+      experiment_mock_file_1_op_2["io_logical_time"] = 1
+      experiment_mock_file_1_op_2["io_timestamp"] = experiment_mock_file_1_op_2["io_timestamp"]+1
+      experiment_mock_file_1_op_2.save!
+
+      experiment_mock_file_2_op_1 = experiment_mock_file_1_op_1.dup
+      experiment_mock_file_2_op_1["inode_id"] = 200001
+      experiment_mock_file_2_op_1["io_timestamp"] = experiment_mock_file_2_op_1["io_timestamp"]+1
+      experiment_mock_file_2_op_1["i_name"] = "mock_file_2"
+      experiment_mock_file_2_op_1.save!
+
+      experiment_mock_file_3_op_1 = experiment_mock_file_1_op_1.dup
+      experiment_mock_file_3_op_1["inode_operation"] = "CREATE"
+      experiment_mock_file_3_op_1["inode_id"] = 200002
+      experiment_mock_file_3_op_1["io_timestamp"] = experiment_mock_file_3_op_1["io_timestamp"]+1
+      experiment_mock_file_3_op_1["io_app_id"] = @app2_id
+      experiment_mock_file_3_op_1["i_name"] = "mock_file_3"
+      experiment_mock_file_3_op_1.save!
+    end
+
+    it "restart epipe" do
+      execute_remotely @hostname, "sudo systemctl restart epipe"
+    end
+
+    it "check mock footprint" do 
+      prov_wait_for_epipe() 
+      result = get_app_footprint(@project1, @app1_id, "FULL")
+      # pp result
+      expect(result.length).to eq 3
+
+      result = get_app_footprint(@project1, @app1_id, "COMPACT")
+      # pp result
+      expect(result.length).to eq 2
+    end
+  end
 end

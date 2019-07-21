@@ -20,6 +20,7 @@ describe "On #{ENV['OS']}" do
   before :all do
     $stdout.sync = true
     with_valid_session
+    pp "user email: #{@user["email"]}"
     @project1_name = "prov_proj_#{short_random_id}"
     @project2_name = "prov_proj_#{short_random_id}"
     @app1_id = "application_#{short_random_id}_0001"
@@ -42,14 +43,17 @@ describe "On #{ENV['OS']}" do
     @xattrV2 = JSON['{"f1_1":"v1","f1_2":{"f2_2":"val2"}}']
     @xattrV3 = JSON['[{"f3_1":"val1","f3_2":"val2"},{"f4_1":"val3","f4_2":"val4"}]']
     @xattrV4 = "notJson"
+    @xattrV5 = JSON['[{"f3_1":"val1","f3_2":"val1"},{"f3_1":"val2","f3_2":"val2"}]']
     pp "create project: #{@project1_name}"
     @project1 = create_project_by_name(@project1_name)
     #pp "create project: #{@project2_name}"
     #@project2 = create_project_by_name(@project2_name)
   end
 
-  after :all do 
-    pp "delete projects"
-    delete_project(@project1)
-  end
+  #after :all do 
+  #  pp "delete projects"
+  #  delete_project(@project1)
+  #end
+
+  
 end

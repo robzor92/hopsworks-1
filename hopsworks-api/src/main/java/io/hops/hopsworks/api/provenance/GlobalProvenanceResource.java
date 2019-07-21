@@ -42,14 +42,12 @@ import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
 import io.hops.hopsworks.api.filter.NoCacheResponse;
 import io.hops.hopsworks.common.elastic.ElasticController;
-import io.hops.hopsworks.common.provenance.MLAssetHit;
-import io.hops.hopsworks.common.provenance.Provenance;
+import io.hops.hopsworks.common.provenance.ProvFileStateHit;
 import io.hops.hopsworks.common.provenance.SimpleResult;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
-import io.hops.hopsworks.restutils.RESTCodes;
 import io.swagger.annotations.Api;
 
 import javax.ejb.EJB;
@@ -59,7 +57,6 @@ import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.GenericEntity;
@@ -83,28 +80,29 @@ public class GlobalProvenanceResource {
   private ElasticController elasticController;
   
   @GET
-  @Path("mlType/{mlType}/list")
+  @Path("list")
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response getMLAssets(@PathParam("mlType") Provenance.MLType mlType,
-    @BeanParam MLAssetListQueryParamsBean mlAssetsParams,
-    @BeanParam GeneralQueryParamsBean queryParams,
+  public Response getFiles(
+    @BeanParam ProvFileDetailsQueryParamsBean fileDetails,
+    @BeanParam ProvMLAssetListQueryParamsBean mlAssetParams,
+    @BeanParam ProvFileAppDetailsQueryParamsBean appDetails,
+    @BeanParam QueryDetailsParamsBean queryDetails,
     @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
-    logger.log(Level.INFO, "Local content path {0} mlassets params:{1} query params:{2}",
-      new Object[]{req.getRequestURL().toString(), mlAssetsParams, queryParams});
-    if (mlType == null) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO, "ml asset type is not set");
-    }
-    if(queryParams.isCount()) {
-      Long countResult = elasticController.fileProvenanceByMLTypeCount(mlType.toString(),
-        mlAssetsParams.params(), queryParams.params());
+    logger.log(Level.INFO, "Local content path:{0} file params:{1} ml asset params:{2} " +
+        "app details params:{3} query params:{4}",
+      new Object[]{req.getRequestURL().toString(), fileDetails, mlAssetParams, appDetails,
+        queryDetails});
+    if(queryDetails.isCount()) {
+      Long countResult = elasticController.provFileStateCount(fileDetails.params(), mlAssetParams.params(),
+        appDetails.params(), queryDetails.params());
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
         .entity(new SimpleResult<>(countResult)).build();
     } else {
-      GenericEntity<List<MLAssetHit>> searchResults = new GenericEntity<List<MLAssetHit>>(
-        elasticController.fileProvenanceByMLType(mlType.toString(), mlAssetsParams.params(),
-          queryParams.params())) {
+      GenericEntity<List<ProvFileStateHit>> searchResults = new GenericEntity<List<ProvFileStateHit>>(
+        elasticController.provFileState(fileDetails.params(), mlAssetParams.params(),
+          appDetails.params(), queryDetails.params())) {
       };
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();
     }

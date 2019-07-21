@@ -167,8 +167,8 @@ module ProvenanceHelper
   end 
 
   def get_ml_asset_in_project(project, ml_type, withAppState) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/mlType/#{ml_type}/list"
-    query_params = "?withAppState=#{withAppState}"
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
+    query_params = "?mlType=#{ml_type}&withAppState=#{withAppState}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -176,8 +176,8 @@ module ProvenanceHelper
   end
 
   def get_ml_asset_by_id(project, ml_type, ml_id, withAppState, status) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/mlType/#{ml_type}/exact"
-    query_params = "?mlId=#{ml_id}&withAppState=#{withAppState}"
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/exact"
+    query_params = "?mlType=#{ml_type}&mlId=#{ml_id}&withAppState=#{withAppState}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(status)
@@ -185,8 +185,8 @@ module ProvenanceHelper
   end
 
   def get_ml_asset_by_id_2(project, ml_type, ml_id, withAppState) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/mlType/#{ml_type}/exact"
-    query_params = "?mlId=#{ml_id}&withAppState=#{withAppState}"
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/exact"
+    query_params = "?mlType=#{ml_type}&mlId=#{ml_id}&withAppState=#{withAppState}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -194,8 +194,8 @@ module ProvenanceHelper
   end
 
   def get_ml_asset_by_xattr_count(project, ml_type, xattr_key, xattr_val, count) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/mlType/#{ml_type}/list"
-    query_params = "?xattrs=#{xattr_key}:#{xattr_val}&count=true"
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
+    query_params = "?mlType=#{ml_type}&xattrs=#{xattr_key}:#{xattr_val}&count=true"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -204,9 +204,18 @@ module ProvenanceHelper
     parsed_result
   end
 
+  def get_ml_asset_by_xattr(project, ml_type, xattr_key, xattr_val)
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
+    query_params = "?mlType=#{ml_type}&xattrs=#{xattr_key}:#{xattr_val}"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+  end
+    
   def get_ml_td_count_using_feature_project(project, feature_name) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/mlType/TRAINING_DATASET/list"
-    query_params = "?xattrs=features.name:#{feature_name}&count=true"
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
+    query_params = "?mlType=TRAINING_DATASET&xattrs=features.name:#{feature_name}&count=true"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -214,8 +223,17 @@ module ProvenanceHelper
   end
 
   def get_ml_td_count_using_feature_global(feature_name) 
-    resource = "#{ENV['HOPSWORKS_API']}/provenance/mlType/TRAINING_DATASET/list"
-    query_params = "?xattrs=features.name:#{feature_name}&count=true"
+    resource = "#{ENV['HOPSWORKS_API']}/provenance/list"
+    query_params = "?mlType=TRAINING_DATASET&xattrs=features.name:#{feature_name}&count=true"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+  end
+
+  def get_app_footprint(project, appId, type) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/app/#{appId}/footprint"
+    query_params = "?type=#{type}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)

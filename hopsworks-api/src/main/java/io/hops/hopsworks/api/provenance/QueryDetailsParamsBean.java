@@ -21,15 +21,15 @@ import io.hops.hopsworks.common.provenance.GeneralQueryParams;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 
-public class GeneralQueryParamsBean {
+public class QueryDetailsParamsBean {
 
   @QueryParam("count")
   @DefaultValue("false")
   private boolean count;
 
-  public GeneralQueryParamsBean() {}
+  public QueryDetailsParamsBean() {}
 
-  public GeneralQueryParamsBean(@QueryParam("count") @DefaultValue("false") boolean count) {
+  public QueryDetailsParamsBean(@QueryParam("count") @DefaultValue("false") boolean count) {
     this.count = count;
   }
 
@@ -43,7 +43,7 @@ public class GeneralQueryParamsBean {
 
   @Override
   public String toString() {
-    return "MLAssetListQueryParamsBean{"
+    return "ProvFileDetailsQueryParamsBean{"
       + " count=" + count
       + '}';
   }

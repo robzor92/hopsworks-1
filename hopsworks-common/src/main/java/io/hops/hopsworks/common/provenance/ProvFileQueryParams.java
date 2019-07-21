@@ -19,40 +19,33 @@ import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import java.util.logging.Level;
 
-public class MLAssetQueryParams {
+public class ProvFileQueryParams {
 
   public final Integer projectId;
   public final Long inodeId;
-  public final String mlId;
   public final boolean withAppState;
 
-  private MLAssetQueryParams(Integer projectId, Long inodeId, String mlId, boolean withAppState) {
+  private ProvFileQueryParams(Integer projectId, Long inodeId, boolean withAppState) {
     this.projectId = projectId;
     this.inodeId = inodeId;
-    this.mlId = mlId;
     this.withAppState = withAppState;
   }
   
   @Override
   public String toString() {
-    return "MLAssetQueryParams{" 
+    return "ProvFileQueryParams{"
       + " projectId=" + projectId
       + (inodeId == null ? "" : " inodeId=" + inodeId)
-      + (mlId == null ? "" : " mlId=" + mlId)
-      + " withAppState=" + withAppState 
+      + " withAppState=" + withAppState
       + '}';
   }
 
-  public static MLAssetQueryParams instance(Integer projectId, Long inodeId, String mlId, boolean withAppState)
+  public static ProvFileQueryParams instance(Integer projectId, Long inodeId, boolean withAppState)
     throws GenericException {
     if (projectId == null) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
         "project provenance query - always confined to own project");
     }
-    if ((inodeId == null && mlId == null) || (inodeId != null && mlId != null)) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
-        "provenance query - you need to provide either inodeId or mlId");
-    }
-    return new MLAssetQueryParams(projectId, inodeId, mlId, withAppState);
+    return new ProvFileQueryParams(projectId, inodeId, withAppState);
   }
 }

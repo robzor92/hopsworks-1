@@ -48,12 +48,16 @@ import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.dataset.DatasetController;
 import io.hops.hopsworks.common.provenance.AppProvenanceHit;
-import io.hops.hopsworks.common.provenance.FileProvenanceHit;
 import io.hops.hopsworks.common.provenance.GeneralQueryParams;
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
-import io.hops.hopsworks.common.provenance.MLAssetHit;
-import io.hops.hopsworks.common.provenance.MLAssetListQueryParams;
-import io.hops.hopsworks.common.provenance.MLAssetQueryParams;
+import io.hops.hopsworks.common.provenance.ProvElastic;
+import io.hops.hopsworks.common.provenance.ProvFileOpHit;
+import io.hops.hopsworks.common.provenance.ProvFileStateHit;
+import io.hops.hopsworks.common.provenance.ProvFileAppDetailsQueryParams;
+import io.hops.hopsworks.common.provenance.ProvFileDetailsQueryParams;
+import io.hops.hopsworks.common.provenance.ProvFileQueryParams;
+import io.hops.hopsworks.common.provenance.ProvMLAssetDetailsQueryParams;
+import io.hops.hopsworks.common.provenance.ProvMLAssetQueryParams;
 import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
@@ -108,7 +112,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -1008,73 +1011,41 @@ public class ElasticController {
   }
   
   //PROVENANCE
-  
-  public List<FileProvenanceHit> fileProvenanceByUserId(int userId) throws ServiceException {
-    return fileProvenanceQuery(fileProvenanceByUserIdQuery(userId));
-  }
-  
-  public List<FileProvenanceHit> fileProvenanceByAppId(String appId) throws ServiceException {
-    return fileProvenanceQuery(fileProvenanceByAppIdQuery(appId));
-  }
-  
-  public List<FileProvenanceHit> fileProvenanceByFileInodeId(long inodeId) throws ServiceException {
-    return fileProvenanceQuery(fileProvenanceByInodeIdQuery(inodeId));
-  }
-  
-  public List<FileProvenanceHit> fileProvenanceByProjectInodeId(long inodeId) throws ServiceException {
-    return fileProvenanceQuery(fileProvenanceByProjectIdQuery(inodeId));
-  }
-  
-  public List<FileProvenanceHit> fileProvenanceByDatasetInodeId(long inodeId) throws ServiceException {
-    return fileProvenanceQuery(fileProvenanceByDatasetIdQuery(inodeId));
-  }
-  
-  public List<FileProvenanceHit> fileProvenanceByInodeName(String inodeName) throws ServiceException {
-    return fileProvenanceQuery(fileProvenanceByInodeNameQuery(inodeName));
-  }
-  
-  public List<MLAssetHit> fileProvenanceByMLType(String mlType, MLAssetQueryParams params)
+  static final int DEFAULT_PROVENANCE_QUERY_SIZE = 500;
+  public List<ProvFileStateHit> provFileState(
+    ProvFileQueryParams fileParams, ProvMLAssetQueryParams mlAssetParams, ProvFileAppDetailsQueryParams appDetails)
     throws ServiceException, ProjectException {
-    return liveMLAssetQuery(liveMLAsset(mlType, params), mlType, params.withAppState, Optional.empty());
+    return provFileStateQuery(provFileStateQB(fileParams, mlAssetParams), appDetails,
+      DEFAULT_PROVENANCE_QUERY_SIZE);
   }
 
-  public List<MLAssetHit> fileProvenanceByMLType(String mlType, MLAssetListQueryParams mlParams,
-    GeneralQueryParams queryParams)
-    throws ServiceException, ProjectException, GenericException {
+  public List<ProvFileStateHit> provFileState(
+    ProvFileDetailsQueryParams fileDetails, ProvMLAssetDetailsQueryParams mlAssetParams,
+    ProvFileAppDetailsQueryParams appDetails, GeneralQueryParams queryParams)
+    throws ServiceException, GenericException, ProjectException {
     if(queryParams.count) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
         "count should not be used with this query");
     }
-    return liveMLAssetQuery(liveMLAsset(mlType, mlParams), mlType, mlParams.withAppState, mlParams.currentState);
+    return provFileStateQuery(provFileStateQB(fileDetails, mlAssetParams), appDetails,
+      DEFAULT_PROVENANCE_QUERY_SIZE);
   }
 
-  public long fileProvenanceByMLTypeCount(String mlType, MLAssetListQueryParams mlParams,
-    GeneralQueryParams queryParams)
-    throws ServiceException, ProjectException, GenericException {
-    if(queryParams.count && mlParams.withAppState) {
+  public long provFileStateCount(ProvFileDetailsQueryParams fileParams, ProvMLAssetDetailsQueryParams mlAssetParams,
+    ProvFileAppDetailsQueryParams appDetails, GeneralQueryParams queryParams)
+    throws ServiceException, GenericException, ProjectException {
+    if(queryParams.count && appDetails.withAppState) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
         "count(no source) and withAppState(multi) cannot be used together");
     }
-    return liveMLAssetCountQuery(liveMLAsset(mlType, mlParams), mlType);
+    return provFileCountQuery(provFileStateQB(fileParams, mlAssetParams));
   }
   
-  public List<AppProvenanceHit> appProvenanceByAppState(String appState) throws ServiceException {
-    return appProvenanceQuery(appProvenanceByAppStateQuery(appState));
-  }
-  
-  public List<AppProvenanceHit> appProvenanceByAppId(String appId) throws ServiceException {
-    return appProvenanceQuery(appProvenanceByAppIdQuery(appId));
-  }
-  
-  public List<AppProvenanceHit> appProvenanceByAppName(String appName) throws ServiceException {
-    return appProvenanceQuery(appProvenanceByAppNameQuery(appName));
-  }
-  
-  public List<AppProvenanceHit> appProvenanceByAppUser(String appUser) throws ServiceException {
-    return appProvenanceQuery(appProvenanceByAppUserQuery(appUser));
+  public List<ProvFileOpHit> provFileOps(String appId) throws ServiceException {
+    return provFileOpQuery(provFileOpQB(appId), DEFAULT_PROVENANCE_QUERY_SIZE);
   }
     
-  private SearchResponse rawQuery(String index, String docType, QueryBuilder query, boolean count)
+  private SearchResponse rawQuery(String index, String docType, QueryBuilder query, int querySize)
     throws ServiceException {
     //some necessary client settings
     Client client = getClient();
@@ -1089,9 +1060,7 @@ public class ElasticController {
     SearchRequestBuilder srb = client.prepareSearch(index);
     srb = srb.setTypes(docType);
     srb = srb.setQuery(query);
-    if(count) {
-      srb = srb.setSize(0);
-    }
+    srb = srb.setSize(querySize);
     LOG.log(Level.INFO, "index:{0} Elastic query: {1}", new Object[]{index, srb});
     ActionFuture<SearchResponse> futureResponse = srb.execute();
     SearchResponse response = futureResponse.actionGet();
@@ -1106,51 +1075,69 @@ public class ElasticController {
     }
   }
 
-  private long liveMLAssetCountQuery(QueryBuilder query, String mlType) throws ServiceException {
+  private long provFileCountQuery(QueryBuilder query) throws ServiceException {
     long count = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, true)
+      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, 0)
       .getHits().totalHits;
     LOG.log(Level.WARNING, "query hits: {0}", count);
     return count;
   }
   
-  private List<MLAssetHit> liveMLAssetQuery(QueryBuilder query, String mlType, boolean withAppState,
-    Optional<Provenance.AppState> currentState)
+  private  List<ProvFileOpHit> provFileOpQuery(QueryBuilder query, int querySize) throws ServiceException {
+    List<ProvFileOpHit> result = new LinkedList<>();
+    SearchResponse searchResult = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
+      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, querySize);
+    SearchHit[] rawHits = searchResult.getHits().getHits();
+    LOG.log(Level.WARNING, "query hits: {0} total:{1}",
+      new Object[]{rawHits.length, searchResult.getHits().totalHits});
+    for (SearchHit rawHit : rawHits) {
+      ProvFileOpHit hit = new ProvFileOpHit(rawHit);
+      result.add(hit);
+    }
+    return result;
+  }
+  
+  private List<ProvFileStateHit> provFileStateQuery(QueryBuilder query,
+    ProvFileAppDetailsQueryParams appDetails, int querySize)
     throws ServiceException {
-    List<MLAssetHit> result = new LinkedList<>();
+    List<ProvFileStateHit> result = new LinkedList<>();
     Set<String> appIds = new HashSet<>();
-    SearchHit[]  rawHits = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, 
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, false)
+    SearchHit[] rawHits = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
+      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, querySize)
       .getHits().getHits();
     LOG.log(Level.WARNING, "query hits: {0}", rawHits.length);
     for (SearchHit rawHit : rawHits) {
-      MLAssetHit fpHit = new MLAssetHit(rawHit);
+      ProvFileStateHit fpHit = new ProvFileStateHit(rawHit);
       result.add(fpHit);
-      if(withAppState && mlType.equals("EXPERIMENT")) {
-        appIds.add(getExperimentAppId(fpHit));
+      if(appDetails.withAppState) {
+        appIds.add(getAppId(fpHit));
       }
     }
-    if(withAppState && mlType.equals("EXPERIMENT")) {
-      Map<String, Map<Provenance.AppState, AppProvenanceHit>> applicationsStates = appStates(appIds);
-      Iterator<MLAssetHit> it = result.iterator();
-      while(it.hasNext()) {
-        MLAssetHit mlAsset = it.next();
-        Map<Provenance.AppState, AppProvenanceHit> appStates = applicationsStates.get(getExperimentAppId(mlAsset));
-        if(currentState.isPresent()) {
-          if(appStates == null || !appStates.containsKey(currentState.get())) {
-            it.remove();
-          } else {
-            mlAsset.setAppState(buildAppState(appStates));
-          }
+    if(appDetails.withAppState) {
+      attachAppStates(result, appIds, appDetails.currentState, querySize);
+    }
+    return result;
+  }
+  
+  private void attachAppStates(List<ProvFileStateHit> fileStates, Set<String> appIds,
+    Provenance.AppState filterOnCurrentState, int querySize) throws ServiceException {
+    Map<String, Map<Provenance.AppState, AppProvenanceHit>> applicationsStates = appStates(appIds, querySize);
+    Iterator<ProvFileStateHit> it = fileStates.iterator();
+    while(it.hasNext()) {
+      ProvFileStateHit mlAsset = it.next();
+      Map<Provenance.AppState, AppProvenanceHit> appStates = applicationsStates.get(getAppId(mlAsset));
+      if(filterOnCurrentState != null) {
+        if(appStates == null || !appStates.containsKey(filterOnCurrentState)) {
+          it.remove();
         } else {
-          if (appStates != null) {
-            mlAsset.setAppState(buildAppState(appStates));
-          }
+          mlAsset.setAppState(buildAppState(appStates));
+        }
+      } else {
+        if (appStates != null) {
+          mlAsset.setAppState(buildAppState(appStates));
         }
       }
     }
-    
-    return result;
   }
   
   private MLAssetAppState buildAppState(Map<Provenance.AppState, AppProvenanceHit> appStates)
@@ -1166,20 +1153,22 @@ public class ElasticController {
     return mlAssetAppState;
   }
   
-  private String getExperimentAppId(MLAssetHit experiment) {
-    if(experiment.getAppId().equals("notls")) {
-      String mlId = experiment.getMlId();
-      String appId = mlId.substring(0, mlId.lastIndexOf("_"));
-      return appId;
+  private String getAppId(ProvFileStateHit mlAsset) {
+    if(mlAsset.getAppId().equals("notls")) {
+      if(mlAsset.getXattrs().containsKey("appId")) {
+        return mlAsset.getXattrs().get("appId");
+      } else {
+        throw new IllegalArgumentException("withAppId enabled for tls clusters or notls cluster with xattr appIds");
+      }
     } else {
-      return experiment.getAppId();
+      return mlAsset.getAppId();
     }
   }
   
-  private Map<String, Map<Provenance.AppState, AppProvenanceHit>> appStates(Set<String> appIds)
+  private Map<String, Map<Provenance.AppState, AppProvenanceHit>> appStates(Set<String> appIds, int querySize)
     throws ServiceException {
     SearchHit[]  rawHits = rawQuery(Settings.ELASTIC_INDEX_APP_PROVENANCE, 
-      Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE, appProvenanceByAppIdQuery(appIds), false)
+      Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE, appProvenanceByAppIdQuery(appIds), querySize)
       .getHits().getHits();
 //    LOG.log(Level.WARNING, "query hits: {0}", rawHits.length);
     Map<String, Map<Provenance.AppState, AppProvenanceHit>> result = new HashMap<>();
@@ -1193,55 +1182,6 @@ public class ElasticController {
       appStates.put(hit.getAppState(), hit);
     }
     return result;
-  }
-  private List<FileProvenanceHit> fileProvenanceQuery(QueryBuilder query) throws ServiceException {
-    List<FileProvenanceHit> result = new LinkedList<>();
-    for (SearchHit rawHit : rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, 
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, true).getHits().getHits()) {
-      FileProvenanceHit hit = new FileProvenanceHit(rawHit);
-      result.add(hit);
-    }
-    return result;
-  }
-  
-  private List<AppProvenanceHit> appProvenanceQuery(QueryBuilder query) throws ServiceException {
-    List<AppProvenanceHit> result = new LinkedList<>();
-    for (SearchHit rawHit : rawQuery(Settings.ELASTIC_INDEX_APP_PROVENANCE, 
-      Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE, query, true).getHits().getHits()) {
-      AppProvenanceHit hit = new AppProvenanceHit(rawHit);
-      result.add(hit);
-    }
-    return result;
-  }
-    
-  private QueryBuilder fileProvenanceByUserIdQuery(int userId) {
-    QueryBuilder query = termQuery(FileProvenanceHit.USER_ID_FIELD, userId);
-    return query;
-  }
-  
-  private QueryBuilder fileProvenanceByAppIdQuery(String appId) {
-    QueryBuilder query = termQuery(FileProvenanceHit.APP_ID_FIELD, appId);
-    return query;
-  }
-  
-  private QueryBuilder fileProvenanceByInodeIdQuery(long inodeId) {
-    QueryBuilder query = termQuery(FileProvenanceHit.INODE_ID_FIELD, inodeId);
-    return query;
-  }
-  
-  private QueryBuilder fileProvenanceByProjectIdQuery(long inodeId) {
-    QueryBuilder query = termQuery(FileProvenanceHit.PROJECT_INODE_ID_FIELD, inodeId);
-    return query;
-  }
-  
-  private QueryBuilder fileProvenanceByDatasetIdQuery(long inodeId) {
-    QueryBuilder query = termQuery(FileProvenanceHit.DATASET_INODE_ID_FIELD, inodeId);
-    return query;
-  }
-  
-  private QueryBuilder fileProvenanceByInodeNameQuery(String inodeName) {
-    QueryBuilder query = termQuery(FileProvenanceHit.INODE_NAME_FIELD, inodeName);
-    return query;
   }
 
   private QueryBuilder getSearchTermQuery(String fieldName, String searchTerm) {
@@ -1268,73 +1208,71 @@ public class ElasticController {
     return project.getInode().getId();
   }
   
-  private QueryBuilder liveMLAsset(String mlType, MLAssetListQueryParams mlParams) throws ProjectException {
+  private QueryBuilder provFileStateQB(ProvFileDetailsQueryParams fileDetails,
+    ProvMLAssetDetailsQueryParams mlAssetListParams)
+    throws ProjectException {
     BoolQueryBuilder query = boolQuery()
-      .must(termQuery(MLAssetHit.ML_PROJECT_INODE_ID_FIELD, getProjectInodeId(mlParams.projectId)))
-      .must(termQuery(MLAssetHit.ML_TYPE_FIELD, mlType))
-      .must(termQuery(MLAssetHit.ML_ALIVE_FIELD, true));
-    if(mlParams.assetName != null)
-      query = query.must(termQuery(MLAssetHit.ML_INODE_NAME_FIELD, mlParams.assetName));
-    if(mlParams.likeAssetName != null)
-      query = query.must(getSearchTermQuery(MLAssetHit.ML_INODE_NAME_FIELD, mlParams.likeAssetName));
-    if(mlParams.userName != null)
-      query = query.must(termQuery(MLAssetHit.ML_USER_NAME_FIELD, mlParams.userName));
-    if(mlParams.likeUserName != null)
-      query = query.must(getSearchTermQuery(MLAssetHit.ML_USER_NAME_FIELD, mlParams.likeUserName));
-    if(mlParams.createdBeforeTimestamp != null || mlParams.createdAfterTimestamp != null) {
-      RangeQueryBuilder rqb = rangeQuery(MLAssetHit.ML_CREATE_TIME_FIELD);
-      if(mlParams.createdAfterTimestamp != null) {
-        rqb = rqb.from(mlParams.createdAfterTimestamp);
+      .must(termQuery(ProvFileStateHit.ML_ALIVE_FIELD, true));
+    if(fileDetails.projectId != null)
+      query = query
+        .must(termQuery(ProvFileStateHit.ML_PROJECT_INODE_ID_FIELD, getProjectInodeId(fileDetails.projectId)));
+    if(fileDetails.assetName != null)
+      query = query.must(matchQuery(ProvFileStateHit.ML_INODE_NAME_FIELD, fileDetails.assetName));
+    if(fileDetails.likeAssetName != null)
+      query = query.must(getSearchTermQuery(ProvFileStateHit.ML_INODE_NAME_FIELD, fileDetails.likeAssetName));
+    if(fileDetails.userName != null)
+      query = query.must(matchQuery(ProvFileStateHit.ML_USER_NAME_FIELD, fileDetails.userName));
+    if(fileDetails.likeUserName != null)
+      query = query.must(getSearchTermQuery(ProvFileStateHit.ML_USER_NAME_FIELD, fileDetails.likeUserName));
+    if(fileDetails.createdBeforeTimestamp != null || fileDetails.createdAfterTimestamp != null) {
+      RangeQueryBuilder rqb = rangeQuery(ProvFileStateHit.ML_CREATE_TIME_FIELD);
+      if(fileDetails.createdAfterTimestamp != null) {
+        rqb = rqb.from(fileDetails.createdAfterTimestamp);
       }
-      if(mlParams.createdBeforeTimestamp != null) {
-        rqb = rqb.to(mlParams.createdBeforeTimestamp);
+      if(fileDetails.createdBeforeTimestamp != null) {
+        rqb = rqb.to(fileDetails.createdBeforeTimestamp);
       }
       query = query.must(rqb);
     }
-    if(mlParams.xattrs != null) {
-      for (Map.Entry<String, String> xattr : mlParams.xattrs.entrySet()) {
-        query = query.must(termQuery(xattr.getKey(), xattr.getValue()));
+    if(fileDetails.xattrs != null) {
+      for (Map.Entry<String, String> xattr : fileDetails.xattrs.entrySet()) {
+        query = query.must(matchQuery(xattr.getKey(), xattr.getValue()));
       }
     }
+    if(mlAssetListParams.mlType != null)
+      query = query.must(termQuery(ProvFileStateHit.ML_TYPE_FIELD, mlAssetListParams.mlType));
+    if(fileDetails.appId != null)
+      query = query.must(termQuery(ProvFileStateHit.ML_APP_ID_FIELD, fileDetails.appId));
     return query;
   }
 
-  private QueryBuilder liveMLAsset(String mlType, MLAssetQueryParams params) throws ProjectException {
+  private QueryBuilder provFileStateQB(ProvFileQueryParams fileParams, ProvMLAssetQueryParams mlAssetParams)
+    throws ProjectException {
 //    LOG.log(Level.INFO, "exact ml asset:{0}", params);
     BoolQueryBuilder query = boolQuery()
-      .must(termQuery(MLAssetHit.ML_PROJECT_INODE_ID_FIELD, getProjectInodeId(params.projectId)))
-      .must(termQuery(MLAssetHit.ML_TYPE_FIELD, mlType))
-      .must(termQuery(MLAssetHit.ML_ALIVE_FIELD, true));
-    if(params.inodeId != null) 
-      query = query.must(termQuery(MLAssetHit.ML_INODE_ID_FIELD, params.inodeId));
-    if(params.mlId != null) 
-      query = query.must(termQuery(MLAssetHit.ML_ID_FIELD, params.mlId));
+      .must(termQuery(ProvFileStateHit.ML_ALIVE_FIELD, true));
+    if(fileParams.projectId != null)
+      query = query
+        .must(termQuery(ProvFileStateHit.ML_PROJECT_INODE_ID_FIELD, getProjectInodeId(fileParams.projectId)));
+    if(fileParams.inodeId != null)
+      query = query.must(termQuery(ProvFileStateHit.ML_INODE_ID_FIELD, fileParams.inodeId));
+    if(mlAssetParams.mlId != null)
+      query = query.must(termQuery(ProvFileStateHit.ML_ID_FIELD, mlAssetParams.mlId));
+    if(mlAssetParams.mlType != null)
+      query = query.must(termQuery(ProvFileStateHit.ML_TYPE_FIELD, mlAssetParams.mlType));
 //    LOG.log(Level.INFO, "query:{0}", query.toString());
     return query;
   }
   
-  private QueryBuilder appProvenanceByAppIdQuery(String appId) {
-    QueryBuilder query = termQuery(AppProvenanceHit.APP_ID_FIELD, appId);
+  private QueryBuilder provFileOpQB(String appId) {
+    BoolQueryBuilder query = boolQuery()
+      .must(termQuery(ProvElastic.Common.ENTRY_TYPE_FIELD, "operation"))
+      .must(termQuery(ProvElastic.Common.APP_ID_FIELD, appId));
     return query;
   }
   
   private QueryBuilder appProvenanceByAppIdQuery(Set<String> appIds) {
     QueryBuilder query = termsQuery(AppProvenanceHit.APP_ID_FIELD, appIds);
-    return query;
-  }
-  
-  private QueryBuilder appProvenanceByAppStateQuery(String appState) {
-    QueryBuilder query = termQuery(AppProvenanceHit.APP_STATE_FIELD, appState);
-    return query;
-  }
-  
-  private QueryBuilder appProvenanceByAppNameQuery(String appName) {
-    QueryBuilder query = termQuery(AppProvenanceHit.APP_NAME_FIELD, appName);
-    return query;
-  }
-  
-  private QueryBuilder appProvenanceByAppUserQuery(String appUser) {
-    QueryBuilder query = termQuery(AppProvenanceHit.APP_USER_FIELD, appUser);
     return query;
   }
   //END_PROVENANCE

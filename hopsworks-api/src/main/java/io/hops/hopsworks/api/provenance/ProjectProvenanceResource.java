@@ -38,17 +38,16 @@
  */
 package io.hops.hopsworks.api.provenance;
 
-import com.google.common.base.Strings;
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
 import io.hops.hopsworks.api.filter.NoCacheResponse;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.elastic.ElasticController;
-import io.hops.hopsworks.common.provenance.AppProvenanceHit;
-import io.hops.hopsworks.common.provenance.MLAssetHit;
-import io.hops.hopsworks.common.provenance.FileProvenanceHit;
-import io.hops.hopsworks.common.provenance.Provenance;
+import io.hops.hopsworks.common.provenance.ProvFileCompactOpsHit;
+import io.hops.hopsworks.common.provenance.ProvFileOpHit;
+import io.hops.hopsworks.common.provenance.ProvFileStateHit;
+import io.hops.hopsworks.common.provenance.ProvFileSummaryOpsHit;
 import io.hops.hopsworks.common.provenance.SimpleResult;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
@@ -56,6 +55,7 @@ import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
 import io.hops.hopsworks.restutils.RESTCodes;
 import io.swagger.annotations.Api;
+
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -65,10 +65,12 @@ import javax.ejb.TransactionAttributeType;
 import javax.enterprise.context.RequestScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BeanParam;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
@@ -95,177 +97,48 @@ public class ProjectProvenanceResource {
   }
   
   @GET
-  @Path("fileEntriesBy/field/{field}/value/{value}")
-  @Produces(MediaType.APPLICATION_JSON)
-  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
-  @JWTRequired(acceptedTokens = {Audience.API},
-    allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response fileProvenance(@PathParam("field") FileProvenanceField field,
-    @PathParam("value") String value, @Context HttpServletRequest req)
-    throws ServiceException {
-
-    if (Strings.isNullOrEmpty(value) || value == null) {
-      throw new IllegalArgumentException("Value was not provided");
-    }
-
-    logger.log(Level.INFO, "Local content path {0}", req.getRequestURL().toString());
-
-    GenericEntity<List<FileProvenanceHit>> searchResults;
-    switch (field) {
-      case FILE_INODE_ID:
-        long fileInodeId;
-        try {
-          fileInodeId = Long.valueOf(value);
-        } catch (NumberFormatException ex) {
-          throw new IllegalArgumentException(
-            FileProvenanceField.FILE_INODE_ID.toString() + "expected value: integer", ex);
-        }
-        searchResults = new GenericEntity<List<FileProvenanceHit>>(
-          elasticController.fileProvenanceByFileInodeId(fileInodeId)) {
-        };
-        break;
-
-      case PROJECT_INODE_ID:
-        long projectInodeId;
-        try {
-          projectInodeId = Long.valueOf(value);
-        } catch (NumberFormatException ex) {
-          throw new IllegalArgumentException(
-            FileProvenanceField.PROJECT_INODE_ID.toString() + "expected value: long", ex);
-        }
-        searchResults = new GenericEntity<List<FileProvenanceHit>>(
-          elasticController.fileProvenanceByProjectInodeId(projectInodeId)) {
-        };
-        break;
-      case DATASET_INODE_ID:
-        long datasetInodeId;
-        try {
-          datasetInodeId = Long.valueOf(value);
-        } catch (NumberFormatException ex) {
-          throw new IllegalArgumentException(
-            FileProvenanceField.DATASET_INODE_ID.toString() + "expected value: long", ex);
-        }
-        searchResults = new GenericEntity<List<FileProvenanceHit>>(
-          elasticController.fileProvenanceByDatasetInodeId(datasetInodeId)) {
-        };
-        break;
-      case USER_ID:
-        int userId;
-        try {
-          userId = Integer.valueOf(value);
-        } catch (NumberFormatException ex) {
-          throw new IllegalArgumentException(
-            FileProvenanceField.USER_ID.toString() + "expected value: int", ex);
-        }
-        searchResults = new GenericEntity<List<FileProvenanceHit>>(
-          elasticController.fileProvenanceByUserId(userId)) {
-        };
-        break;
-      case APP_ID:
-        searchResults = new GenericEntity<List<FileProvenanceHit>>(
-          elasticController.fileProvenanceByAppId(value)) {
-        };
-        break;
-      case FILE_INODE_NAME:
-        searchResults = new GenericEntity<List<FileProvenanceHit>>(
-          elasticController.fileProvenanceByInodeName(value)) {
-        };
-        break;
-      default:
-        throw new IllegalArgumentException("Unmanaged field:" + field);
-    }
-
-    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();
-  }
-
-  @GET
-  @Path("appEntriesBy/field/{field}/value/{value}")
-  @Produces(MediaType.APPLICATION_JSON)
-  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
-  @JWTRequired(acceptedTokens = {Audience.API},
-    allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response appProvenance(@PathParam("field") AppProvenanceField field,
-    @PathParam("value") String value, @Context HttpServletRequest req)
-    throws ServiceException {
-
-    if (Strings.isNullOrEmpty(value) || value == null) {
-      throw new IllegalArgumentException("Value was not provided");
-    }
-
-    logger.log(Level.INFO, "Local content path {0}", req.getRequestURL().toString());
-
-    GenericEntity<List<AppProvenanceHit>> searchResults;
-    switch (field) {
-      case APP_ID:
-        searchResults = new GenericEntity<List<AppProvenanceHit>>(
-          elasticController.appProvenanceByAppId(value)) {
-        };
-        break;
-      case APP_STATE:
-        searchResults = new GenericEntity<List<AppProvenanceHit>>(
-          elasticController.appProvenanceByAppState(value)) {
-        };
-        break;
-      case APP_NAME:
-        searchResults = new GenericEntity<List<AppProvenanceHit>>(
-          elasticController.appProvenanceByAppName(value)) {
-        };
-        break;
-      case APP_USER:
-        searchResults = new GenericEntity<List<AppProvenanceHit>>(
-          elasticController.appProvenanceByAppUser(value)) {
-        };
-        break;
-      default:
-        throw new IllegalArgumentException("Unmanaged field:" + field);
-    }
-
-    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();
-  }
-
-  @GET
-  @Path("mlType/{mlType}/list")
+  @Path("list")
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response getMLAssets(@PathParam("mlType") Provenance.MLType mlType, 
-    @BeanParam MLAssetListQueryParamsBean mlAssetsParams,
-    @BeanParam GeneralQueryParamsBean queryParams,
+  public Response getFiles(
+    @BeanParam ProvFileDetailsQueryParamsBean fileDetails,
+    @BeanParam ProvMLAssetListQueryParamsBean mlAssetParams,
+    @BeanParam ProvFileAppDetailsQueryParamsBean appDetails,
+    @BeanParam QueryDetailsParamsBean queryDetails,
     @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
-    logger.log(Level.INFO, "Local content path {0} mlassets params:{1} query params:{2}",
-      new Object[]{req.getRequestURL().toString(), mlAssetsParams, queryParams});
-    if (mlType == null) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO, "ml asset type is not set");
-    }
-    if(queryParams.isCount()) {
-      Long countResult = elasticController.fileProvenanceByMLTypeCount(mlType.toString(),
-        mlAssetsParams.params(project.getId()), queryParams.params());
+    logger.log(Level.INFO, "Local content path:{0} file params:{1} ml asset params:{2} " +
+        "app details params:{3} query params:{4}",
+      new Object[]{req.getRequestURL().toString(), fileDetails, mlAssetParams, appDetails, queryDetails});
+    if(queryDetails.isCount()) {
+      Long countResult = elasticController.provFileStateCount(fileDetails.params(project.getId()),
+        mlAssetParams.params(), appDetails.params(), queryDetails.params());
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
         .entity(new SimpleResult<>(countResult)).build();
     } else {
-      GenericEntity<List<MLAssetHit>> searchResults = new GenericEntity<List<MLAssetHit>>(
-        elasticController.fileProvenanceByMLType(mlType.toString(), mlAssetsParams.params(project.getId()),
-          queryParams.params())) {
+      GenericEntity<List<ProvFileStateHit>> searchResults = new GenericEntity<List<ProvFileStateHit>>(
+        elasticController.provFileState(fileDetails.params(project.getId()), mlAssetParams.params(),
+          appDetails.params(), queryDetails.params())) {
       };
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();
     }
   }
 
   @GET
-  @Path("mlType/{mlType}/exact")
+  @Path("exact")
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response getMLAssets(@PathParam("mlType") Provenance.MLType mlType, 
-    @BeanParam MLAssetQueryParamsBean mlAssetsParams, @BeanParam GeneralQueryParamsBean queryParams,
+  public Response getFiles(
+    @BeanParam ProvFileQueryParamsBean fileParams,
+    @BeanParam ProvMLAssetQueryParamsBean mlAssetParams,
+    @BeanParam ProvFileAppDetailsQueryParamsBean appDetailsParams,
     @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
-    logger.log(Level.INFO, "Local content path {0} mlassets params:{1} query params:{2}",
-      new Object[]{req.getRequestURL().toString(), mlAssetsParams, queryParams});
-    if (mlType == null) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO, "ml asset type is not set");
-    }
-    GenericEntity<List<MLAssetHit>> searchResults = new GenericEntity<List<MLAssetHit>>(
-      elasticController.fileProvenanceByMLType(mlType.toString(), mlAssetsParams.params(project.getId()))) {
+    logger.log(Level.INFO, "Local content path:{0} file params:{1} ml asset params:{2} app details params:{3} ",
+      new Object[]{req.getRequestURL().toString(), fileParams, mlAssetParams, appDetailsParams});
+    GenericEntity<List<ProvFileStateHit>> searchResults = new GenericEntity<List<ProvFileStateHit>>(
+      elasticController.provFileState(
+        fileParams.params(project.getId()), mlAssetParams.params(), appDetailsParams.params())) {
     };
     if(searchResults.getEntity().isEmpty()) {
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.NOT_FOUND).build();
@@ -276,7 +149,43 @@ public class ProjectProvenanceResource {
         .entity(searchResults.getEntity().get(0)).build();
     }
   }
-
+  
+  @GET
+  @Path("app/{appId}/footprint")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response appFootprint(
+    @PathParam("appId") String appId,
+    @QueryParam("type") @DefaultValue("FULL") FootprintType type,
+    @Context HttpServletRequest req) throws ServiceException, GenericException {
+    logger.log(Level.INFO, "Local content path:{0} appId:{1} ml asset params:{2} app details params:{3} ",
+      new Object[]{req.getRequestURL().toString(), appId});
+    List<ProvFileOpHit> result = elasticController.provFileOps(appId);
+    switch(type) {
+      case FULL:
+        GenericEntity<List<ProvFileOpHit>> fullResults = new GenericEntity<List<ProvFileOpHit>>(result) {};
+        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(fullResults).build();
+      case COMPACT:
+        GenericEntity<List<ProvFileCompactOpsHit>> compactResults
+          = new GenericEntity<List<ProvFileCompactOpsHit>>(ProvFileCompactOpsHit.compact(result)) {};
+        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(compactResults).build();
+      case SUMMARY:
+        GenericEntity<List<ProvFileSummaryOpsHit>> summaryResults
+          = new GenericEntity<List<ProvFileSummaryOpsHit>>(ProvFileSummaryOpsHit.summary(result)) {};
+        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(summaryResults).build();
+      default:
+        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
+          "footprint type: " + type);
+    }
+  }
+  
+  public enum FootprintType {
+    FULL,
+    COMPACT,
+    SUMMARY
+  }
+  
   public static enum FileProvenanceField {
     FILE_INODE_ID,
     PROJECT_INODE_ID,

@@ -15,20 +15,18 @@
  */
 package io.hops.hopsworks.api.provenance;
 
-import io.hops.hopsworks.common.provenance.MLAssetListQueryParams;
-import io.hops.hopsworks.common.provenance.Provenance;
+import io.hops.hopsworks.common.provenance.ProvFileDetailsQueryParams;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.swagger.annotations.ApiParam;
 
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import java.util.Map;
 
-public class MLAssetListQueryParamsBean {
-  @QueryParam("assetName")
+public class ProvFileDetailsQueryParamsBean {
+  @QueryParam("fileName")
   private String assetName;
   
-  @QueryParam("likeAssetName")
+  @QueryParam("likeFileName")
   private String likeAssetName;
    
   @QueryParam("userName")
@@ -42,40 +40,34 @@ public class MLAssetListQueryParamsBean {
   
   @QueryParam("createdAfter")
   private Long createdAfterTimestamp;
-
-  @DefaultValue("false") 
-  @QueryParam("withAppState") 
-  private boolean withAppState;
   
-  @QueryParam("currentState")
-  private Provenance.AppState currentState;
-
   @QueryParam("xattrs")
   @ApiParam(value = "ex. key1:val1,key2:val2")
   private String xattrs;
   
-  public MLAssetListQueryParamsBean(@QueryParam("assetName") String assetName, 
+  @QueryParam("appId")
+  private String appId;
+  
+  public ProvFileDetailsQueryParamsBean(
+    @QueryParam("assetName") String assetName,
     @QueryParam("likeAssetName") String likeAssetName, 
     @QueryParam("userName") String userName,
     @QueryParam("likeUserName") String likeUserName,
     @QueryParam("createdBefore") long createdBeforeTimestamp, 
-    @QueryParam("createdAfter") long createdAfterTimestamp, 
-    @QueryParam("withAppState") @DefaultValue("false") boolean withAppState,
-    @QueryParam("currentState") Provenance.AppState currentState,
-    @QueryParam("xattrs") String xattrs) {
+    @QueryParam("createdAfter") long createdAfterTimestamp,
+    @QueryParam("xattrs") String xattrs,
+    @QueryParam("appId") String appId) {
     this.assetName = assetName;
     this.likeAssetName = likeAssetName;
     this.userName = userName;
     this.likeUserName = likeUserName;
     this.createdBeforeTimestamp = createdBeforeTimestamp;
     this.createdAfterTimestamp = createdAfterTimestamp;
-    this.withAppState = withAppState;
-    this.currentState = currentState;
     this.xattrs = xattrs;
+    this.appId = appId;
   }
   
-  public MLAssetListQueryParamsBean() {
-  }
+  public ProvFileDetailsQueryParamsBean() {}
 
   public String getUserName() {
     return userName;
@@ -99,14 +91,6 @@ public class MLAssetListQueryParamsBean {
 
   public void setCreatedAfterTimestamp(Long createdAfterTimestamp) {
     this.createdAfterTimestamp = createdAfterTimestamp;
-  }
-
-  public Provenance.AppState getCurrentState() {
-    return currentState;
-  }
-
-  public void setCurrentState(Provenance.AppState currentState) {
-    this.currentState = currentState;
   }
 
   public String getAssetName() {
@@ -133,14 +117,6 @@ public class MLAssetListQueryParamsBean {
     this.likeUserName = likeUserName;
   }
 
-  public boolean isWithAppState() {
-    return withAppState;
-  }
-
-  public void setWithAppState(boolean withAppState) {
-    this.withAppState = withAppState;
-  }
-
   public String getXattrs() {
     return xattrs;
   }
@@ -148,37 +124,44 @@ public class MLAssetListQueryParamsBean {
   public void setXattrs(String xattrs) throws GenericException {
     this.xattrs = xattrs;
   }
-
+  
+  public String getAppId() {
+    return appId;
+  }
+  
+  public void setAppId(String appId) {
+    this.appId = appId;
+  }
+  
   @Override
   public String toString() {
-    return "MLAssetListQueryParamsBean{" 
+    return "ProvFileDetailsQueryParamsBean{"
       + (assetName == null ? "" : " assetName=" + assetName)
       + (likeAssetName == null ? "" : " likeAssetName=" + likeAssetName)
       + (userName == null ? "" : " userName=" + userName)
-      + (likeUserName == null ? "" : " likeUserName=" + likeUserName) 
+      + (likeUserName == null ? "" : " likeUserName=" + likeUserName)
       + (createdBeforeTimestamp == null ? "" : " createdBeforeTimestamp=" + createdBeforeTimestamp)
       + (createdAfterTimestamp == null ? "" :" createdAfterTimestamp=" + createdAfterTimestamp)
-      + " withAppState=" + withAppState 
-      + (currentState == null ? "" : " currentState=" + currentState)
       + (xattrs == null ? "" : " xattrs=" + xattrs)
+      + (appId == null ? "" : " appId=" + appId)
       + '}';
   }
 
-  public MLAssetListQueryParams params(Integer projectId) throws GenericException {
+  public ProvFileDetailsQueryParams params(Integer projectId) throws GenericException {
     Map<String, String> xattrsMap = null;
     if(xattrs != null) {
-      xattrsMap = MLAssetListQueryParams.getXAttrsMap(xattrs);
+      xattrsMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrs);
     }
-    return MLAssetListQueryParams.instance(projectId, assetName, likeAssetName,
-      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, withAppState, currentState, xattrsMap);
+    return ProvFileDetailsQueryParams.instance(projectId, assetName, likeAssetName,
+      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsMap, appId);
   }
   
-  public MLAssetListQueryParams params() throws GenericException {
+  public ProvFileDetailsQueryParams params() throws GenericException {
     Map<String, String> xattrsMap = null;
     if(xattrs != null) {
-      xattrsMap = MLAssetListQueryParams.getXAttrsMap(xattrs);
+      xattrsMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrs);
     }
-    return MLAssetListQueryParams.instance(null, assetName, likeAssetName,
-      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, withAppState, currentState, xattrsMap);
+    return ProvFileDetailsQueryParams.instance(null, assetName, likeAssetName,
+      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsMap, appId);
   }
 }

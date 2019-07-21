@@ -19,12 +19,11 @@ import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.logging.Level;
 
-public class MLAssetListQueryParams {
+public class ProvFileDetailsQueryParams {
   public final Integer projectId;
   public final String assetName;
   public final String likeAssetName;
@@ -32,58 +31,47 @@ public class MLAssetListQueryParams {
   public final String likeUserName;
   public final Long createdBeforeTimestamp;
   public final Long createdAfterTimestamp;
-  public final boolean withAppState;
-  public final Optional<Provenance.AppState> currentState;
   public final Map<String, String> xattrs;
+  public final String appId;
 
-  private MLAssetListQueryParams(Integer projectId, 
+  private ProvFileDetailsQueryParams(Integer projectId,
     String assetName, String likeAssetName,
     String userName, String likeUserName, 
     Long createdBeforeTimestamp, Long createdAfterTimestamp,
-    boolean withAppState, Provenance.AppState currentState,
-    Map<String, String> xattrs) {
+    Map<String, String> xattrs,
+    String appId) {
     this.projectId = projectId;
     this.assetName = assetName;
     this.likeAssetName = likeAssetName;
     this.userName = userName;
-    this.likeUserName = likeAssetName;
+    this.likeUserName = likeUserName;
     this.createdBeforeTimestamp = createdBeforeTimestamp;
     this.createdAfterTimestamp = createdAfterTimestamp;
-    this.withAppState = withAppState;
-    this.currentState = Optional.ofNullable(currentState);
     this.xattrs = xattrs;
+    this.appId = appId;
   }
 
-  public static MLAssetListQueryParams instance(Integer projectId, 
+  public static ProvFileDetailsQueryParams instance(Integer projectId,
     String assetName, String likeAssetName,
     String userName, String likeUserName, 
     Long createdBeforeTimestamp, Long createdAfterTimestamp,
-    boolean withAppState, Provenance.AppState currentState,
-    Map<String, String> xattrs) throws GenericException {
+    Map<String, String> xattrs, String appId) throws GenericException {
     if (assetName != null && likeAssetName != null) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
         "provenance query - set only one - either like or exact - assetName");
-    }
-    if (projectId == null) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
-        "project provenance query - always confined to own project");
     }
     if (userName != null && likeUserName != null) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
         "provenance query - set only one - either like or exact - userName");
     }
-    if (currentState != null && !withAppState) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
-        "provenance query - in order to filter by current state - withAppState has to be enabled");
-    }
-    return new MLAssetListQueryParams(projectId, assetName, likeAssetName, userName, likeUserName,
-      createdBeforeTimestamp, createdAfterTimestamp, withAppState, currentState, xattrs);
+    return new ProvFileDetailsQueryParams(projectId, assetName, likeAssetName, userName, likeUserName,
+      createdBeforeTimestamp, createdAfterTimestamp, xattrs, appId);
   }
   
-  public static MLAssetListQueryParams projectMLAssets(Integer projectId, boolean withAppState) 
+  public static ProvFileDetailsQueryParams projectMLAssets(Integer projectId)
     throws GenericException {
     return instance(projectId, null, null, null, null,
-      null, null, withAppState, null, null);
+      null, null, null, null);
   }
   
   public static Map<String, String> getXAttrsMap(String xattrs) throws GenericException {
