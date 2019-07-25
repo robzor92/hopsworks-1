@@ -231,8 +231,8 @@ module ProvenanceHelper
     parsed_result = JSON.parse(result)
   end
 
-  def get_app_footprint(project, appId, type) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/app/#{appId}/footprint"
+  def get_app_fileOperations(project, appId, type) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/app/#{appId}/fileOperations"
     query_params = "?type=#{type}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"

@@ -858,12 +858,12 @@ describe "On #{ENV['OS']}" do
     end 
   end
 
-  describe 'mock app footprint' do
+  describe 'mock app fileOperations' do
     it "stop epipe" do
       execute_remotely @hostname, "sudo systemctl stop epipe"
     end
 
-    it "create mock footprint" do
+    it "create mock fileOperations" do
       prov_create_experiment(@project1, @experiment_app1_name1)
       experiment_record = FileProv.where("project_name": @project1["inode_name"], "i_name": @experiment_app1_name1)
       expect(experiment_record.length).to eq 1
@@ -907,13 +907,13 @@ describe "On #{ENV['OS']}" do
       execute_remotely @hostname, "sudo systemctl restart epipe"
     end
 
-    it "check mock footprint" do 
+    it "check mock fileOperations" do 
       prov_wait_for_epipe() 
-      result = get_app_footprint(@project1, @app1_id, "FULL")
+      result = get_app_fileOperations(@project1, @app1_id, "FULL")
       # pp result
       expect(result.length).to eq 3
 
-      result = get_app_footprint(@project1, @app1_id, "COMPACT")
+      result = get_app_fileOperations(@project1, @app1_id, "COMPACT")
       # pp result
       expect(result.length).to eq 2
     end

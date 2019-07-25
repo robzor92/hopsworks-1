@@ -44,7 +44,9 @@ import io.hops.hopsworks.api.filter.NoCacheResponse;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.elastic.ElasticController;
+import io.hops.hopsworks.common.provenance.ProvAppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvFileCompactOpsHit;
+import io.hops.hopsworks.common.provenance.ProvFileHit;
 import io.hops.hopsworks.common.provenance.ProvFileOpHit;
 import io.hops.hopsworks.common.provenance.ProvFileStateHit;
 import io.hops.hopsworks.common.provenance.ProvFileSummaryOpsHit;
@@ -151,15 +153,15 @@ public class ProjectProvenanceResource {
   }
   
   @GET
-  @Path("app/{appId}/footprint")
+  @Path("app/{appId}/fileOperations")
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response appFootprint(
     @PathParam("appId") String appId,
-    @QueryParam("type") @DefaultValue("FULL") FootprintType type,
+    @QueryParam("type") @DefaultValue("FULL") FileOpsReturnType type,
     @Context HttpServletRequest req) throws ServiceException, GenericException {
-    logger.log(Level.INFO, "Local content path:{0} appId:{1} ml asset params:{2} app details params:{3} ",
+    logger.log(Level.INFO, "Local content path:{0} appId:{1}",
       new Object[]{req.getRequestURL().toString(), appId});
     List<ProvFileOpHit> result = elasticController.provFileOps(appId);
     switch(type) {
@@ -180,13 +182,29 @@ public class ProjectProvenanceResource {
     }
   }
   
-  public enum FootprintType {
+  public enum FileOpsReturnType {
     FULL,
     COMPACT,
     SUMMARY
   }
   
-  public static enum FileProvenanceField {
+  @GET
+  @Path("app/{appId}/footprint")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response appFootprint(
+    @PathParam("appId") String appId,
+    @QueryParam("type") @DefaultValue("ALL") ProvAppFootprintType type,
+    @Context HttpServletRequest req) throws ServiceException {
+    logger.log(Level.INFO, "Local content path:{0} appId:{1}",
+      new Object[]{req.getRequestURL().toString(), appId});
+    GenericEntity<List<ProvFileHit>> fullResults = new GenericEntity<List<ProvFileHit>>(
+      elasticController.provAppFootprint(appId, type)) {};
+    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(fullResults).build();
+  }
+  
+  public enum FileProvenanceField {
     FILE_INODE_ID,
     PROJECT_INODE_ID,
     DATASET_INODE_ID,
