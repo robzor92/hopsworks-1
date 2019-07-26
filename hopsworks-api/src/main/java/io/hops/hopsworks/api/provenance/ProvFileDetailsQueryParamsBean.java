@@ -41,9 +41,13 @@ public class ProvFileDetailsQueryParamsBean {
   @QueryParam("createdAfter")
   private Long createdAfterTimestamp;
   
-  @QueryParam("xattrs")
+  @QueryParam("xattrsExact")
   @ApiParam(value = "ex. key1:val1,key2:val2")
-  private String xattrs;
+  private String xattrsExact;
+  
+  @QueryParam("xattrsLike")
+  @ApiParam(value = "ex. key1:val1,key2:val2")
+  private String xattrsLike;
   
   @QueryParam("appId")
   private String appId;
@@ -55,7 +59,8 @@ public class ProvFileDetailsQueryParamsBean {
     @QueryParam("likeUserName") String likeUserName,
     @QueryParam("createdBefore") long createdBeforeTimestamp, 
     @QueryParam("createdAfter") long createdAfterTimestamp,
-    @QueryParam("xattrs") String xattrs,
+    @QueryParam("xattrsExact") String xattrsExact,
+    @QueryParam("xattrsLike") String xattrsLike,
     @QueryParam("appId") String appId) {
     this.assetName = assetName;
     this.likeAssetName = likeAssetName;
@@ -63,7 +68,8 @@ public class ProvFileDetailsQueryParamsBean {
     this.likeUserName = likeUserName;
     this.createdBeforeTimestamp = createdBeforeTimestamp;
     this.createdAfterTimestamp = createdAfterTimestamp;
-    this.xattrs = xattrs;
+    this.xattrsExact = xattrsExact;
+    this.xattrsLike = xattrsLike;
     this.appId = appId;
   }
   
@@ -117,12 +123,20 @@ public class ProvFileDetailsQueryParamsBean {
     this.likeUserName = likeUserName;
   }
 
-  public String getXattrs() {
-    return xattrs;
+  public String getXattrsExact() {
+    return xattrsExact;
   }
 
-  public void setXattrs(String xattrs) throws GenericException {
-    this.xattrs = xattrs;
+  public void setXattrsExact(String xattrsExact) throws GenericException {
+    this.xattrsExact = xattrsExact;
+  }
+  
+  public String getXattrsLike() {
+    return xattrsLike;
+  }
+  
+  public void setXattrsLike(String xattrsLike) {
+    this.xattrsLike = xattrsLike;
   }
   
   public String getAppId() {
@@ -142,26 +156,23 @@ public class ProvFileDetailsQueryParamsBean {
       + (likeUserName == null ? "" : " likeUserName=" + likeUserName)
       + (createdBeforeTimestamp == null ? "" : " createdBeforeTimestamp=" + createdBeforeTimestamp)
       + (createdAfterTimestamp == null ? "" :" createdAfterTimestamp=" + createdAfterTimestamp)
-      + (xattrs == null ? "" : " xattrs=" + xattrs)
+      + (xattrsExact == null ? "" : " xattrsExact=" + xattrsExact)
+      + (xattrsLike == null ? "" : " xattrsLike=" + xattrsLike)
       + (appId == null ? "" : " appId=" + appId)
       + '}';
   }
 
   public ProvFileDetailsQueryParams params(Integer projectId) throws GenericException {
-    Map<String, String> xattrsMap = null;
-    if(xattrs != null) {
-      xattrsMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrs);
-    }
+    Map<String, String> xattrsExactMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrsExact);
+    Map<String, String> xattrsLikeMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrsLike);
     return ProvFileDetailsQueryParams.instance(projectId, assetName, likeAssetName,
-      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsMap, appId);
+      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap, appId);
   }
   
   public ProvFileDetailsQueryParams params() throws GenericException {
-    Map<String, String> xattrsMap = null;
-    if(xattrs != null) {
-      xattrsMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrs);
-    }
+    Map<String, String> xattrsExactMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrsExact);
+    Map<String, String> xattrsLikeMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrsLike);
     return ProvFileDetailsQueryParams.instance(null, assetName, likeAssetName,
-      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsMap, appId);
+      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap, appId);
   }
 }

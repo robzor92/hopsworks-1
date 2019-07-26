@@ -127,10 +127,10 @@ describe "On #{ENV['OS']}" do
         prov_wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
         expect(result1.length).to eq 1
-        xattrs = Hash.new
-        xattrs["xattr_key_1"] = "xattr_value_1"
-        xattrs["xattr_key_2"] = "xattr_value_2"
-        prov_check_asset_with_xattrs(result1, prov_experiment_id(@experiment_app1_name1), xattrs)
+        xattrsExact = Hash.new
+        xattrsExact["xattr_key_1"] = "xattr_value_1"
+        xattrsExact["xattr_key_2"] = "xattr_value_2"
+        prov_check_asset_with_xattrs(result1, prov_experiment_id(@experiment_app1_name1), xattrsExact)
       end
 
       it "delete experiments" do
@@ -168,10 +168,10 @@ describe "On #{ENV['OS']}" do
         prov_wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
         expect(result1.length).to eq 1
-        xattrs = Hash.new
-        xattrs["xattr_key_1"] = "xattr_value_1_updated"
-        xattrs["xattr_key_3"] = "xattr_value_3"
-        prov_check_asset_with_xattrs(result1, prov_experiment_id(@experiment_app1_name1), xattrs)
+        xattrsExact = Hash.new
+        xattrsExact["xattr_key_1"] = "xattr_value_1_updated"
+        xattrsExact["xattr_key_3"] = "xattr_value_3"
+        prov_check_asset_with_xattrs(result1, prov_experiment_id(@experiment_app1_name1), xattrsExact)
       end
 
       it "delete experiments" do
@@ -320,10 +320,10 @@ describe "On #{ENV['OS']}" do
         prov_wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "MODEL", false)
         expect(result1.length).to eq 1
-        xattrs = Hash.new
-        xattrs["xattr_key_1"] = "xattr_value_1"
-        xattrs["xattr_key_2"] = "xattr_value_2"
-        prov_check_asset_with_xattrs(result1, prov_model_id(@model1_name, @model_version1), xattrs)
+        xattrsExact = Hash.new
+        xattrsExact["xattr_key_1"] = "xattr_value_1"
+        xattrsExact["xattr_key_2"] = "xattr_value_2"
+        prov_check_asset_with_xattrs(result1, prov_model_id(@model1_name, @model_version1), xattrsExact)
       end
 
       it "delete model" do
@@ -401,10 +401,10 @@ describe "On #{ENV['OS']}" do
         prov_wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false)
         expect(result1.length).to eq 1
-        xattrs = Hash.new
-        xattrs["xattr_key_1"] = "xattr_value_1"
-        xattrs["xattr_key_2"] = "xattr_value_2"
-        prov_check_asset_with_xattrs(result1, prov_td_id(@td1_name, @td_version1), xattrs)
+        xattrsExact = Hash.new
+        xattrsExact["xattr_key_1"] = "xattr_value_1"
+        xattrsExact["xattr_key_2"] = "xattr_value_2"
+        prov_check_asset_with_xattrs(result1, prov_td_id(@td1_name, @td_version1), xattrsExact)
       end
 
       it "delete training dataset" do

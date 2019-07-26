@@ -58,6 +58,7 @@ import io.hops.hopsworks.common.provenance.ProvFileStateHit;
 import io.hops.hopsworks.common.provenance.ProvFileAppDetailsQueryParams;
 import io.hops.hopsworks.common.provenance.ProvFileDetailsQueryParams;
 import io.hops.hopsworks.common.provenance.ProvFileQueryParams;
+import io.hops.hopsworks.common.provenance.ProvFilesParamBuilder;
 import io.hops.hopsworks.common.provenance.ProvMLAssetDetailsQueryParams;
 import io.hops.hopsworks.common.provenance.ProvMLAssetQueryParams;
 import io.hops.hopsworks.common.provenance.Provenance;
@@ -1014,6 +1015,18 @@ public class ElasticController {
   
   //PROVENANCE
   static final int DEFAULT_PROVENANCE_QUERY_SIZE = 500;
+  public List<ProvFileStateHit> provFileState(ProvFilesParamBuilder params)
+    throws GenericException, ServiceException, ProjectException {
+    return provFileState(params.fileDetails(), params.mlAssetDetails(), params.appDetails(),
+      new GeneralQueryParams(false));
+  }
+  
+  public long provFileStateCount(ProvFilesParamBuilder params)
+    throws GenericException, ServiceException, ProjectException {
+    return provFileStateCount(params.fileDetails(), params.mlAssetDetails(), params.appDetails(),
+      new GeneralQueryParams(true));
+  }
+  
   public List<ProvFileStateHit> provFileState(
     ProvFileQueryParams fileParams, ProvMLAssetQueryParams mlAssetParams, ProvFileAppDetailsQueryParams appDetails)
     throws ServiceException, ProjectException {
@@ -1330,9 +1343,14 @@ public class ElasticController {
       }
       query = query.must(rqb);
     }
-    if(fileDetails.xattrs != null) {
-      for (Map.Entry<String, String> xattr : fileDetails.xattrs.entrySet()) {
+    if(fileDetails.xattrsExact != null) {
+      for (Map.Entry<String, String> xattr : fileDetails.xattrsExact.entrySet()) {
         query = query.must(matchQuery(xattr.getKey(), xattr.getValue()));
+      }
+    }
+    if(fileDetails.xattrsLike != null) {
+      for (Map.Entry<String, String> xattr : fileDetails.xattrsLike.entrySet()) {
+        query = query.must(getSearchTermQuery(xattr.getKey(), xattr.getValue()));
       }
     }
     if(mlAssetListParams.mlType != null)

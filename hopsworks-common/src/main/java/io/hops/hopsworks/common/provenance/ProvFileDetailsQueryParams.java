@@ -18,6 +18,7 @@ package io.hops.hopsworks.common.provenance;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.TreeMap;
@@ -31,14 +32,15 @@ public class ProvFileDetailsQueryParams {
   public final String likeUserName;
   public final Long createdBeforeTimestamp;
   public final Long createdAfterTimestamp;
-  public final Map<String, String> xattrs;
+  public final Map<String, String> xattrsExact;
+  public final Map<String, String> xattrsLike;
   public final String appId;
 
   private ProvFileDetailsQueryParams(Integer projectId,
     String assetName, String likeAssetName,
     String userName, String likeUserName, 
     Long createdBeforeTimestamp, Long createdAfterTimestamp,
-    Map<String, String> xattrs,
+    Map<String, String> xattrsExact, Map<String, String> xattrsLike,
     String appId) {
     this.projectId = projectId;
     this.assetName = assetName;
@@ -47,7 +49,8 @@ public class ProvFileDetailsQueryParams {
     this.likeUserName = likeUserName;
     this.createdBeforeTimestamp = createdBeforeTimestamp;
     this.createdAfterTimestamp = createdAfterTimestamp;
-    this.xattrs = xattrs;
+    this.xattrsExact = xattrsExact;
+    this.xattrsLike = xattrsLike;
     this.appId = appId;
   }
 
@@ -55,7 +58,37 @@ public class ProvFileDetailsQueryParams {
     String assetName, String likeAssetName,
     String userName, String likeUserName, 
     Long createdBeforeTimestamp, Long createdAfterTimestamp,
-    Map<String, String> xattrs, String appId) throws GenericException {
+    String xattrsExact,  String xattrsLike,
+    String appId) throws GenericException {
+    Map<String, String> xattrsExactMap = getXAttrsMap(xattrsExact);
+    Map<String, String> xattrsLikeMap = getXAttrsMap(xattrsLike);
+    checkParams(projectId, assetName, likeAssetName, userName, likeUserName,
+      createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap, appId);
+    return new ProvFileDetailsQueryParams(projectId, assetName, likeAssetName, userName, likeUserName,
+      createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap, appId);
+  }
+  
+  public static ProvFileDetailsQueryParams instance(Integer projectId,
+    String assetName, String likeAssetName,
+    String userName, String likeUserName,
+    Long createdBeforeTimestamp, Long createdAfterTimestamp,
+    Map<String, String> xattrsExact,  Map<String, String> xattrsLike,
+    String appId) throws GenericException{
+    
+    Map<String, String> xattrsExactMap = provInternalXAttrsMap(xattrsExact);
+    Map<String, String> xattrsLikeMap = provInternalXAttrsMap(xattrsLike);
+    checkParams(projectId, assetName, likeAssetName, userName, likeUserName,
+      createdBeforeTimestamp, createdAfterTimestamp, xattrsExact, xattrsLike, appId);
+    return new ProvFileDetailsQueryParams(projectId, assetName, likeAssetName, userName, likeUserName,
+      createdBeforeTimestamp, createdAfterTimestamp, xattrsExact, xattrsLike, appId);
+  }
+  
+  private static void checkParams(Integer projectId,
+    String assetName, String likeAssetName,
+    String userName, String likeUserName,
+    Long createdBeforeTimestamp, Long createdAfterTimestamp,
+    Map<String, String> xattrsExact,  Map<String, String> xattrsLike,
+    String appId) throws GenericException {
     if (assetName != null && likeAssetName != null) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
         "provenance query - set only one - either like or exact - assetName");
@@ -64,14 +97,18 @@ public class ProvFileDetailsQueryParams {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
         "provenance query - set only one - either like or exact - userName");
     }
-    return new ProvFileDetailsQueryParams(projectId, assetName, likeAssetName, userName, likeUserName,
-      createdBeforeTimestamp, createdAfterTimestamp, xattrs, appId);
   }
   
-  public static ProvFileDetailsQueryParams projectMLAssets(Integer projectId)
-    throws GenericException {
-    return instance(projectId, null, null, null, null,
-      null, null, null, null);
+  private static Map<String, String> provInternalXAttrsMap(Map<String, String> xattrs) {
+    Map<String, String> result = new HashMap<>();
+    if (xattrs == null || xattrs.isEmpty()) {
+      return result;
+    }
+    for(Map.Entry<String, String> e : xattrs.entrySet()) {
+      String adjustedKey = adjustXAttrKey(e.getKey());
+      result.put(adjustedKey, e.getValue());
+    }
+    return result;
   }
   
   public static Map<String, String> getXAttrsMap(String xattrs) throws GenericException {
@@ -85,18 +122,23 @@ public class ProvFileDetailsQueryParams {
       String[] aux = p.split(":");
       if(aux.length != 2 || aux[0].isEmpty()) {
         throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
-          "malformed xattrs:" + xattrs);
+          "malformed xattrsExact:" + xattrs);
       }
-      String keyParts[] = aux[0].split("\\.");
-      StringJoiner keyj = new StringJoiner(".");
-      if(keyParts.length == 1) {
-        keyj.add(keyParts[0]).add("raw");
-      } else {
-        keyj.add(keyParts[0]).add("value");
-        for(int i = 1; i < keyParts.length; i++) keyj.add(keyParts[i]);
-      }
-      result.put(keyj.toString(), aux[1]);
+      String adjustedKey = adjustXAttrKey(aux[0]);
+      result.put(adjustedKey, aux[1]);
     }
     return result;
+  }
+  
+  private static String adjustXAttrKey(String key) {
+    String keyParts[] =key.split("\\.");
+    StringJoiner keyj = new StringJoiner(".");
+    if(keyParts.length == 1) {
+      keyj.add(keyParts[0]).add("raw");
+    } else {
+      keyj.add(keyParts[0]).add("value");
+      for(int i = 1; i < keyParts.length; i++) keyj.add(keyParts[i]);
+    }
+    return keyj.toString();
   }
 }

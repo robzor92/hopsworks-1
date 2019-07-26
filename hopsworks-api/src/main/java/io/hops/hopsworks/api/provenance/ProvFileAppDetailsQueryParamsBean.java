@@ -27,12 +27,12 @@ public class ProvFileAppDetailsQueryParamsBean {
   @QueryParam("withAppState")
   private boolean withAppState;
   
-  @QueryParam("currentState")
+  @QueryParam("currentAppState")
   private Provenance.AppState currentState;
   
   public ProvFileAppDetailsQueryParamsBean(
     @QueryParam("withAppState") @DefaultValue("false") boolean withAppState,
-    @QueryParam("currentState") Provenance.AppState currentState) {
+    @QueryParam("currentAppState") Provenance.AppState currentState) {
     this.withAppState = withAppState;
     this.currentState = currentState;
   }
@@ -59,7 +59,7 @@ public class ProvFileAppDetailsQueryParamsBean {
   public String toString() {
     return "ProvFileAppDetailsQueryParamsBean{"
       + " withAppState=" + withAppState
-      + (currentState == null ? "" : " currentState=" + currentState)
+      + (currentState == null ? "" : " currentAppState=" + currentState)
       + '}';
   }
   

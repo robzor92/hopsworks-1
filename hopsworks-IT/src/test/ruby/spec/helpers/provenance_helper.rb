@@ -151,14 +151,14 @@ module ProvenanceHelper
     #pp asset
   end 
 
-  def prov_check_asset_with_xattrs(assets, asset_id, xattrs) 
+  def prov_check_asset_with_xattrs(assets, asset_id, xattrsExact)
     asset = assets.select {|a| a["mlId"] == asset_id }
     expect(asset.length).to eq 1
     #pp model
-    expect(asset[0]["xattrs"]["entry"].length).to eq xattrs.length
-    xattrs.each do |key, value|
-      #pp model[0]["xattrs"]["entry"]
-      xattr = asset[0]["xattrs"]["entry"].select do |e| 
+    expect(asset[0]["xattrsExact"]["entry"].length).to eq xattrsExact.length
+    xattrsExact.each do |key, value|
+      #pp model[0]["xattrsExact"]["entry"]
+      xattr = asset[0]["xattrsExact"]["entry"].select do |e|
         e["key"] == key && e["value"] == value
       end
       expect(xattr.length).to eq 1
@@ -195,7 +195,7 @@ module ProvenanceHelper
 
   def get_ml_asset_by_xattr_count(project, ml_type, xattr_key, xattr_val, count) 
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
-    query_params = "?mlType=#{ml_type}&xattrs=#{xattr_key}:#{xattr_val}&count=true"
+    query_params = "?mlType=#{ml_type}&xattrsExact=#{xattr_key}:#{xattr_val}&count=true"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -206,7 +206,7 @@ module ProvenanceHelper
 
   def get_ml_asset_by_xattr(project, ml_type, xattr_key, xattr_val)
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
-    query_params = "?mlType=#{ml_type}&xattrs=#{xattr_key}:#{xattr_val}"
+    query_params = "?mlType=#{ml_type}&xattrsExact=#{xattr_key}:#{xattr_val}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -215,7 +215,7 @@ module ProvenanceHelper
     
   def get_ml_td_count_using_feature_project(project, feature_name) 
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
-    query_params = "?mlType=TRAINING_DATASET&xattrs=features.name:#{feature_name}&count=true"
+    query_params = "?mlType=TRAINING_DATASET&xattrsExact=features.name:#{feature_name}&count=true"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -224,7 +224,7 @@ module ProvenanceHelper
 
   def get_ml_td_count_using_feature_global(feature_name) 
     resource = "#{ENV['HOPSWORKS_API']}/provenance/list"
-    query_params = "?mlType=TRAINING_DATASET&xattrs=features.name:#{feature_name}&count=true"
+    query_params = "?mlType=TRAINING_DATASET&xattrsExact=features.name:#{feature_name}&count=true"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
