@@ -27,15 +27,15 @@ import java.util.List;
 import java.util.Map;
 
 @XmlRootElement
-public class ProvFileCompactOpsHit {
+public class ProvFileOpsCompactByFile {
   private long inodeId;
   private String appId;
   private String inodeName;
   private List<CompactOpHit> ops = new LinkedList<>();
   
-  public ProvFileCompactOpsHit() {}
+  public ProvFileOpsCompactByFile() {}
   
-  private ProvFileCompactOpsHit(long inodeId, String appId, String inodeName) {
+  private ProvFileOpsCompactByFile(long inodeId, String appId, String inodeName) {
     this.inodeId = inodeId;
     this.appId = appId;
     this.inodeName = inodeName;
@@ -91,19 +91,19 @@ public class ProvFileCompactOpsHit {
     });
   }
   
-  public static List<ProvFileCompactOpsHit> compact(List<ProvFileOpHit> fileOps) {
-    Map<Long, ProvFileCompactOpsHit> files = new HashMap<>();
+  public static List<ProvFileOpsCompactByFile> compact(List<ProvFileOpHit> fileOps) {
+    Map<Long, ProvFileOpsCompactByFile> files = new HashMap<>();
     for(ProvFileOpHit fileOp : fileOps) {
-      ProvFileCompactOpsHit file = files.get(fileOp.getInodeId());
+      ProvFileOpsCompactByFile file = files.get(fileOp.getInodeId());
       if(file == null) {
-        file = new ProvFileCompactOpsHit(fileOp.getInodeId(), fileOp.getAppId(), fileOp.getInodeName());
+        file = new ProvFileOpsCompactByFile(fileOp.getInodeId(), fileOp.getAppId(), fileOp.getInodeName());
         files.put(fileOp.getInodeId(), file);
       }
       file.addOp(new CompactOpHit(fileOp.getInodeOperation(), fileOp.getLogicalTime(), fileOp.getTimestamp(),
         fileOp.getReadableTimestamp(), fileOp.getXattrName()));
     }
-    List<ProvFileCompactOpsHit> result = new LinkedList<>();
-    for (ProvFileCompactOpsHit compactOps : files.values()) {
+    List<ProvFileOpsCompactByFile> result = new LinkedList<>();
+    for (ProvFileOpsCompactByFile compactOps : files.values()) {
       compactOps.sortOpsByTimestamp();
       result.add(compactOps);
     }

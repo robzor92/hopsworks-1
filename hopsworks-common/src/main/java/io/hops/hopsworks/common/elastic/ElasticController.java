@@ -109,6 +109,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1143,6 +1144,10 @@ public class ElasticController {
     return new LinkedList<>(files.values());
   }
   
+  public List<ProvFileOpHit> provFileOps(Long inodeId) throws ServiceException {
+    return provFileOpQuery(provFileOpQB(inodeId, null, null), DEFAULT_PROVENANCE_QUERY_SIZE);
+  }
+  
   public List<ProvFileOpHit> provFileOps(String appId) throws ServiceException {
     return provFileOps(appId, new String[0]);
   }
@@ -1150,7 +1155,8 @@ public class ElasticController {
   private List<ProvFileOpHit> provFileOps(String appId, String[] inodeOperations) throws ServiceException {
     QueryBuilder inodeOperationsQB = provInodeOperationsQB(inodeOperations);
     List<ProvFileOpHit> queryResult
-      = provFileOpQuery(provFileOpQB(appId, inodeOperationsQB), DEFAULT_PROVENANCE_QUERY_SIZE);
+      = provFileOpQuery(provFileOpQB(null, appId, inodeOperationsQB), DEFAULT_PROVENANCE_QUERY_SIZE);
+    Collections.sort(queryResult, ProvFileOpHit.timestampComparator);
     return queryResult;
   }
     
@@ -1389,10 +1395,13 @@ public class ElasticController {
     return query;
   }
   
-  private QueryBuilder provFileOpQB(String appId, QueryBuilder inodeOperationsQB) {
+  private QueryBuilder provFileOpQB(Long inodeId, String appId, QueryBuilder inodeOperationsQB) {
     BoolQueryBuilder query = boolQuery()
-      .must(termQuery(ProvElastic.Common.ENTRY_TYPE_FIELD, "operation"))
-      .must(termQuery(ProvElastic.Common.APP_ID_FIELD, appId));
+      .must(termQuery(ProvElastic.Common.ENTRY_TYPE_FIELD, "operation"));
+    if(inodeId != null)
+      query = query.must(termQuery(ProvElastic.Common.INODE_ID_FIELD, inodeId));
+    if(appId != null)
+      query  = query.must(termQuery(ProvElastic.Common.APP_ID_FIELD, appId));
     if(inodeOperationsQB != null)
       query = query.must(inodeOperationsQB);
     return query;

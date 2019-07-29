@@ -15,6 +15,8 @@
  */
 package io.hops.hopsworks.common.provenance;
 
+import com.google.common.primitives.Ints;
+import com.google.common.primitives.Longs;
 import org.elasticsearch.search.SearchHit;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -27,6 +29,7 @@ import java.util.logging.Logger;
 @XmlRootElement
 public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
   private static final Logger LOG = Logger.getLogger(ProvFileOpHit.class.getName());
+  public static final TimestampComparator timestampComparator = new TimestampComparator();
   
   private String id;
   private float score;
@@ -190,5 +193,17 @@ public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
   
   public void setXattrName(String xattrName) {
     this.xattrName = xattrName;
+  }
+  
+  public static class TimestampComparator implements Comparator<ProvFileOpHit> {
+  
+    @Override
+    public int compare(ProvFileOpHit o1, ProvFileOpHit o2) {
+      int result = Ints.compare(o1.logicalTime, o2.logicalTime);
+      if(result == 0) {
+        result = Longs.compare(o1.timestamp, o2.timestamp);
+      }
+      return result;
+    }
   }
 }

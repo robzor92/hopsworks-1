@@ -24,15 +24,15 @@ import java.util.Map;
 import java.util.Set;
 
 @XmlRootElement
-public class ProvFileSummaryOpsHit {
+public class ProvFileOpsSummaryByFile {
   private long inodeId;
   private String appId;
   private String inodeName;
   private Set<String> ops = new HashSet<>();
   
-  public ProvFileSummaryOpsHit() {}
+  public ProvFileOpsSummaryByFile() {}
   
-  private ProvFileSummaryOpsHit(long inodeId, String appId, String inodeName) {
+  private ProvFileOpsSummaryByFile(long inodeId, String appId, String inodeName) {
     this.inodeId = inodeId;
     this.appId = appId;
     this.inodeName = inodeName;
@@ -74,12 +74,12 @@ public class ProvFileSummaryOpsHit {
     this.inodeName = inodeName;
   }
   
-  public static List<ProvFileSummaryOpsHit> summary(List<ProvFileOpHit> fileOps) {
-    Map<Long, ProvFileSummaryOpsHit> files = new HashMap<>();
+  public static List<ProvFileOpsSummaryByFile> summary(List<ProvFileOpHit> fileOps) {
+    Map<Long, ProvFileOpsSummaryByFile> files = new HashMap<>();
     for(ProvFileOpHit fileOp : fileOps) {
-      ProvFileSummaryOpsHit file = files.get(fileOp.getInodeId());
+      ProvFileOpsSummaryByFile file = files.get(fileOp.getInodeId());
       if(file == null) {
-        file = new ProvFileSummaryOpsHit(fileOp.getInodeId(), fileOp.getAppId(), fileOp.getInodeName());
+        file = new ProvFileOpsSummaryByFile(fileOp.getInodeId(), fileOp.getAppId(), fileOp.getInodeName());
         files.put(fileOp.getInodeId(), file);
       }
       file.addOp(fileOp.getInodeOperation());

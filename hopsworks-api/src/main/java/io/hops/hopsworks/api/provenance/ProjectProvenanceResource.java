@@ -45,11 +45,13 @@ import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.provenance.ProvAppFootprintType;
-import io.hops.hopsworks.common.provenance.ProvFileCompactOpsHit;
+import io.hops.hopsworks.common.provenance.ProvFileOpsCompactByApp;
+import io.hops.hopsworks.common.provenance.ProvFileOpsCompactByFile;
 import io.hops.hopsworks.common.provenance.ProvFileHit;
 import io.hops.hopsworks.common.provenance.ProvFileOpHit;
+import io.hops.hopsworks.common.provenance.ProvFileOpsSummaryByApp;
 import io.hops.hopsworks.common.provenance.ProvFileStateHit;
-import io.hops.hopsworks.common.provenance.ProvFileSummaryOpsHit;
+import io.hops.hopsworks.common.provenance.ProvFileOpsSummaryByFile;
 import io.hops.hopsworks.common.provenance.SimpleResult;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
@@ -153,11 +155,41 @@ public class ProjectProvenanceResource {
   }
   
   @GET
+  @Path("file/{inodeId}/history")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response fileOpHistory(
+    @PathParam("inodeId") Long inodeId,
+    @QueryParam("type") @DefaultValue("FULL") FileOpsReturnType type,
+    @Context HttpServletRequest req) throws ServiceException, GenericException {
+    logger.log(Level.INFO, "Local content path:{0} inodeId:{1}",
+      new Object[]{req.getRequestURL().toString(), inodeId});
+    List<ProvFileOpHit> result = elasticController.provFileOps(inodeId);
+    switch(type) {
+      case FULL:
+        GenericEntity<List<ProvFileOpHit>> fullResults = new GenericEntity<List<ProvFileOpHit>>(result) {};
+        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(fullResults).build();
+      case COMPACT:
+        GenericEntity<List<ProvFileOpsCompactByApp>> compactResults
+          = new GenericEntity<List<ProvFileOpsCompactByApp>>(ProvFileOpsCompactByApp.compact(result)) {};
+        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(compactResults).build();
+      case SUMMARY:
+        GenericEntity<List<ProvFileOpsSummaryByApp>> summaryResults
+          = new GenericEntity<List<ProvFileOpsSummaryByApp>>(ProvFileOpsSummaryByApp.summary(result)) {};
+        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(summaryResults).build();
+      default:
+        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
+          "footprint type: " + type);
+    }
+  }
+  
+  @GET
   @Path("app/{appId}/fileOperations")
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response appFootprint(
+  public Response appFileOps(
     @PathParam("appId") String appId,
     @QueryParam("type") @DefaultValue("FULL") FileOpsReturnType type,
     @Context HttpServletRequest req) throws ServiceException, GenericException {
@@ -169,12 +201,12 @@ public class ProjectProvenanceResource {
         GenericEntity<List<ProvFileOpHit>> fullResults = new GenericEntity<List<ProvFileOpHit>>(result) {};
         return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(fullResults).build();
       case COMPACT:
-        GenericEntity<List<ProvFileCompactOpsHit>> compactResults
-          = new GenericEntity<List<ProvFileCompactOpsHit>>(ProvFileCompactOpsHit.compact(result)) {};
+        GenericEntity<List<ProvFileOpsCompactByFile>> compactResults
+          = new GenericEntity<List<ProvFileOpsCompactByFile>>(ProvFileOpsCompactByFile.compact(result)) {};
         return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(compactResults).build();
       case SUMMARY:
-        GenericEntity<List<ProvFileSummaryOpsHit>> summaryResults
-          = new GenericEntity<List<ProvFileSummaryOpsHit>>(ProvFileSummaryOpsHit.summary(result)) {};
+        GenericEntity<List<ProvFileOpsSummaryByFile>> summaryResults
+          = new GenericEntity<List<ProvFileOpsSummaryByFile>>(ProvFileOpsSummaryByFile.summary(result)) {};
         return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(summaryResults).build();
       default:
         throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
@@ -193,7 +225,7 @@ public class ProjectProvenanceResource {
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response appFootprint(
+  public Response appProvenance(
     @PathParam("appId") String appId,
     @QueryParam("type") @DefaultValue("ALL") ProvAppFootprintType type,
     @Context HttpServletRequest req) throws ServiceException {
