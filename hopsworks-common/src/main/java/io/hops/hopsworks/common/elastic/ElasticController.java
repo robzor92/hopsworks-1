@@ -1299,18 +1299,12 @@ public class ElasticController {
     return result;
   }
 
-  private QueryBuilder getSearchTermQuery(String fieldName, String searchTerm) {
-    QueryBuilder namePrefixMatch = prefixQuery(fieldName, searchTerm);
-    QueryBuilder namePhraseMatch = matchPhraseQuery(fieldName, searchTerm);
-    QueryBuilder nameFuzzyQuery = fuzzyQuery(fieldName, searchTerm);
-    QueryBuilder wildCardQuery = wildcardQuery(fieldName, String.format("*%s*", searchTerm));
-
+  private QueryBuilder getProvSearchQuery(String fieldName, String searchTerm) {
     QueryBuilder nameQuery = boolQuery()
-      .should(namePrefixMatch)
-      .should(namePhraseMatch)
-      .should(nameFuzzyQuery)
-      .should(wildCardQuery);
-
+      .should(prefixQuery(fieldName, searchTerm.toLowerCase()))
+      .should(fuzzyQuery(fieldName, searchTerm.toLowerCase()))
+      .should(wildcardQuery(fieldName, String.format("*%s*", searchTerm.toLowerCase())))
+      .should(matchPhraseQuery(fieldName, searchTerm.toLowerCase()));
     return nameQuery;
   }
   
@@ -1334,11 +1328,11 @@ public class ElasticController {
     if(fileDetails.assetName != null)
       query = query.must(matchQuery(ProvFileStateHit.ML_INODE_NAME_FIELD, fileDetails.assetName));
     if(fileDetails.likeAssetName != null)
-      query = query.must(getSearchTermQuery(ProvFileStateHit.ML_INODE_NAME_FIELD, fileDetails.likeAssetName));
+      query = query.must(getProvSearchQuery(ProvFileStateHit.ML_INODE_NAME_FIELD, fileDetails.likeAssetName));
     if(fileDetails.userName != null)
       query = query.must(matchQuery(ProvFileStateHit.ML_USER_NAME_FIELD, fileDetails.userName));
     if(fileDetails.likeUserName != null)
-      query = query.must(getSearchTermQuery(ProvFileStateHit.ML_USER_NAME_FIELD, fileDetails.likeUserName));
+      query = query.must(getProvSearchQuery(ProvFileStateHit.ML_USER_NAME_FIELD, fileDetails.likeUserName));
     if(fileDetails.createdBeforeTimestamp != null || fileDetails.createdAfterTimestamp != null) {
       RangeQueryBuilder rqb = rangeQuery(ProvFileStateHit.ML_CREATE_TIME_FIELD);
       if(fileDetails.createdAfterTimestamp != null) {
@@ -1356,7 +1350,7 @@ public class ElasticController {
     }
     if(fileDetails.xattrsLike != null) {
       for (Map.Entry<String, String> xattr : fileDetails.xattrsLike.entrySet()) {
-        query = query.must(getSearchTermQuery(xattr.getKey(), xattr.getValue()));
+        query = query.must(getProvSearchQuery(xattr.getKey(), xattr.getValue()));
       }
     }
     if(mlAssetListParams.mlType != null)

@@ -44,6 +44,9 @@ describe "On #{ENV['OS']}" do
     @xattrV3 = JSON['[{"f3_1":"val1","f3_2":"val2"},{"f4_1":"val3","f4_2":"val4"}]']
     @xattrV4 = "notJson"
     @xattrV5 = JSON['[{"f3_1":"val1","f3_2":"val1"},{"f3_1":"val2","f3_2":"val2"}]']
+    @xattrV6 = "notJava"
+    @xattrV7 = "not Json"
+    @xattrV8 = JSON['{"name": "fashion mnist demo"}']
     pp "create project: #{@project1_name}"
     @project1 = create_project_by_name(@project1_name)
     pp "create project: #{@project2_name}"
@@ -856,6 +859,90 @@ describe "On #{ENV['OS']}" do
         get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false, 404)
       end
     end 
+
+    describe "search by like xattr" do
+      it "stop epipe" do
+        execute_remotely @hostname, "sudo systemctl stop epipe"
+      end
+
+      it "create experiment with xattr" do
+        prov_create_experiment(@project1, @experiment_app1_name1)
+        experiment_record1 = prov_get_experiment_record(@project1, @experiment_app1_name1)
+        expect(experiment_record1.length).to eq 1  
+        prov_add_xattr(experiment_record1[0], "test_xattr", @xattrV4, "XATTR_ADD", 1)
+        
+        prov_create_experiment(@project1, @experiment_app2_name1)
+        experiment_record2 = prov_get_experiment_record(@project1, @experiment_app2_name1)
+        expect(experiment_record2.length).to eq 1  
+        prov_add_xattr(experiment_record2[0], "test_xattr", @xattrV6, "XATTR_ADD", 1)
+
+        prov_create_experiment(@project1, @experiment_app1_name2)
+        experiment_record3 = prov_get_experiment_record(@project1, @experiment_app1_name2)
+        expect(experiment_record3.length).to eq 1  
+        prov_add_xattr(experiment_record3[0], "test_xattr", @xattrV7, "XATTR_ADD", 1)
+        prov_add_xattr(experiment_record3[0], "config", JSON[@xattrV8], "XATTR_ADD", 2)
+      end
+
+      it "restart epipe" do
+        execute_remotely @hostname, "sudo systemctl restart epipe"
+        prov_wait_for_epipe() 
+      end
+
+      it "check not json - ok - search result" do 
+        experiment1_id = prov_experiment_id(@experiment_app1_name1)
+        experiment2_id = prov_experiment_id(@experiment_app2_name1)
+        experiment3_id = prov_experiment_id(@experiment_app1_name2)
+
+        experiments1 = get_ml_asset_by_xattr(@project1, "EXPERIMENT", "test_xattr", "notJson")
+        #pp experiment
+        expect(experiments1.length).to eq 1
+        prov_check_asset_with_id(experiments1, experiment1_id)
+
+        experiments2 = get_ml_asset_like_xattr(@project1, "EXPERIMENT", "test_xattr", "notJson")
+        #pp experiment
+        expect(experiments2.length).to eq 1
+        prov_check_asset_with_id(experiments2, experiment1_id)
+
+        experiments3 = get_ml_asset_like_xattr(@project1, "EXPERIMENT", "test_xattr", "notJs")
+        #pp experiment
+        expect(experiments3.length).to eq 1
+        prov_check_asset_with_id(experiments3, experiment1_id)      
+
+        experiments4 = get_ml_asset_like_xattr(@project1, "EXPERIMENT", "test_xattr", "not")
+        #pp experiment
+        expect(experiments4.length).to eq 3
+        prov_check_asset_with_id(experiments4, experiment1_id)
+        prov_check_asset_with_id(experiments4, experiment2_id)
+        prov_check_asset_with_id(experiments4, experiment3_id)
+
+        experiments5 = get_ml_asset_like_xattr(@project1, "EXPERIMENT", "test_xattr", "Json")
+        #pp experiment
+        expect(experiments5.length).to eq 2
+        prov_check_asset_with_id(experiments5, experiment1_id)
+        prov_check_asset_with_id(experiments5, experiment3_id)
+
+        experiments6 = get_ml_asset_like_xattr(@project1, "EXPERIMENT", "config.name", "mnist")
+        #pp experiment
+        expect(experiments6.length).to eq 1
+        prov_check_asset_with_id(experiments6, experiment3_id)
+      end
+
+      it "delete experiment dataset" do
+        prov_delete_experiment(@project1, @experiment_app1_name1)
+        prov_delete_experiment(@project1, @experiment_app2_name1)
+        prov_delete_experiment(@project1, @experiment_app1_name2)
+      end
+
+      it "check cleanup" do 
+        prov_wait_for_epipe() 
+        experiment_id1 = prov_experiment_id(@experiment_app1_name1)
+        experiment_id2 = prov_experiment_id(@experiment_app2_name1)
+        experiment_id3 = prov_experiment_id(@experiment_app1_name2)
+        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false, 404)
+        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id2, false, 404)
+        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id3, false, 404)
+      end
+    end 
   end
 
   describe 'mock app fileOperations' do
@@ -917,5 +1004,71 @@ describe "On #{ENV['OS']}" do
       # pp result
       expect(result.length).to eq 2
     end
+
+    it "delete experiment dataset" do
+      prov_delete_experiment(@project1, @experiment_app1_name1)
+    end
+
+    it "check cleanup" do 
+      prov_wait_for_epipe() 
+      experiment_id1 = prov_experiment_id(@experiment_app1_name1)
+      experiment_id2 = prov_experiment_id(@experiment_app2_name1)
+      get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false, 404)
+    end
   end
+
+  describe "search by like file name" do
+    it "stop epipe" do
+      execute_remotely @hostname, "sudo systemctl stop epipe"
+    end
+
+    it "create experiment" do
+      prov_create_experiment(@project1, @experiment_app1_name1)
+      prov_create_experiment(@project1, @experiment_app2_name1)
+    end
+
+    it "restart epipe" do
+      execute_remotely @hostname, "sudo systemctl restart epipe"
+      prov_wait_for_epipe() 
+    end
+
+    it "check - ok - search result" do 
+      experiment1_id = prov_experiment_id(@experiment_app1_name1)
+      experiment2_id = prov_experiment_id(@experiment_app2_name1)
+
+      experiments1 = get_ml_asset_like_name(@project1, "EXPERIMENT", @experiment_app1_name1)
+      #pp experiment
+      expect(experiments1.length).to eq 1
+      prov_check_asset_with_id(experiments1, experiment1_id)
+
+      experiments2 = get_ml_asset_like_name(@project1, "EXPERIMENT", @experiment_app2_name1)
+      #pp experiment
+      expect(experiments2.length).to eq 1
+      prov_check_asset_with_id(experiments2, experiment2_id)
+
+      experiments3 = get_ml_asset_like_name(@project1, "EXPERIMENT", @app1_id)
+      #pp experiment
+      expect(experiments3.length).to eq 1
+      prov_check_asset_with_id(experiments3, experiment1_id)      
+
+      experiments4 = get_ml_asset_like_name(@project1, "EXPERIMENT", "application_")
+      #pp experiment
+      expect(experiments4.length).to eq 2
+      prov_check_asset_with_id(experiments4, experiment1_id)
+      prov_check_asset_with_id(experiments4, experiment2_id)
+    end
+
+    it "delete experiment dataset" do
+      prov_delete_experiment(@project1, @experiment_app1_name1)
+      prov_delete_experiment(@project1, @experiment_app2_name1)
+    end
+
+    it "check cleanup" do 
+      prov_wait_for_epipe() 
+      experiment_id1 = prov_experiment_id(@experiment_app1_name1)
+      experiment_id2 = prov_experiment_id(@experiment_app2_name1)
+      get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false, 404)
+      get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id2, false, 404)
+    end
+  end 
 end

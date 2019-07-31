@@ -44,6 +44,9 @@ describe "On #{ENV['OS']}" do
     @xattrV3 = JSON['[{"f3_1":"val1","f3_2":"val2"},{"f4_1":"val3","f4_2":"val4"}]']
     @xattrV4 = "notJson"
     @xattrV5 = JSON['[{"f3_1":"val1","f3_2":"val1"},{"f3_1":"val2","f3_2":"val2"}]']
+    @xattrV6 = "notJava"
+    @xattrV7 = "not Json"
+    @xattrV8 = JSON['{"name": "fashion mnist demo"}']
     pp "create project: #{@project1_name}"
     @project1 = create_project_by_name(@project1_name)
     #pp "create project: #{@project2_name}"
@@ -55,5 +58,4 @@ describe "On #{ENV['OS']}" do
   #  delete_project(@project1)
   #end
 
-  
 end
