@@ -21,7 +21,6 @@ import io.swagger.annotations.ApiParam;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
-import java.util.Map;
 
 public class ProvFileDetailsQueryParamsBean {
   @QueryParam("fileName")
@@ -179,18 +178,14 @@ public class ProvFileDetailsQueryParamsBean {
   }
 
   public ProvFileDetailsQueryParams params(Integer projectId) throws GenericException {
-    Map<String, String> xattrsExactMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrsExact);
-    Map<String, String> xattrsLikeMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrsLike);
     return ProvFileDetailsQueryParams.instance(projectId, assetName, likeAssetName,
-      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap,
+      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsExact, xattrsLike,
       appId, withFullPath);
   }
   
   public ProvFileDetailsQueryParams params() throws GenericException {
-    Map<String, String> xattrsExactMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrsExact);
-    Map<String, String> xattrsLikeMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrsLike);
     return ProvFileDetailsQueryParams.instance(null, assetName, likeAssetName,
-      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap,
+      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsExact, xattrsLike,
       appId, withFullPath);
   }
 }

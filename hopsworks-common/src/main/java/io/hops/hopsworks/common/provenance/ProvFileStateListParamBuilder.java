@@ -153,7 +153,6 @@ public class ProvFileStateListParamBuilder {
     return this;
   }
   
-  
   public ProvFileDetailsQueryParams fileDetails() throws GenericException {
     return ProvFileDetailsQueryParams.instance(projectId, assetName, likeAssetName, userName, likeUserName,
       createdBeforeTimestamp, createdAfterTimestamp, xattrsExact, xattrsLike, appId, withAppState);
