@@ -19,6 +19,7 @@ import io.hops.hopsworks.common.provenance.ProvFileDetailsQueryParams;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.swagger.annotations.ApiParam;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import java.util.Map;
 
@@ -52,6 +53,10 @@ public class ProvFileDetailsQueryParamsBean {
   @QueryParam("appId")
   private String appId;
   
+  @QueryParam("withFullPath")
+  @DefaultValue("false")
+  private boolean withFullPath;
+  
   public ProvFileDetailsQueryParamsBean(
     @QueryParam("assetName") String assetName,
     @QueryParam("likeAssetName") String likeAssetName, 
@@ -61,7 +66,8 @@ public class ProvFileDetailsQueryParamsBean {
     @QueryParam("createdAfter") long createdAfterTimestamp,
     @QueryParam("xattrsExact") String xattrsExact,
     @QueryParam("xattrsLike") String xattrsLike,
-    @QueryParam("appId") String appId) {
+    @QueryParam("appId") String appId,
+    @QueryParam("withFullPath") @DefaultValue("false") boolean withFullPath) {
     this.assetName = assetName;
     this.likeAssetName = likeAssetName;
     this.userName = userName;
@@ -71,6 +77,7 @@ public class ProvFileDetailsQueryParamsBean {
     this.xattrsExact = xattrsExact;
     this.xattrsLike = xattrsLike;
     this.appId = appId;
+    this.withFullPath = withFullPath;
   }
   
   public ProvFileDetailsQueryParamsBean() {}
@@ -147,6 +154,14 @@ public class ProvFileDetailsQueryParamsBean {
     this.appId = appId;
   }
   
+  public boolean isWithFullPath() {
+    return withFullPath;
+  }
+  
+  public void setWithFullPath(boolean withFullPath) {
+    this.withFullPath = withFullPath;
+  }
+  
   @Override
   public String toString() {
     return "ProvFileDetailsQueryParamsBean{"
@@ -159,6 +174,7 @@ public class ProvFileDetailsQueryParamsBean {
       + (xattrsExact == null ? "" : " xattrsExact=" + xattrsExact)
       + (xattrsLike == null ? "" : " xattrsLike=" + xattrsLike)
       + (appId == null ? "" : " appId=" + appId)
+      + " withFullPath=" + withFullPath
       + '}';
   }
 
@@ -166,13 +182,15 @@ public class ProvFileDetailsQueryParamsBean {
     Map<String, String> xattrsExactMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrsExact);
     Map<String, String> xattrsLikeMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrsLike);
     return ProvFileDetailsQueryParams.instance(projectId, assetName, likeAssetName,
-      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap, appId);
+      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap,
+      appId, withFullPath);
   }
   
   public ProvFileDetailsQueryParams params() throws GenericException {
     Map<String, String> xattrsExactMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrsExact);
     Map<String, String> xattrsLikeMap = ProvFileDetailsQueryParams.getXAttrsMap(xattrsLike);
     return ProvFileDetailsQueryParams.instance(null, assetName, likeAssetName,
-      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap, appId);
+      userName, likeUserName, createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap,
+      appId, withFullPath);
   }
 }

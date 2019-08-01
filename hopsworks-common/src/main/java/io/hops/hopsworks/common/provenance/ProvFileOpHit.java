@@ -43,6 +43,7 @@ public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
   private String readableTimestamp;
   private String inodeName;
   private String xattrName;
+  private String fullPath;
   
   public ProvFileOpHit() {}
 
@@ -193,6 +194,14 @@ public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
   
   public void setXattrName(String xattrName) {
     this.xattrName = xattrName;
+  }
+  
+  public String getFullPath() {
+    return fullPath;
+  }
+  
+  public void setFullPath(String fullPath) {
+    this.fullPath = fullPath;
   }
   
   public static class TimestampComparator implements Comparator<ProvFileOpHit> {

@@ -56,6 +56,7 @@ public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
   private String projectName;
   private Map<String, String> xattrs = new HashMap<>();
   private MLAssetAppState appState;
+  private String fullPath;
   
   public ProvFileStateHit(){
   }
@@ -271,4 +272,11 @@ public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
     this.appState = appState;
   }
   
+  public String getFullPath() {
+    return fullPath;
+  }
+  
+  public void setFullPath(String fullPath) {
+    this.fullPath = fullPath;
+  }
 }

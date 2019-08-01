@@ -52,6 +52,7 @@ import io.hops.hopsworks.common.provenance.ProvFileOpHit;
 import io.hops.hopsworks.common.provenance.ProvFileOpsSummaryByApp;
 import io.hops.hopsworks.common.provenance.ProvFileStateHit;
 import io.hops.hopsworks.common.provenance.ProvFileOpsSummaryByFile;
+import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.SimpleResult;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
@@ -90,7 +91,9 @@ public class ProjectProvenanceResource {
   @EJB
   private NoCacheResponse noCacheResponse;
   @EJB
-  private ElasticController elasticController;
+  private ProvenanceController provenanceCtrl;
+  @EJB
+  private ElasticController elasticCtrl;
   @EJB
   private ProjectFacade projectFacade;
   
@@ -115,14 +118,14 @@ public class ProjectProvenanceResource {
         "app details params:{3} query params:{4}",
       new Object[]{req.getRequestURL().toString(), fileDetails, mlAssetParams, appDetails, queryDetails});
     if(queryDetails.isCount()) {
-      Long countResult = elasticController.provFileStateCount(fileDetails.params(project.getId()),
-        mlAssetParams.params(), appDetails.params(), queryDetails.params());
+      Long countResult = provenanceCtrl.provFileStateCount(fileDetails.params(project.getId()),
+        mlAssetParams.params(), appDetails.params());
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
         .entity(new SimpleResult<>(countResult)).build();
     } else {
       GenericEntity<List<ProvFileStateHit>> searchResults = new GenericEntity<List<ProvFileStateHit>>(
-        elasticController.provFileState(fileDetails.params(project.getId()), mlAssetParams.params(),
-          appDetails.params(), queryDetails.params())) {
+        provenanceCtrl.provFileState(fileDetails.params(project.getId()), mlAssetParams.params(),
+          appDetails.params())) {
       };
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();
     }
@@ -141,7 +144,7 @@ public class ProjectProvenanceResource {
     logger.log(Level.INFO, "Local content path:{0} file params:{1} ml asset params:{2} app details params:{3} ",
       new Object[]{req.getRequestURL().toString(), fileParams, mlAssetParams, appDetailsParams});
     GenericEntity<List<ProvFileStateHit>> searchResults = new GenericEntity<List<ProvFileStateHit>>(
-      elasticController.provFileState(
+      elasticCtrl.provFileState(
         fileParams.params(project.getId()), mlAssetParams.params(), appDetailsParams.params())) {
     };
     if(searchResults.getEntity().isEmpty()) {
@@ -162,10 +165,11 @@ public class ProjectProvenanceResource {
   public Response fileOpHistory(
     @PathParam("inodeId") Long inodeId,
     @QueryParam("type") @DefaultValue("FULL") FileOpsReturnType type,
+    @QueryParam("withFullPath") @DefaultValue("false") boolean withFullPath,
     @Context HttpServletRequest req) throws ServiceException, GenericException {
     logger.log(Level.INFO, "Local content path:{0} inodeId:{1}",
       new Object[]{req.getRequestURL().toString(), inodeId});
-    List<ProvFileOpHit> result = elasticController.provFileOps(inodeId);
+    List<ProvFileOpHit> result = provenanceCtrl.provFileOps(inodeId, null, withFullPath);
     switch(type) {
       case FULL:
         GenericEntity<List<ProvFileOpHit>> fullResults = new GenericEntity<List<ProvFileOpHit>>(result) {};
@@ -192,10 +196,11 @@ public class ProjectProvenanceResource {
   public Response appFileOps(
     @PathParam("appId") String appId,
     @QueryParam("type") @DefaultValue("FULL") FileOpsReturnType type,
+    @QueryParam("withFullPath") @DefaultValue("false") boolean withFullPath,
     @Context HttpServletRequest req) throws ServiceException, GenericException {
     logger.log(Level.INFO, "Local content path:{0} appId:{1}",
       new Object[]{req.getRequestURL().toString(), appId});
-    List<ProvFileOpHit> result = elasticController.provFileOps(appId);
+    List<ProvFileOpHit> result = provenanceCtrl.provFileOps(null, appId, withFullPath);
     switch(type) {
       case FULL:
         GenericEntity<List<ProvFileOpHit>> fullResults = new GenericEntity<List<ProvFileOpHit>>(result) {};
@@ -232,7 +237,7 @@ public class ProjectProvenanceResource {
     logger.log(Level.INFO, "Local content path:{0} appId:{1}",
       new Object[]{req.getRequestURL().toString(), appId});
     GenericEntity<List<ProvFileHit>> fullResults = new GenericEntity<List<ProvFileHit>>(
-      elasticController.provAppFootprint(appId, type)) {};
+      elasticCtrl.provAppFootprint(appId, type)) {};
     return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(fullResults).build();
   }
   

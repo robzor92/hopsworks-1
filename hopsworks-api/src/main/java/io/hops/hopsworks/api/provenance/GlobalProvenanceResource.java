@@ -41,8 +41,8 @@ package io.hops.hopsworks.api.provenance;
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
 import io.hops.hopsworks.api.filter.NoCacheResponse;
-import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.provenance.ProvFileStateHit;
+import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.SimpleResult;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
@@ -77,7 +77,7 @@ public class GlobalProvenanceResource {
   @EJB
   private NoCacheResponse noCacheResponse;
   @EJB
-  private ElasticController elasticController;
+  private ProvenanceController provenanceCtlr;
   
   @GET
   @Path("list")
@@ -95,14 +95,14 @@ public class GlobalProvenanceResource {
       new Object[]{req.getRequestURL().toString(), fileDetails, mlAssetParams, appDetails,
         queryDetails});
     if(queryDetails.isCount()) {
-      Long countResult = elasticController.provFileStateCount(fileDetails.params(), mlAssetParams.params(),
-        appDetails.params(), queryDetails.params());
+      Long countResult = provenanceCtlr.provFileStateCount(fileDetails.params(), mlAssetParams.params(),
+        appDetails.params());
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
         .entity(new SimpleResult<>(countResult)).build();
     } else {
       GenericEntity<List<ProvFileStateHit>> searchResults = new GenericEntity<List<ProvFileStateHit>>(
-        elasticController.provFileState(fileDetails.params(), mlAssetParams.params(),
-          appDetails.params(), queryDetails.params())) {
+        provenanceCtlr.provFileState(fileDetails.params(), mlAssetParams.params(),
+          appDetails.params())) {
       };
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();
     }

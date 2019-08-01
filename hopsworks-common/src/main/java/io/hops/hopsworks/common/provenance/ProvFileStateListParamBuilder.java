@@ -19,7 +19,7 @@ import io.hops.hopsworks.exceptions.GenericException;
 
 import java.util.Map;
 
-public class ProvFilesParamBuilder {
+public class ProvFileStateListParamBuilder {
   private Integer projectId;
   private String assetName;
   private String likeAssetName;
@@ -34,13 +34,13 @@ public class ProvFilesParamBuilder {
   private Provenance.AppState currentAppState;
   private boolean withAppState;
   
-  public ProvFilesParamBuilder() {}
+  public ProvFileStateListParamBuilder() {}
   
   public Integer getProjectId() {
     return projectId;
   }
   
-  public ProvFilesParamBuilder withProjectId(Integer projectId) {
+  public ProvFileStateListParamBuilder withProjectId(Integer projectId) {
     this.projectId = projectId;
     return this;
   }
@@ -49,7 +49,7 @@ public class ProvFilesParamBuilder {
     return assetName;
   }
   
-  public ProvFilesParamBuilder withAssetName(String assetName) {
+  public ProvFileStateListParamBuilder withAssetName(String assetName) {
     this.assetName = assetName;
     return this;
   }
@@ -58,7 +58,7 @@ public class ProvFilesParamBuilder {
     return likeAssetName;
   }
   
-  public ProvFilesParamBuilder withLikeAssetName(String likeAssetName) {
+  public ProvFileStateListParamBuilder withLikeAssetName(String likeAssetName) {
     this.likeAssetName = likeAssetName;
     return this;
   }
@@ -67,7 +67,7 @@ public class ProvFilesParamBuilder {
     return userName;
   }
   
-  public ProvFilesParamBuilder withUserName(String userName) {
+  public ProvFileStateListParamBuilder withUserName(String userName) {
     this.userName = userName;
     return this;
   }
@@ -76,7 +76,7 @@ public class ProvFilesParamBuilder {
     return likeUserName;
   }
   
-  public ProvFilesParamBuilder withLikeUserName(String likeUserName) {
+  public ProvFileStateListParamBuilder withLikeUserName(String likeUserName) {
     this.likeUserName = likeUserName;
     return this;
   }
@@ -85,7 +85,7 @@ public class ProvFilesParamBuilder {
     return createdBeforeTimestamp;
   }
   
-  public ProvFilesParamBuilder withCreatedBeforeTimestamp(Long createdBeforeTimestamp) {
+  public ProvFileStateListParamBuilder withCreatedBeforeTimestamp(Long createdBeforeTimestamp) {
     this.createdBeforeTimestamp = createdBeforeTimestamp;
     return this;
   }
@@ -94,7 +94,7 @@ public class ProvFilesParamBuilder {
     return createdAfterTimestamp;
   }
   
-  public ProvFilesParamBuilder withCreatedAfterTimestamp(Long createdAfterTimestamp) {
+  public ProvFileStateListParamBuilder withCreatedAfterTimestamp(Long createdAfterTimestamp) {
     this.createdAfterTimestamp = createdAfterTimestamp;
     return this;
   }
@@ -103,7 +103,7 @@ public class ProvFilesParamBuilder {
     return xattrsExact;
   }
   
-  public ProvFilesParamBuilder withXattrsExact(Map<String, String> xattrsExact) {
+  public ProvFileStateListParamBuilder withXattrsExact(Map<String, String> xattrsExact) {
     this.xattrsExact = xattrsExact;
     return this;
   }
@@ -112,7 +112,7 @@ public class ProvFilesParamBuilder {
     return xattrsLike;
   }
   
-  public ProvFilesParamBuilder withXAttrsLike(Map<String, String> xattrsLike) {
+  public ProvFileStateListParamBuilder withXAttrsLike(Map<String, String> xattrsLike) {
     this.xattrsLike = xattrsLike;
     return this;
   }
@@ -121,7 +121,7 @@ public class ProvFilesParamBuilder {
     return appId;
   }
   
-  public ProvFilesParamBuilder withAppId(String appId) {
+  public ProvFileStateListParamBuilder withAppId(String appId) {
     this.appId = appId;
     return this;
   }
@@ -130,7 +130,7 @@ public class ProvFilesParamBuilder {
     return mlType;
   }
   
-  public ProvFilesParamBuilder withMlType(String mlType) {
+  public ProvFileStateListParamBuilder withMlType(String mlType) {
     this.mlType = mlType;
     return this;
   }
@@ -139,7 +139,7 @@ public class ProvFilesParamBuilder {
     return withAppState;
   }
   
-  public ProvFilesParamBuilder withAppState(boolean withAppState) {
+  public ProvFileStateListParamBuilder withAppState(boolean withAppState) {
     this.withAppState = withAppState;
     return this;
   }
@@ -148,7 +148,7 @@ public class ProvFilesParamBuilder {
     return currentAppState;
   }
   
-  public ProvFilesParamBuilder withCurrentAppState(Provenance.AppState currentAppState) {
+  public ProvFileStateListParamBuilder withCurrentAppState(Provenance.AppState currentAppState) {
     this.currentAppState = currentAppState;
     return this;
   }
@@ -156,7 +156,7 @@ public class ProvFilesParamBuilder {
   
   public ProvFileDetailsQueryParams fileDetails() throws GenericException {
     return ProvFileDetailsQueryParams.instance(projectId, assetName, likeAssetName, userName, likeUserName,
-      createdBeforeTimestamp, createdAfterTimestamp, xattrsExact, xattrsLike, appId);
+      createdBeforeTimestamp, createdAfterTimestamp, xattrsExact, xattrsLike, appId, withAppState);
   }
   
   public ProvMLAssetDetailsQueryParams mlAssetDetails() {

@@ -48,7 +48,6 @@ import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.dataset.DatasetController;
 import io.hops.hopsworks.common.provenance.AppProvenanceHit;
-import io.hops.hopsworks.common.provenance.GeneralQueryParams;
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
 import io.hops.hopsworks.common.provenance.ProvAppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvElastic;
@@ -58,7 +57,6 @@ import io.hops.hopsworks.common.provenance.ProvFileStateHit;
 import io.hops.hopsworks.common.provenance.ProvFileAppDetailsQueryParams;
 import io.hops.hopsworks.common.provenance.ProvFileDetailsQueryParams;
 import io.hops.hopsworks.common.provenance.ProvFileQueryParams;
-import io.hops.hopsworks.common.provenance.ProvFilesParamBuilder;
 import io.hops.hopsworks.common.provenance.ProvMLAssetDetailsQueryParams;
 import io.hops.hopsworks.common.provenance.ProvMLAssetQueryParams;
 import io.hops.hopsworks.common.provenance.Provenance;
@@ -1016,17 +1014,6 @@ public class ElasticController {
   
   //PROVENANCE
   static final int DEFAULT_PROVENANCE_QUERY_SIZE = 500;
-  public List<ProvFileStateHit> provFileState(ProvFilesParamBuilder params)
-    throws GenericException, ServiceException, ProjectException {
-    return provFileState(params.fileDetails(), params.mlAssetDetails(), params.appDetails(),
-      new GeneralQueryParams(false));
-  }
-  
-  public long provFileStateCount(ProvFilesParamBuilder params)
-    throws GenericException, ServiceException, ProjectException {
-    return provFileStateCount(params.fileDetails(), params.mlAssetDetails(), params.appDetails(),
-      new GeneralQueryParams(true));
-  }
   
   public List<ProvFileStateHit> provFileState(
     ProvFileQueryParams fileParams, ProvMLAssetQueryParams mlAssetParams, ProvFileAppDetailsQueryParams appDetails)
@@ -1037,20 +1024,16 @@ public class ElasticController {
 
   public List<ProvFileStateHit> provFileState(
     ProvFileDetailsQueryParams fileDetails, ProvMLAssetDetailsQueryParams mlAssetParams,
-    ProvFileAppDetailsQueryParams appDetails, GeneralQueryParams queryParams)
-    throws ServiceException, GenericException, ProjectException {
-    if(queryParams.count) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-        "count should not be used with this query");
-    }
+    ProvFileAppDetailsQueryParams appDetails)
+    throws ServiceException, ProjectException {
     return provFileStateQuery(provFileStateQB(fileDetails, mlAssetParams), appDetails,
       DEFAULT_PROVENANCE_QUERY_SIZE);
   }
 
   public long provFileStateCount(ProvFileDetailsQueryParams fileParams, ProvMLAssetDetailsQueryParams mlAssetParams,
-    ProvFileAppDetailsQueryParams appDetails, GeneralQueryParams queryParams)
+    ProvFileAppDetailsQueryParams appDetails)
     throws ServiceException, GenericException, ProjectException {
-    if(queryParams.count && appDetails.withAppState) {
+    if(appDetails.withAppState) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
         "count(no source) and withAppState(multi) cannot be used together");
     }
@@ -1078,7 +1061,7 @@ public class ElasticController {
         throw new IllegalArgumentException("footprint type:" + footprintType + " not managed");
     }
   
-    List<ProvFileOpHit> fileOps = provFileOps(appId, inodeOperations);
+    List<ProvFileOpHit> fileOps = provFileOps(null, appId, inodeOperations);
     Map<Long, ProvFileHit> files = new HashMap<>();
     Set<Long> filesAccessed = new HashSet<>();
     Set<Long> filesCreated = new HashSet<>();
@@ -1144,18 +1127,11 @@ public class ElasticController {
     return new LinkedList<>(files.values());
   }
   
-  public List<ProvFileOpHit> provFileOps(Long inodeId) throws ServiceException {
-    return provFileOpQuery(provFileOpQB(inodeId, null, null), DEFAULT_PROVENANCE_QUERY_SIZE);
-  }
-  
-  public List<ProvFileOpHit> provFileOps(String appId) throws ServiceException {
-    return provFileOps(appId, new String[0]);
-  }
-  
-  private List<ProvFileOpHit> provFileOps(String appId, String[] inodeOperations) throws ServiceException {
+  public List<ProvFileOpHit> provFileOps(Long inodeId, String appId, String[] inodeOperations)
+    throws ServiceException {
     QueryBuilder inodeOperationsQB = provInodeOperationsQB(inodeOperations);
     List<ProvFileOpHit> queryResult
-      = provFileOpQuery(provFileOpQB(null, appId, inodeOperationsQB), DEFAULT_PROVENANCE_QUERY_SIZE);
+      = provFileOpQuery(provFileOpQB(inodeId, appId, inodeOperationsQB), DEFAULT_PROVENANCE_QUERY_SIZE);
     Collections.sort(queryResult, ProvFileOpHit.timestampComparator);
     return queryResult;
   }

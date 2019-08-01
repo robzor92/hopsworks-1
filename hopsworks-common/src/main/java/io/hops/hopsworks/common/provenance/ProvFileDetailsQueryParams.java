@@ -35,13 +35,14 @@ public class ProvFileDetailsQueryParams {
   public final Map<String, String> xattrsExact;
   public final Map<String, String> xattrsLike;
   public final String appId;
+  public final boolean withFullPath;
 
   private ProvFileDetailsQueryParams(Integer projectId,
     String assetName, String likeAssetName,
     String userName, String likeUserName, 
     Long createdBeforeTimestamp, Long createdAfterTimestamp,
     Map<String, String> xattrsExact, Map<String, String> xattrsLike,
-    String appId) {
+    String appId, boolean withFullPath) {
     this.projectId = projectId;
     this.assetName = assetName;
     this.likeAssetName = likeAssetName;
@@ -52,6 +53,7 @@ public class ProvFileDetailsQueryParams {
     this.xattrsExact = xattrsExact;
     this.xattrsLike = xattrsLike;
     this.appId = appId;
+    this.withFullPath = withFullPath;
   }
 
   public static ProvFileDetailsQueryParams instance(Integer projectId,
@@ -59,13 +61,13 @@ public class ProvFileDetailsQueryParams {
     String userName, String likeUserName, 
     Long createdBeforeTimestamp, Long createdAfterTimestamp,
     String xattrsExact,  String xattrsLike,
-    String appId) throws GenericException {
+    String appId, boolean withFullPath) throws GenericException {
     Map<String, String> xattrsExactMap = getXAttrsMap(xattrsExact);
     Map<String, String> xattrsLikeMap = getXAttrsMap(xattrsLike);
     checkParams(projectId, assetName, likeAssetName, userName, likeUserName,
-      createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap, appId);
+      createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap, appId, withFullPath);
     return new ProvFileDetailsQueryParams(projectId, assetName, likeAssetName, userName, likeUserName,
-      createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap, appId);
+      createdBeforeTimestamp, createdAfterTimestamp, xattrsExactMap, xattrsLikeMap, appId, withFullPath);
   }
   
   public static ProvFileDetailsQueryParams instance(Integer projectId,
@@ -73,14 +75,14 @@ public class ProvFileDetailsQueryParams {
     String userName, String likeUserName,
     Long createdBeforeTimestamp, Long createdAfterTimestamp,
     Map<String, String> xattrsExact,  Map<String, String> xattrsLike,
-    String appId) throws GenericException{
+    String appId, boolean withFullPath) throws GenericException{
     
     Map<String, String> xattrsExactMap = provInternalXAttrsMap(xattrsExact);
     Map<String, String> xattrsLikeMap = provInternalXAttrsMap(xattrsLike);
     checkParams(projectId, assetName, likeAssetName, userName, likeUserName,
-      createdBeforeTimestamp, createdAfterTimestamp, xattrsExact, xattrsLike, appId);
+      createdBeforeTimestamp, createdAfterTimestamp, xattrsExact, xattrsLike, appId, withFullPath);
     return new ProvFileDetailsQueryParams(projectId, assetName, likeAssetName, userName, likeUserName,
-      createdBeforeTimestamp, createdAfterTimestamp, xattrsExact, xattrsLike, appId);
+      createdBeforeTimestamp, createdAfterTimestamp, xattrsExact, xattrsLike, appId, withFullPath);
   }
   
   private static void checkParams(Integer projectId,
@@ -88,7 +90,7 @@ public class ProvFileDetailsQueryParams {
     String userName, String likeUserName,
     Long createdBeforeTimestamp, Long createdAfterTimestamp,
     Map<String, String> xattrsExact,  Map<String, String> xattrsLike,
-    String appId) throws GenericException {
+    String appId, boolean withFullPath) throws GenericException {
     if (assetName != null && likeAssetName != null) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
         "provenance query - set only one - either like or exact - assetName");

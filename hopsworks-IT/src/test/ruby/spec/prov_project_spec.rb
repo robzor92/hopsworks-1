@@ -30,6 +30,7 @@ describe "On #{ENV['OS']}" do
     @experiment_app2_name1 = "#{@app2_id}_1"
     @experiment_app3_name1 = "#{@app3_id}_1"
     @experiment_app1_name2 = "#{@app1_id}_2"
+    @experiment_app1_name3 = "#{@app1_id}_3"
     @not_experiment_name = "not_experiment"
     @model1_name = "model_a"
     @model2_name = "model_b"
@@ -46,7 +47,7 @@ describe "On #{ENV['OS']}" do
     @xattrV5 = JSON['[{"f3_1":"val1","f3_2":"val1"},{"f3_1":"val2","f3_2":"val2"}]']
     @xattrV6 = "notJava"
     @xattrV7 = "not Json"
-    @xattrV8 = JSON['{"name": "fashion mnist demo"}']
+    @xattrV8 = JSON['{"name": "fashion mnist gridsearch"}']
     pp "create project: #{@project1_name}"
     @project1 = create_project_by_name(@project1_name)
     pp "create project: #{@project2_name}"
@@ -943,6 +944,63 @@ describe "On #{ENV['OS']}" do
         get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id3, false, 404)
       end
     end 
+
+    describe "search by like xattr 2" do
+      it "stop epipe" do
+        execute_remotely @hostname, "sudo systemctl stop epipe"
+      end
+
+      it "create experiment with xattr" do
+        prov_create_experiment(@project1, @experiment_app1_name1)
+        experiment_record1 = prov_get_experiment_record(@project1, @experiment_app1_name1)
+        expect(experiment_record1.length).to eq 1  
+        prov_add_xattr(experiment_record1[0], "config", JSON[@xattrV8], "XATTR_ADD", 1)
+        
+        prov_create_experiment(@project1, @experiment_app1_name2)
+        experiment_record2 = prov_get_experiment_record(@project1, @experiment_app1_name2)
+        expect(experiment_record2.length).to eq 1  
+        prov_add_xattr(experiment_record2[0], "config", JSON[@xattrV8], "XATTR_ADD", 1)
+
+        prov_create_experiment(@project1, @experiment_app1_name3)
+        experiment_record3 = prov_get_experiment_record(@project1, @experiment_app1_name3)
+        expect(experiment_record3.length).to eq 1  
+        prov_add_xattr(experiment_record3[0], "config", JSON[@xattrV8], "XATTR_ADD", 1)
+      end
+
+      it "restart epipe" do
+        execute_remotely @hostname, "sudo systemctl restart epipe"
+        prov_wait_for_epipe() 
+      end
+
+      it "check not json - ok - search result" do 
+        experiment1_id = prov_experiment_id(@experiment_app1_name1)
+        experiment2_id = prov_experiment_id(@experiment_app1_name2)
+        experiment3_id = prov_experiment_id(@experiment_app1_name3)
+
+        experiments1 = get_ml_asset_like_xattr(@project1, "EXPERIMENT", "config.name", "mnist")
+        #pp experiment
+        expect(experiments1.length).to eq 3
+        prov_check_asset_with_id(experiments1, experiment1_id)
+        prov_check_asset_with_id(experiments1, experiment2_id)
+        prov_check_asset_with_id(experiments1, experiment3_id)
+      end
+
+      it "delete experiment dataset" do
+        prov_delete_experiment(@project1, @experiment_app1_name1)
+        prov_delete_experiment(@project1, @experiment_app1_name2)
+        prov_delete_experiment(@project1, @experiment_app1_name3)
+      end
+
+      it "check cleanup" do 
+        prov_wait_for_epipe() 
+        experiment_id1 = prov_experiment_id(@experiment_app1_name1)
+        experiment_id2 = prov_experiment_id(@experiment_app1_name2)
+        experiment_id3 = prov_experiment_id(@experiment_app1_name3)
+        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false, 404)
+        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id2, false, 404)
+        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id3, false, 404)
+      end
+    end
   end
 
   describe 'mock app fileOperations' do

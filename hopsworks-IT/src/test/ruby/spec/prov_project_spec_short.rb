@@ -30,6 +30,7 @@ describe "On #{ENV['OS']}" do
     @experiment_app2_name1 = "#{@app2_id}_1"
     @experiment_app3_name1 = "#{@app3_id}_1"
     @experiment_app1_name2 = "#{@app1_id}_2"
+    @experiment_app1_name3 = "#{@app1_id}_3"
     @not_experiment_name = "not_experiment"
     @model1_name = "model_a"
     @model2_name = "model_b"
@@ -46,7 +47,7 @@ describe "On #{ENV['OS']}" do
     @xattrV5 = JSON['[{"f3_1":"val1","f3_2":"val1"},{"f3_1":"val2","f3_2":"val2"}]']
     @xattrV6 = "notJava"
     @xattrV7 = "not Json"
-    @xattrV8 = JSON['{"name": "fashion mnist demo"}']
+    @xattrV8 = JSON['{"name": "fashion mnist gridsearch"}']
     pp "create project: #{@project1_name}"
     @project1 = create_project_by_name(@project1_name)
     #pp "create project: #{@project2_name}"
