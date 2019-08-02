@@ -50,8 +50,8 @@ describe "On #{ENV['OS']}" do
     @xattrV8 = JSON['{"name": "fashion mnist gridsearch"}']
     pp "create project: #{@project1_name}"
     @project1 = create_project_by_name(@project1_name)
-    #pp "create project: #{@project2_name}"
-    #@project2 = create_project_by_name(@project2_name)
+    pp "create project: #{@project2_name}"
+    @project2 = create_project_by_name(@project2_name)
   end
 
   #after :all do 

@@ -60,7 +60,11 @@ public class ProvenanceController {
   
   public List<ProvFileStateHit> provFileState(ProvFileStateListParamBuilder params)
     throws GenericException, ServiceException, ProjectException {
-    return provFileState(params.fileDetails(), params.mlAssetDetails(), params.appDetails());
+    if(params.getMlId() != null || params.getInodeId() != null) {
+      return elasticCtrl.provFileState(params.fileParams(), params.mlAssetParams(), params.appDetails());
+    } else {
+      return provFileState(params.fileDetails(), params.mlAssetDetails(), params.appDetails());
+    }
   }
   
   public List<ProvFileStateHit> provFileState(ProvFileDetailsQueryParams fileDetails,

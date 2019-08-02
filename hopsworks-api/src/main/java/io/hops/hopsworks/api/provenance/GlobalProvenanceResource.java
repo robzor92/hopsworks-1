@@ -77,7 +77,7 @@ public class GlobalProvenanceResource {
   @EJB
   private NoCacheResponse noCacheResponse;
   @EJB
-  private ProvenanceController provenanceCtlr;
+  private ProvenanceController provenanceCtrl;
   
   @GET
   @Path("list")
@@ -95,13 +95,13 @@ public class GlobalProvenanceResource {
       new Object[]{req.getRequestURL().toString(), fileDetails, mlAssetParams, appDetails,
         queryDetails});
     if(queryDetails.isCount()) {
-      Long countResult = provenanceCtlr.provFileStateCount(fileDetails.params(), mlAssetParams.params(),
+      Long countResult = provenanceCtrl.provFileStateCount(fileDetails.params(), mlAssetParams.params(),
         appDetails.params());
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
         .entity(new SimpleResult<>(countResult)).build();
     } else {
       GenericEntity<List<ProvFileStateHit>> searchResults = new GenericEntity<List<ProvFileStateHit>>(
-        provenanceCtlr.provFileState(fileDetails.params(), mlAssetParams.params(),
+        provenanceCtrl.provFileState(fileDetails.params(), mlAssetParams.params(),
           appDetails.params())) {
       };
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();

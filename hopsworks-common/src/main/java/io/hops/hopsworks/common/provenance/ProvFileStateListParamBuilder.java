@@ -21,6 +21,8 @@ import java.util.Map;
 
 public class ProvFileStateListParamBuilder {
   private Integer projectId;
+  private Long inodeId;
+  private String mlId;
   private String assetName;
   private String likeAssetName;
   private String userName;
@@ -36,6 +38,16 @@ public class ProvFileStateListParamBuilder {
   
   public ProvFileStateListParamBuilder() {}
   
+  public ProvFileStateListParamBuilder(Integer projectId, Long inodeId, String mlId, String mlType,
+    boolean withAppState, Provenance.AppState currentAppState) {
+    this.projectId = projectId;
+    this.inodeId = inodeId;
+    this.mlId = mlId;
+    this.mlType = mlType;
+    this.withAppState = withAppState;
+    this.currentAppState = currentAppState;
+  }
+  
   public Integer getProjectId() {
     return projectId;
   }
@@ -43,6 +55,22 @@ public class ProvFileStateListParamBuilder {
   public ProvFileStateListParamBuilder withProjectId(Integer projectId) {
     this.projectId = projectId;
     return this;
+  }
+  
+  public Long getInodeId() {
+    return inodeId;
+  }
+  
+  public void withInodeId(Long inodeId) {
+    this.inodeId = inodeId;
+  }
+  
+  public String getMlId() {
+    return mlId;
+  }
+  
+  public void withMlId(String mlId) {
+    this.mlId = mlId;
   }
   
   public String getAssetName() {
@@ -151,6 +179,14 @@ public class ProvFileStateListParamBuilder {
   public ProvFileStateListParamBuilder withCurrentAppState(Provenance.AppState currentAppState) {
     this.currentAppState = currentAppState;
     return this;
+  }
+  
+  public ProvFileQueryParams fileParams() throws GenericException {
+    return ProvFileQueryParams.instance(projectId, inodeId, withAppState);
+  }
+  
+  public ProvMLAssetQueryParams mlAssetParams() {
+    return ProvMLAssetQueryParams.instance(mlType, mlId);
   }
   
   public ProvFileDetailsQueryParams fileDetails() throws GenericException {

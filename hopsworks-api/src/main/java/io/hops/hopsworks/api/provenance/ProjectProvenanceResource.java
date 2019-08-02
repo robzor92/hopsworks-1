@@ -52,6 +52,7 @@ import io.hops.hopsworks.common.provenance.ProvFileOpHit;
 import io.hops.hopsworks.common.provenance.ProvFileOpsSummaryByApp;
 import io.hops.hopsworks.common.provenance.ProvFileStateHit;
 import io.hops.hopsworks.common.provenance.ProvFileOpsSummaryByFile;
+import io.hops.hopsworks.common.provenance.ProvFileStateListParamBuilder;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.SimpleResult;
 import io.hops.hopsworks.exceptions.GenericException;
@@ -143,10 +144,12 @@ public class ProjectProvenanceResource {
     @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
     logger.log(Level.INFO, "Local content path:{0} file params:{1} ml asset params:{2} app details params:{3} ",
       new Object[]{req.getRequestURL().toString(), fileParams, mlAssetParams, appDetailsParams});
+    ProvFileStateListParamBuilder params
+      = new ProvFileStateListParamBuilder(project.getId(), fileParams.getInodeId(), mlAssetParams.getMlId(),
+      mlAssetParams.getMlType(),
+      fileParams.isWithAppState(), appDetailsParams.getCurrentState());
     GenericEntity<List<ProvFileStateHit>> searchResults = new GenericEntity<List<ProvFileStateHit>>(
-      elasticCtrl.provFileState(
-        fileParams.params(project.getId()), mlAssetParams.params(), appDetailsParams.params())) {
-    };
+      provenanceCtrl.provFileState(params)) {};
     if(searchResults.getEntity().isEmpty()) {
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.NOT_FOUND).build();
     } else if(searchResults.getEntity().size() > 1){
