@@ -430,7 +430,7 @@ public class ProjectService {
   public Response updateProject(
       ProjectDTO projectDTO, @PathParam("projectId") Integer id,
       @Context SecurityContext sc) throws ProjectException, DatasetException, HopsSecurityException,
-      ServiceException, FeaturestoreException, UserException {
+    ServiceException, FeaturestoreException, UserException, GenericException {
 
     RESTApiJsonResponse json = new RESTApiJsonResponse();
     Users user = jWTHelper.getUserPrincipal(sc);
@@ -619,7 +619,7 @@ public class ProjectService {
     return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(json).build();
 
   }
-
+  
   @Path("{projectId}/projectMembers")
   public ProjectMembersService projectMembers(@PathParam("projectId") Integer id) {
     this.projectMembers.setProjectId(id);

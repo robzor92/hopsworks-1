@@ -39,17 +39,26 @@
 package io.hops.hopsworks.common.provenance;
 
 public class ProvFileOpListParamBuilder {
-  private long inodeId;
+  private Integer projectId;
+  private Long inodeId;
   private String appId;
   private boolean withFullPath;
   
   public ProvFileOpListParamBuilder() {}
   
-  public long getInodeId() {
+  public Integer getProjectId() {
+    return projectId;
+  }
+  
+  public void withProjectId(Integer projectId) {
+    this.projectId = projectId;
+  }
+  
+  public Long getInodeId() {
     return inodeId;
   }
   
-  public void withInodeId(long inodeId) {
+  public void withInodeId(Long inodeId) {
     this.inodeId = inodeId;
   }
   

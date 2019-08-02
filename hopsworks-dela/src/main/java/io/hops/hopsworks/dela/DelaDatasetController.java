@@ -48,6 +48,7 @@ import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.dataset.DatasetController;
 import io.hops.hopsworks.common.dataset.FilePreviewDTO;
 import io.hops.hopsworks.exceptions.DatasetException;
+import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.HopsSecurityException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
@@ -102,7 +103,7 @@ public class DelaDatasetController {
   }
   
   public Dataset download(Project project, Users user, String publicDSId, String name)
-    throws DelaException {
+    throws DelaException, GenericException {
     Dataset dataset;
     try {
       dataset = createDataset(user, project, name, "");
@@ -145,7 +146,7 @@ public class DelaDatasetController {
   }
 
   public Dataset createDataset(Users user, Project project, String name, String description)
-    throws DatasetException, HopsSecurityException {
+    throws DatasetException, HopsSecurityException, GenericException {
 
     datasetCtrl.createDataset(user, project, name, description, -1, true, false, false,
       dfs.getDfsOps());

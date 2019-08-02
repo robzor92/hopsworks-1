@@ -62,9 +62,11 @@ import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
 import io.hops.hopsworks.common.hdfs.Utils;
+import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.util.HopsUtils;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.DatasetException;
+import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.HopsSecurityException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -115,6 +117,8 @@ public class DatasetController {
   private DistributedFsService dfs;
   @EJB
   private Settings settings;
+  @EJB
+  private ProvenanceController provenanceCtrl;
 
   /**
    * Create a new DataSet. This is, a folder right under the project home
@@ -141,6 +145,46 @@ public class DatasetController {
   public void createDataset(Users user, Project project, String dataSetName,
       String datasetDescription, int templateId, boolean searchable,
       boolean stickyBit, boolean defaultDataset, DistributedFileSystemOps dfso)
+    throws DatasetException, HopsSecurityException, GenericException {
+    Inode.MetaStatus metaStatus;
+    if(searchable) {
+      if(provenanceCtrl.isProjectProvenanceEnabled(project, dfso)) {
+        metaStatus = Inode.MetaStatus.PROVENANCE_ENABLED;
+      } else {
+        metaStatus = Inode.MetaStatus.META_ENABLED;
+      }
+    } else {
+      metaStatus = Inode.MetaStatus.DISABLED;
+    }
+    createDataset(user, project, dataSetName, datasetDescription, templateId, metaStatus, stickyBit,
+      defaultDataset, dfso);
+  }
+  
+  /**
+   * Create a new DataSet. This is, a folder right under the project home
+   * folder.
+   * **The Dataset directory is created using the superuser dfso**
+   *
+   * @param user The creating Users. Cannot be null.
+   * @param project The project under which to create the DataSet. Cannot be
+   * null.
+   * @param dataSetName The name of the DataSet being created. Cannot be null
+   * and must satisfy the validity criteria for a folder name.
+   * @param datasetDescription The description of the DataSet being created. Can
+   * be null.
+   * @param templateId The id of the metadata template to be associated with
+   * this DataSet.
+   * @param metaStatus DISABLED/META_ENABLED/PROVENANCE_ENABLED - Defines whether the dataset and its provenance can be
+   *                   indexed or not (i.e. whether it can be visible in the search results or not)
+   * @param stickyBit Whether or not the dataset should have the sticky bit set
+   * @param defaultDataset
+   * @param dfso
+   * folder names, or the folder already exists.
+   */
+  @TransactionAttribute(TransactionAttributeType.NEVER)
+  public void createDataset(Users user, Project project, String dataSetName,
+    String datasetDescription, int templateId, Inode.MetaStatus metaStatus,
+    boolean stickyBit, boolean defaultDataset, DistributedFileSystemOps dfso)
     throws DatasetException, HopsSecurityException {
     //Parameter checking.
     if (user == null || project == null || dataSetName == null) {
@@ -170,7 +214,7 @@ public class DatasetController {
         ds = inodes.findByInodePK(parent, dataSetName,
             HopsUtils.dataSetPartitionId(parent, dataSetName));
         Dataset newDS = new Dataset(ds, project);
-        newDS.setSearchable(searchable);
+        newDS.setSearchable(isSearchable(metaStatus));
 
         if (datasetDescription != null) {
           newDS.setDescription(datasetDescription);
@@ -182,10 +226,17 @@ public class DatasetController {
         hdfsUsersBean.addDatasetUsersGroups(user, project, newDS, dfso);
 
         //set the dataset meta enabled. Support 3 level indexing
-        if (searchable) {
-          dfso.setMetaEnabled(dsPath);
-          Dataset logDs = getByProjectAndDsName(project,null, dataSetName);
-          logDataset(logDs, OperationType.Add);
+        switch(metaStatus) {
+          case META_ENABLED: {
+            dfso.setMetaEnabled(dsPath);
+            Dataset logDs = getByProjectAndDsName(project,null, dataSetName);
+            logDataset(logDs, OperationType.Add);
+          } break;
+          case PROVENANCE_ENABLED: {
+            dfso.setProvenanceEnabled(dsPath);
+            Dataset logDs = getByProjectAndDsName(project,null, dataSetName);
+            logDataset(logDs, OperationType.Add);
+          } break;
         }
       } catch (Exception e) {
         try {
@@ -202,6 +253,10 @@ public class DatasetController {
       throw new DatasetException(RESTCodes.DatasetErrorCode.DATASET_OPERATION_ERROR, Level.INFO,
         "Could not create dataset: " + dataSetName);
     }
+  }
+  
+  private boolean isSearchable(Inode.MetaStatus metaStatus) {
+    return !Inode.MetaStatus.DISABLED.equals(metaStatus);
   }
 
   /**

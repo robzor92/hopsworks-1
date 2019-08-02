@@ -173,7 +173,7 @@ public class Inode implements Serializable {
   private boolean subtreeLocked;
   @Column(name = "meta_enabled")
   @NotNull
-  private boolean metaEnabled;
+  private MetaStatus metaStatus;
   @Column(name = "is_dir")
   @NotNull
   private boolean dir;
@@ -198,14 +198,14 @@ public class Inode implements Serializable {
   }
 
   public Inode(InodePK inodePK, Long id, boolean quotaEnabled,
-          boolean underConstruction, boolean subtreeLocked, boolean metaEnabled,
+          boolean underConstruction, boolean subtreeLocked, MetaStatus metaStatus,
           boolean dir) {
     this.inodePK = inodePK;
     this.id = id;
     this.quotaEnabled = quotaEnabled;
     this.underConstruction = underConstruction;
     this.subtreeLocked = subtreeLocked;
-    this.metaEnabled = metaEnabled;
+    this.metaStatus = metaStatus;
     this.dir = dir;
   }
 
@@ -213,9 +213,8 @@ public class Inode implements Serializable {
   public Inode(Inode inode) {
     this(new InodePK(inode.getInodePK().getParentId(), inode.getInodePK().
             getName(), inode.getInodePK().getPartitionId()), inode.getId(),
-            inode.isQuotaEnabled(), inode.
-            isUnderConstruction(), inode.isSubtreeLocked(), inode.
-            isMetaEnabled(), inode.isDir());
+            inode.isQuotaEnabled(), inode.isUnderConstruction(), inode.isSubtreeLocked(),
+            inode.getMetaStatus(), inode.isDir());
   }
 
   public Inode(long parentId, String name, long partitionId) {
@@ -404,12 +403,12 @@ public class Inode implements Serializable {
     return dir;
   }
 
-  public boolean isMetaEnabled() {
-    return metaEnabled;
+  public MetaStatus getMetaStatus() {
+    return metaStatus;
   }
 
-  public void setMetaEnabled(boolean metaEnabled) {
-    this.metaEnabled = metaEnabled;
+  public void setMetaStatus(MetaStatus metaStatus) {
+    this.metaStatus = metaStatus;
   }
 
   public boolean isQuotaEnabled() {
@@ -435,5 +434,10 @@ public class Inode implements Serializable {
   public void setUnderConstruction(boolean underConstruction) {
     this.underConstruction = underConstruction;
   }
-
+  
+  public enum MetaStatus {
+    DISABLED,
+    META_ENABLED,
+    PROVENANCE_ENABLED;
+  }
 }

@@ -41,10 +41,11 @@ package io.hops.hopsworks.api.provenance;
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
 import io.hops.hopsworks.api.filter.NoCacheResponse;
+import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
-import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.provenance.ProvAppFootprintType;
+import io.hops.hopsworks.common.provenance.ProvDatasetState;
 import io.hops.hopsworks.common.provenance.ProvFileOpsCompactByApp;
 import io.hops.hopsworks.common.provenance.ProvFileOpsCompactByFile;
 import io.hops.hopsworks.common.provenance.ProvFileHit;
@@ -73,6 +74,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -94,14 +96,47 @@ public class ProjectProvenanceResource {
   @EJB
   private ProvenanceController provenanceCtrl;
   @EJB
-  private ElasticController elasticCtrl;
-  @EJB
   private ProjectFacade projectFacade;
   
   private Project project;
 
   public void setProjectId(Integer projectId) {
     this.project = projectFacade.find(projectId);
+  }
+  
+  @GET
+  @Path("/status")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.ANYONE})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response changeProvenanceStatus()
+    throws GenericException {
+    Inode.MetaStatus status = provenanceCtrl.getProjectProvenanceStatus(project);
+    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
+      .entity(new SimpleResult(status.name())).build();
+  }
+  
+  @POST
+  @Path("/status/{status}")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.ANYONE})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response changeProvenanceStatus(
+    @PathParam("status") Inode.MetaStatus status)
+    throws GenericException {
+    provenanceCtrl.changeProjectProvenanceStatus(project, status);
+    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).build();
+  }
+  
+  @GET
+  @Path("/content")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.ANYONE})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response content() {
+    GenericEntity<List<ProvDatasetState>> result
+      = new GenericEntity<List<ProvDatasetState>>(provenanceCtrl.getDatasetsProvenanceStatus(project)) {};
+    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(result).build();
   }
   
   @GET
@@ -169,10 +204,10 @@ public class ProjectProvenanceResource {
     @PathParam("inodeId") Long inodeId,
     @QueryParam("type") @DefaultValue("FULL") FileOpsReturnType type,
     @QueryParam("withFullPath") @DefaultValue("false") boolean withFullPath,
-    @Context HttpServletRequest req) throws ServiceException, GenericException {
+    @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
     logger.log(Level.INFO, "Local content path:{0} inodeId:{1}",
       new Object[]{req.getRequestURL().toString(), inodeId});
-    List<ProvFileOpHit> result = provenanceCtrl.provFileOps(inodeId, null, withFullPath);
+    List<ProvFileOpHit> result = provenanceCtrl.provFileOps(project.getId(), inodeId, null, withFullPath);
     switch(type) {
       case FULL:
         GenericEntity<List<ProvFileOpHit>> fullResults = new GenericEntity<List<ProvFileOpHit>>(result) {};
@@ -200,10 +235,10 @@ public class ProjectProvenanceResource {
     @PathParam("appId") String appId,
     @QueryParam("type") @DefaultValue("FULL") FileOpsReturnType type,
     @QueryParam("withFullPath") @DefaultValue("false") boolean withFullPath,
-    @Context HttpServletRequest req) throws ServiceException, GenericException {
+    @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
     logger.log(Level.INFO, "Local content path:{0} appId:{1}",
       new Object[]{req.getRequestURL().toString(), appId});
-    List<ProvFileOpHit> result = provenanceCtrl.provFileOps(null, appId, withFullPath);
+    List<ProvFileOpHit> result = provenanceCtrl.provFileOps(project.getId(), null, appId, withFullPath);
     switch(type) {
       case FULL:
         GenericEntity<List<ProvFileOpHit>> fullResults = new GenericEntity<List<ProvFileOpHit>>(result) {};
@@ -236,11 +271,11 @@ public class ProjectProvenanceResource {
   public Response appProvenance(
     @PathParam("appId") String appId,
     @QueryParam("type") @DefaultValue("ALL") ProvAppFootprintType type,
-    @Context HttpServletRequest req) throws ServiceException {
+    @Context HttpServletRequest req) throws ServiceException, ProjectException {
     logger.log(Level.INFO, "Local content path:{0} appId:{1}",
       new Object[]{req.getRequestURL().toString(), appId});
     GenericEntity<List<ProvFileHit>> fullResults = new GenericEntity<List<ProvFileHit>>(
-      elasticCtrl.provAppFootprint(appId, type)) {};
+      provenanceCtrl.provAppFootprint(project.getId(), appId, type)) {};
     return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(fullResults).build();
   }
   

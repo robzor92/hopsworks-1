@@ -256,9 +256,65 @@ public class DistributedFileSystemOps {
    * @return
    * @throws IOException
    */
-  public void setXAttr(String path,  String name, byte[] value, EnumSet<XAttrSetFlag> flag) throws IOException {
+  public void setXAttr(String path, String name, byte[] value, EnumSet<XAttrSetFlag> flag) throws IOException {
     Path hdfsPath = new Path(path);
     dfs.setXAttr(hdfsPath, name, value, flag);
+  }
+  
+  /**
+   * Insert new XAttr value attached to file or directory in the given path
+   *
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public void insertXAttr(String path, String name, byte[] value) throws IOException {
+    Path hdfsPath = new Path(path);
+    EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
+    flags.add(XAttrSetFlag.CREATE);
+    dfs.setXAttr(hdfsPath, name, value, flags);
+  }
+  
+  /**
+   * Insert or update XAttr value attached to file or directory in the given path
+   *
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public void upsertXAttr(String path, String name, byte[] value) throws IOException {
+    Path hdfsPath = new Path(path);
+    EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
+    if(dfs.getXAttr(hdfsPath, name) != null) {
+      flags.add(XAttrSetFlag.REPLACE);
+    } else {
+      flags.add(XAttrSetFlag.CREATE);
+    }
+    dfs.setXAttr(hdfsPath, name, value, flags);
+  }
+  
+  /**
+   * Read XAttr attached to file or directory in the given path
+   *
+   * @param path
+   * @return xattr value as byte array
+   * @throws IOException
+   */
+  public byte[] getXAttr(String path, String name) throws IOException {
+    Path hdfsPath = new Path(path);
+    return dfs.getXAttr(hdfsPath, name);
+  }
+  
+  /**
+   * Remove XAttr attached to file or directory in the given path
+   *
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public void removeXAttr(String path, String name) throws IOException {
+    Path hdfsPath = new Path(path);
+    dfs.removeXAttr(hdfsPath, name);
   }
 
   /**
@@ -657,6 +713,27 @@ public class DistributedFileSystemOps {
    */
   public void unsetMetaEnabled(Path path) throws IOException {
     this.dfs.setMetaEnabled(path, false);
+  }
+  
+  /**
+   * Set Provenance enabled flag on a given path
+   * <p/>
+   * @param path
+   * @throws IOException
+   */
+  public void setProvenanceEnabled(Path path) throws IOException {
+    this.dfs.setProvenanceEnabled(path);
+  }
+  
+  /**
+   * Set Provenance enabled flag on a given path
+   * <p/>
+   * @param path
+   * @throws IOException
+   */
+  public void setProvenanceEnabled(String location) throws IOException {
+    Path path = new Path(location);
+    setProvenanceEnabled(path);
   }
   
   /**

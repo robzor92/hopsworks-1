@@ -49,9 +49,7 @@ import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.dataset.DatasetController;
 import io.hops.hopsworks.common.provenance.AppProvenanceHit;
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
-import io.hops.hopsworks.common.provenance.ProvAppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvElastic;
-import io.hops.hopsworks.common.provenance.ProvFileHit;
 import io.hops.hopsworks.common.provenance.ProvFileOpHit;
 import io.hops.hopsworks.common.provenance.ProvFileStateHit;
 import io.hops.hopsworks.common.provenance.ProvFileAppDetailsQueryParams;
@@ -1040,98 +1038,11 @@ public class ElasticController {
     return provFileCountQuery(provFileStateQB(fileParams, mlAssetParams));
   }
   
-  public List<ProvFileHit> provAppFootprint(String appId, ProvAppFootprintType footprintType) throws ServiceException {
-    String inodeOperations[];
-    switch(footprintType) {
-      case ALL:
-        inodeOperations = new String[0];
-        break;
-      case INPUT:
-        inodeOperations = new String[]{"CREATE", "ACCESS_DATA"};
-        break;
-      case OUTPUT:
-        inodeOperations = new String[]{"CREATE", "MODIFY_DATA", "DELETE"};
-        break;
-      case OUTPUT_ADDED:
-      case TMP:
-      case REMOVED:
-        inodeOperations = new String[]{"CREATE", "DELETE"};
-        break;
-      default:
-        throw new IllegalArgumentException("footprint type:" + footprintType + " not managed");
-    }
-  
-    List<ProvFileOpHit> fileOps = provFileOps(null, appId, inodeOperations);
-    Map<Long, ProvFileHit> files = new HashMap<>();
-    Set<Long> filesAccessed = new HashSet<>();
-    Set<Long> filesCreated = new HashSet<>();
-    Set<Long> filesModified = new HashSet<>();
-    Set<Long> filesDeleted = new HashSet<>();
-    for(ProvFileOpHit fileOp : fileOps) {
-      files.put(fileOp.getInodeId(), new ProvFileHit(fileOp.getInodeId(), fileOp.getInodeName()));
-      switch(fileOp.getInodeOperation()) {
-        case "CREATE":
-          filesCreated.add(fileOp.getInodeId());
-          break;
-        case "DELETE":
-          filesDeleted.add(fileOp.getInodeId());
-          break;
-        case "ACCESS_DATA":
-          filesAccessed.add(fileOp.getInodeId());
-          break;
-        case "MODIFY_DATA":
-          filesModified.add(fileOp.getInodeId());
-          break;
-        default:
-      }
-    }
-    //filter files based on footprintTypes
-    switch(footprintType) {
-      case ALL:
-        //nothing - return all results
-        break;
-      case INPUT: {
-        //files read - that existed before app (not created by app)
-        Set<Long> aux = new HashSet<>(filesAccessed);
-        aux.removeAll(filesCreated);
-        files.keySet().retainAll(aux);
-      } break;
-      case OUTPUT: {
-        //files created or modified, but not deleted
-        Set<Long> aux = new HashSet<>(filesCreated);
-        aux.addAll(filesModified);
-        aux.removeAll(filesDeleted);
-        files.keySet().retainAll(aux);
-      } break;
-      case OUTPUT_ADDED: {
-        //files created but not deleted
-        Set<Long> aux = new HashSet<>(filesCreated);
-        aux.removeAll(filesDeleted);
-        files.keySet().retainAll(aux);
-      } break;
-      case TMP: {
-        //files created and deleted
-        Set<Long> aux = new HashSet<>(filesCreated);
-        aux.retainAll(filesDeleted);
-        files.keySet().retainAll(aux);
-      } break;
-      case REMOVED: {
-        //files not created and deleted
-        Set<Long> aux = new HashSet<>(filesDeleted);
-        aux.removeAll(filesCreated);
-        files.keySet().retainAll(aux);
-      } break;
-      default:
-        //continue;
-    }
-    return new LinkedList<>(files.values());
-  }
-  
-  public List<ProvFileOpHit> provFileOps(Long inodeId, String appId, String[] inodeOperations)
+  public List<ProvFileOpHit> provFileOps(Long projectInodeId, Long inodeId, String appId, String[] inodeOperations)
     throws ServiceException {
     QueryBuilder inodeOperationsQB = provInodeOperationsQB(inodeOperations);
     List<ProvFileOpHit> queryResult
-      = provFileOpQuery(provFileOpQB(inodeId, appId, inodeOperationsQB), DEFAULT_PROVENANCE_QUERY_SIZE);
+      = provFileOpQuery(provFileOpQB(projectInodeId, inodeId, appId, inodeOperationsQB), DEFAULT_PROVENANCE_QUERY_SIZE);
     Collections.sort(queryResult, ProvFileOpHit.timestampComparator);
     return queryResult;
   }
@@ -1365,9 +1276,12 @@ public class ElasticController {
     return query;
   }
   
-  private QueryBuilder provFileOpQB(Long inodeId, String appId, QueryBuilder inodeOperationsQB) {
+  private QueryBuilder provFileOpQB(Long projectInodeId, Long inodeId, String appId,
+    QueryBuilder inodeOperationsQB) {
     BoolQueryBuilder query = boolQuery()
       .must(termQuery(ProvElastic.Common.ENTRY_TYPE_FIELD, "operation"));
+    if(projectInodeId != null)
+      query = query.must(termQuery(ProvElastic.Common.PROJECT_INODE_ID_FIELD, projectInodeId));
     if(inodeId != null)
       query = query.must(termQuery(ProvElastic.Common.INODE_ID_FIELD, inodeId));
     if(appId != null)

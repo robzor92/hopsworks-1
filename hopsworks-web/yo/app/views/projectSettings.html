@@ -376,8 +376,67 @@
                 </table>
               </uib-tab>
 
-            </uib-tabset>
-          </div>
+              <uib-tab index="3" heading="Provenance">
+
+                <h3>Hopsworks Provenance Settings</h3>
+                <div class="panel panel-default"  style="width: 800px; background-color: #F7F7F7;" ng-controller="ProvenanceCtrl as provenanceCtrl">
+                  <div class="panel-body">
+                    <div id="projectProvenance">
+                      <div class="control-group col-md-offset-1">
+                        <fieldset>
+                          <label>Project</label>
+                          <div class="row">
+                            <md-checkbox class=" row md-primary" ng-model="provenanceCtrl.projectProvenanceEnabled"
+                                         ng-disabled="provenanceCtrl.pGetStatusWorking">
+                              Provenance Status
+                            </md-checkbox>
+                          </div>
+                        </fieldset>
+                        <fieldset>
+                          <label>Datasets</label>
+                          <table st-table="rowCollection" class="table table-striped"
+                                 ng-show="provenanceCtrl.datasetProvenanceStatus.length > 0">
+                            <thead>
+                            <tr>
+                              <th class="col-sm-3">None/Meta/Prov</th>
+                              <th class="col-sm-9">Dataset</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr ng-repeat="dataset in provenanceCtrl.datasetProvenanceStatus" class="row">
+                              <td class="col-sm-3 pull-left">
+                                <div style="margin-left: 10px;">
+                                  <md-radio-group ng-model="dataset.metaStatus" class="md-primary"
+                                                  layout="row" layout-align="start center">
+                                    <md-radio-button ng-repeat="m in provenanceCtrl.metaStatus" ng-value="m.id"
+                                                     ng-disabled="true" aria-label="m.label"/>
+                                  </md-radio-group>
+                                </div>
+                              </td>
+                              <td class="col-sm-9">
+                                <div style="margin-left: 10px;"><b>{{dataset.name}}</b></div>
+                              </td>
+                            </tr>
+                            </tbody>
+                          </table>
+                        </fieldset>
+                        <div class="row">
+                          <button class="btn btn-success" type="button"
+                                  ng-disabled="provenanceCtrl.isWorking()"
+                                  ng-click="provenanceCtrl.setProvenanceStatus()">
+                            Save
+                          </button>
+                          <i class="fa fa-info-circle"
+                             uib-tooltip="Click to update project provenance status."></i>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </uib-tab>
+          </uib-tabset>
+        </div>
 
 
       </section>

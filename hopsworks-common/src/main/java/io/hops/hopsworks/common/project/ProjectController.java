@@ -633,7 +633,7 @@ public class ProjectController {
    * @throws java.io.IOException
    */
   public void createProjectLogResources(Users user, Project project,
-      DistributedFileSystemOps dfso) throws IOException, DatasetException, HopsSecurityException {
+      DistributedFileSystemOps dfso) throws IOException, DatasetException, HopsSecurityException, GenericException {
 
     for (Settings.BaseDataset ds : Settings.BaseDataset.values()) {
       datasetController.createDataset(user, project, ds.getName(), ds.
@@ -686,15 +686,15 @@ public class ProjectController {
   // Used only during project creation
   private List<Future<?>> addService(Project project, ProjectServiceEnum service,
       Users user, DistributedFileSystemOps dfso)
-      throws ProjectException, ServiceException, DatasetException, HopsSecurityException,
-      UserException, FeaturestoreException {
+    throws ProjectException, ServiceException, DatasetException, HopsSecurityException,
+    UserException, FeaturestoreException, GenericException {
     return addService(project, service, user, dfso, dfso);
   }
 
   public List<Future<?>> addService(Project project, ProjectServiceEnum service,
       Users user, DistributedFileSystemOps dfso, DistributedFileSystemOps udfso)
-      throws ProjectException, ServiceException, DatasetException, HopsSecurityException,
-      UserException, FeaturestoreException {
+    throws ProjectException, ServiceException, DatasetException, HopsSecurityException,
+    UserException, FeaturestoreException, GenericException {
 
     List<Future<?>> futureList = new ArrayList<>();
 
@@ -745,8 +745,8 @@ public class ProjectController {
 
   private void addServiceDataset(Project project, Users user,
       Settings.ServiceDataset ds, DistributedFileSystemOps dfso,
-      DistributedFileSystemOps udfso, boolean metaEnabled) 
-    throws DatasetException, HopsSecurityException, ProjectException {
+      DistributedFileSystemOps udfso, boolean metaEnabled)
+    throws DatasetException, HopsSecurityException, ProjectException, GenericException {
     try {
       String datasetName = ds.getName();
       //Training Datasets should be shareable, prefix with project name to avoid naming conflicts when sharing
@@ -789,7 +789,7 @@ public class ProjectController {
 
   private Future<CertificatesController.CertsResult> addServiceServing(Project project, Users user,
                                  DistributedFileSystemOps dfso, DistributedFileSystemOps udfso, boolean metaEnabled)
-      throws ProjectException, DatasetException, HopsSecurityException, UserException {
+    throws ProjectException, DatasetException, HopsSecurityException, UserException, GenericException {
 
     addServiceDataset(project, user, Settings.ServiceDataset.SERVING, dfso, udfso, metaEnabled);
     elasticController.createIndexPattern(project, project.getName().toLowerCase() + "_serving-*");

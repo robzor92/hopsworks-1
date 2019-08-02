@@ -17,6 +17,7 @@ package io.hops.hopsworks.common.provenance;
 
 public class ProvElastic {
   public static class Common {
+    public static final String PROJECT_INODE_ID_FIELD = "project_i_id";
     public static final String INODE_ID_FIELD = "inode_id";
     public static final String INODE_OPERATION_FIELD = "inode_operation";
     public static final String APP_ID_FIELD = "io_app_id";
