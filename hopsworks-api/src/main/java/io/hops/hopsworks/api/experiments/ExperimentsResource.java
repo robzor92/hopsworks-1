@@ -1,6 +1,6 @@
 package io.hops.hopsworks.api.experiments;
 
-import io.hops.hopsworks.api.experiments.provenance.ExperimentProvenanceResource;
+import io.hops.hopsworks.api.experiments.provenance.ExperimentFileProvenanceResource;
 import io.hops.hopsworks.api.experiments.results.ExperimentResultsResource;
 import io.hops.hopsworks.api.experiments.tensorboard.TensorBoardResource;
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
@@ -71,7 +71,7 @@ public class ExperimentsResource {
   @Inject
   private ExperimentResultsResource resultsResource;
   @Inject
-  private ExperimentProvenanceResource provenanceResource;
+  private ExperimentFileProvenanceResource provenanceResource;
   @EJB
   private ExperimentsController experimentsController;
   @EJB
@@ -96,7 +96,7 @@ public class ExperimentsResource {
   public Response getAll(
       @BeanParam Pagination pagination,
       @BeanParam ExperimentsBeanParam experimentsBeanParam,
-      @Context UriInfo uriInfo) throws ServiceException, ProjectException, GenericException {
+      @Context UriInfo uriInfo) throws ServiceException, ProjectException, GenericException, ExperimentsException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.EXPERIMENTS);
     resourceRequest.setOffset(pagination.getOffset());
     resourceRequest.setLimit(pagination.getLimit());
@@ -195,7 +195,7 @@ public class ExperimentsResource {
   @ApiOperation(value = "Provenance sub-resource", tags = {"ProvenanceResource"})
   @Path("{id}/provenance")
   @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
-  public ExperimentProvenanceResource provenance(@PathParam("id") String id) {
+  public ExperimentFileProvenanceResource provenance(@PathParam("id") String id) {
     return this.provenanceResource.setProject(project, id);
   }
 }

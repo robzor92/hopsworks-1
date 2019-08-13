@@ -1,7 +1,7 @@
 package io.hops.hopsworks.api.experiments;
 
 import com.google.common.base.Strings;
-import io.hops.hopsworks.api.experiments.provenance.ExperimentProvenanceBuilder;
+import io.hops.hopsworks.api.experiments.provenance.ExperimentFileProvenanceBuilder;
 import io.hops.hopsworks.api.experiments.results.ExperimentResultsBuilder;
 import io.hops.hopsworks.api.experiments.tensorboard.TensorBoardBuilder;
 import io.hops.hopsworks.common.api.ResourceRequest;
@@ -17,6 +17,7 @@ import io.hops.hopsworks.common.provenance.Provenance;
 
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.util.DateUtils;
+import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
@@ -44,9 +45,9 @@ public class ExperimentsBuilder {
   @EJB
   private TensorBoardBuilder tensorBoardBuilder;
   @EJB
-  private ExperimentProvenanceBuilder provenanceBuilder;
+  private ExperimentFileProvenanceBuilder experimentFileProvenanceBuilder;
   @EJB
-  private ExperimentResultsBuilder resultsBuilder;
+  private ExperimentResultsBuilder experimentResultsBuilder;
   @EJB
   private ExperimentConfigurationConverter experimentConfigurationConverter;
 
@@ -76,7 +77,7 @@ public class ExperimentsBuilder {
 
   //Build collection
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project)
-      throws ServiceException, ProjectException, GenericException {
+      throws ServiceException, ProjectException, GenericException, ExperimentsException {
     ExperimentDTO dto = new ExperimentDTO();
     uri(dto, uriInfo, project);
     expand(dto, resourceRequest);
@@ -92,48 +93,20 @@ public class ExperimentsBuilder {
           provenanceController.provFileState(provFilesParamBuilder.fileDetails(),
               provFilesParamBuilder.mlAssetDetails(), provFilesParamBuilder.appDetails())) {
       };
-      searchResults.getEntity().forEach((fileProvenanceHit) -> {
-        ExperimentDTO experimentDTO = build(uriInfo, resourceRequest, project, fileProvenanceHit);
+
+      for(ProvFileStateHit fileProvStateHit: searchResults.getEntity()) {
+        ExperimentDTO experimentDTO = build(uriInfo, resourceRequest, project, fileProvStateHit);
         if(experimentDTO != null) {
           dto.addItem(experimentDTO);
         }
-      });
+      }
     }
     return dto;
   }
-
-  //Build specific
-  public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project, String mlId)
-      throws ServiceException, ProjectException, GenericException {
-    ExperimentDTO dto = new ExperimentDTO();
-    uri(dto, uriInfo, project);
-    expand(dto, resourceRequest);
-
-    if(dto.isExpand()) {
-      ProvFileStateListParamBuilder provFilesParamBuilder = new ProvFileStateListParamBuilder();
-      provFilesParamBuilder.withProjectId(project.getId());
-      provFilesParamBuilder.withMlType(Provenance.MLType.EXPERIMENT.name());
-      provFilesParamBuilder.withAppState(true);
-      buildFilter(provFilesParamBuilder, resourceRequest.getFilter());
-
-      GenericEntity<List<ProvFileStateHit>> searchResults = new GenericEntity<List<ProvFileStateHit>>(
-          provenanceController.provFileState(provFilesParamBuilder.fileDetails(),
-              provFilesParamBuilder.mlAssetDetails(), provFilesParamBuilder.appDetails())) {
-      };
-      searchResults.getEntity().forEach((fileProvenanceHit) -> {
-        ExperimentDTO experimentDTO = build(uriInfo, resourceRequest, project, fileProvenanceHit);
-        if(experimentDTO != null && fileProvenanceHit.getMlId().equals(mlId)) {
-          dto.addItem(experimentDTO);
-        }
-      });
-    }
-    return dto;
-  }
-
 
   //Build specific
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
-                             ProvFileStateHit fileProvenanceHit) {
+                             ProvFileStateHit fileProvenanceHit) throws ExperimentsException {
 
     ExperimentDTO experimentDTO = new ExperimentDTO();
     uri(experimentDTO, uriInfo, project, fileProvenanceHit);
@@ -176,9 +149,9 @@ public class ExperimentsBuilder {
         experimentDTO.setOptimizationKey(experimentDescription.getOptimizationKey());
         experimentDTO.setTensorboard(tensorBoardBuilder.build(uriInfo,
             resourceRequest.get(ResourceRequest.Name.TENSORBOARD), project, fileProvenanceHit.getMlId()));
-        experimentDTO.setProvenance(provenanceBuilder.build(uriInfo,
+        experimentDTO.setProvenance(experimentFileProvenanceBuilder.build(uriInfo,
             resourceRequest.get(ResourceRequest.Name.PROVENANCE), project, fileProvenanceHit.getMlId()));
-        experimentDTO.setResults(resultsBuilder.build(uriInfo,
+        experimentDTO.setResults(experimentResultsBuilder.build(uriInfo,
             resourceRequest.get(ResourceRequest.Name.RESULTS), project, fileProvenanceHit.getMlId()));
       } else {
         return null;

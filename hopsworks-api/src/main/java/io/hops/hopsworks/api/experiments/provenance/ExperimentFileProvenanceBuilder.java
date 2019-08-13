@@ -20,7 +20,7 @@ import java.util.logging.Level;
 
 @Stateless
 @TransactionAttribute(TransactionAttributeType.NEVER)
-public class ExperimentProvenanceBuilder {
+public class ExperimentFileProvenanceBuilder {
 
   @EJB
   private ProvenanceController provenanceController;

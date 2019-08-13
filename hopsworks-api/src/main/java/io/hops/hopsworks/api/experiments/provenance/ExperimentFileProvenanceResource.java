@@ -25,18 +25,18 @@ import java.util.logging.Level;
 
 @RequestScoped
 @TransactionAttribute(TransactionAttributeType.NEVER)
-public class ExperimentProvenanceResource {
+public class ExperimentFileProvenanceResource {
 
   private Project project;
   private String experimentId;
 
   @EJB
-  private ExperimentProvenanceBuilder provenanceBuilder;
+  private ExperimentFileProvenanceBuilder experimentFileProvenanceBuilder;
 
-  public ExperimentProvenanceResource(){
+  public ExperimentFileProvenanceResource(){
   }
 
-  public ExperimentProvenanceResource setProject(Project project, String experimentId) {
+  public ExperimentFileProvenanceResource setProject(Project project, String experimentId) {
     this.project = project;
     this.experimentId = experimentId;
     return this;
@@ -54,7 +54,8 @@ public class ExperimentProvenanceResource {
   public Response getProvenance(@Context SecurityContext sc,
                                  @Context UriInfo uriInfo) throws ExperimentsException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.PROVENANCE);
-    ExperimentProvenanceDTO dto = provenanceBuilder.build(uriInfo, resourceRequest, project, this.experimentId);
+    ExperimentProvenanceDTO dto = experimentFileProvenanceBuilder.build(uriInfo, resourceRequest,
+        project, this.experimentId);
     if(dto == null) {
       throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.PROVENANCE_NOT_FOUND, Level.FINE);
     }

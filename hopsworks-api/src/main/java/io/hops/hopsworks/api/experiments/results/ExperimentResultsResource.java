@@ -31,7 +31,7 @@ public class ExperimentResultsResource {
   private String experimentId;
 
   @EJB
-  private ExperimentResultsBuilder resultsBuilder;
+  private ExperimentResultsBuilder experimentResultsBuilder;
 
   public ExperimentResultsResource(){
   }
@@ -54,7 +54,7 @@ public class ExperimentResultsResource {
   public Response getResults(@Context SecurityContext sc, @Context UriInfo uriInfo) throws ExperimentsException {
 
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.RESULTS);
-    ExperimentResultSummaryDTO dto = resultsBuilder.build(uriInfo, resourceRequest, project, experimentId);
+    ExperimentResultSummaryDTO dto = experimentResultsBuilder.build(uriInfo, resourceRequest, project, experimentId);
     if(dto == null) {
       throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_NOT_FOUND, Level.FINE);
     }
