@@ -6,6 +6,7 @@ import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.experiments.dto.provenance.ExperimentProvenanceDTO;
 import io.hops.hopsworks.common.provenance.ProvAppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvFileHit;
+import io.hops.hopsworks.common.provenance.ProvenanceController;
 
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
@@ -20,7 +21,7 @@ import java.util.List;
 public class ExperimentProvenanceBuilder {
 
   @EJB
-  private ElasticController elasticController;
+  private ProvenanceController provenanceController;
 
   public ExperimentProvenanceDTO uri(ExperimentProvenanceDTO dto, UriInfo uriInfo, Project project, String mlId) {
     dto.setHref(uriInfo.getBaseUriBuilder().path(ResourceRequest.Name.PROJECT.toString().toLowerCase())
@@ -49,7 +50,7 @@ public class ExperimentProvenanceBuilder {
 
         String appId = mlId.substring(0, mlId.lastIndexOf("_"));
 
-        List<ProvFileHit> filesReadHits = elasticController.provAppFootprint(appId,
+        List<ProvFileHit> filesReadHits = provenanceController.provAppFootprint(project.getId(), appId,
             ProvAppFootprintType.INPUT);
         ArrayList<String> filesRead = new ArrayList<>();
         for(ProvFileHit file : filesReadHits) {
@@ -57,7 +58,7 @@ public class ExperimentProvenanceBuilder {
         }
         dto.setFilesRead(filesRead.toArray(new String[0]));
 
-        List<ProvFileHit> filesOutputHits = elasticController.provAppFootprint(appId,
+        List<ProvFileHit> filesOutputHits = provenanceController.provAppFootprint(project.getId(), appId,
             ProvAppFootprintType.OUTPUT_ADDED);
         ArrayList<String> filesOutput = new ArrayList<>();
         for(ProvFileHit file : filesOutputHits) {
@@ -65,7 +66,7 @@ public class ExperimentProvenanceBuilder {
         }
         dto.setFilesOutput(filesOutput.toArray(new String[0]));
 
-        List<ProvFileHit> filesDeletedHits = elasticController.provAppFootprint(appId,
+        List<ProvFileHit> filesDeletedHits = provenanceController.provAppFootprint(project.getId(), appId,
             ProvAppFootprintType.REMOVED);
         ArrayList<String> filesDeleted = new ArrayList<>();
         for(ProvFileHit file : filesDeletedHits) {
