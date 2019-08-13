@@ -1566,15 +1566,19 @@ public class RESTCodes {
 
     EXPERIMENT_NOT_FOUND(0, "No experiment found for provided id.",
         Response.Status.NOT_FOUND),
-    PROVENANCE_NOT_FOUND(1, "No provenance information found for provided id.",
+    PROVENANCE_NOT_FOUND(1, "No file provenance found for experiment.",
         Response.Status.NOT_FOUND),
+    PROVENANCE_FILE_QUERY_ERROR(1, "Error occurred when retrieving file provenance information for experiment.",
+        Response.Status.INTERNAL_SERVER_ERROR),
     RESULTS_NOT_FOUND(2, "No results found for provided id.",
-        Response.Status.NOT_FOUND);
+        Response.Status.NOT_FOUND),
+    RESULTS_RETRIEVAL_ERROR(3, "Error occurred when retrieving experiment results.",
+        Response.Status.INTERNAL_SERVER_ERROR);
 
     private int code;
     private String message;
     private Response.Status respStatus;
-    public final int range = 320000;
+    public final int range = 330000;
 
     ExperimentsErrorCode(Integer code, String message, Response.Status respStatus) {
       this.code = range + code;

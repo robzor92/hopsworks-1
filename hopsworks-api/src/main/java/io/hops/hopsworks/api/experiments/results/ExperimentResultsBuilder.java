@@ -9,6 +9,8 @@ import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.util.Settings;
+import io.hops.hopsworks.exceptions.ExperimentsException;
+import io.hops.hopsworks.restutils.RESTCodes;
 import org.apache.hadoop.fs.Path;
 
 import javax.ejb.EJB;
@@ -17,6 +19,7 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.util.logging.Level;
 
 @Stateless
 @TransactionAttribute(TransactionAttributeType.NEVER)
@@ -45,7 +48,7 @@ public class ExperimentResultsBuilder {
   }
 
   public ExperimentResultSummaryDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
-                                          String mlId) {
+                                          String mlId) throws ExperimentsException {
     ExperimentResultSummaryDTO dto = new ExperimentResultSummaryDTO();
     uri(dto, uriInfo, project, mlId);
     expand(dto, resourceRequest);
@@ -59,8 +62,9 @@ public class ExperimentResultsBuilder {
           String summaryJson = dfso.cat(new Path(summaryPath));
           dto.setResults(experimentConfigurationConverter.unmarshalResults(summaryJson).getResults());
         }
-      } catch (IOException e) {
-
+      } catch (Exception e) {
+        throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_RETRIEVAL_ERROR, Level.FINE,
+            "Unable to get results for experiment", e.getMessage(), e);
       } finally {
         if (dfso != null) {
           dfs.closeDfsClient(dfso);

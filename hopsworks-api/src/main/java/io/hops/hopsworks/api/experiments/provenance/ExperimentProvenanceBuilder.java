@@ -6,6 +6,9 @@ import io.hops.hopsworks.common.experiments.dto.provenance.ExperimentProvenanceD
 import io.hops.hopsworks.common.provenance.ProvAppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvFileHit;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
+import io.hops.hopsworks.exceptions.ExperimentsException;
+import io.hops.hopsworks.exceptions.JobException;
+import io.hops.hopsworks.restutils.RESTCodes;
 
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
@@ -14,6 +17,7 @@ import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 @Stateless
 @TransactionAttribute(TransactionAttributeType.NEVER)
@@ -40,13 +44,12 @@ public class ExperimentProvenanceBuilder {
   }
 
   public ExperimentProvenanceDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project, String mlId)
-  {
+      throws ExperimentsException {
     ExperimentProvenanceDTO dto = new ExperimentProvenanceDTO();
     uri(dto, uriInfo, project, mlId);
     expand(dto, resourceRequest);
     if (dto.isExpand()) {
       try {
-
         String appId = mlId.substring(0, mlId.lastIndexOf("_"));
 
         List<ProvFileHit> filesReadHits = provenanceController.provAppFootprint(project.getId(), appId,
@@ -73,7 +76,8 @@ public class ExperimentProvenanceBuilder {
         }
         dto.setFilesDeleted(filesDeleted.toArray(new String[0]));
       } catch(Exception e) {
-
+        throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.PROVENANCE_FILE_QUERY_ERROR, Level.FINE,
+            "Unable to get file provenance information for experiment", e.getMessage(), e);
       }
     }
     return dto;
