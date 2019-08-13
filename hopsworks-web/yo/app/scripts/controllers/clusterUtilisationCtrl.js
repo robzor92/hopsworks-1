@@ -227,7 +227,7 @@ angular.module('hopsWorksApp')
             };
 
             var getELKStatus = function () {
-              ClusterUtilService.getHopsStatus().then(
+              ClusterUtilService.getELKStatus().then(
                       function (success) {
                         var nbInstances = 0;
                         var nbRunningInstances = 0;
