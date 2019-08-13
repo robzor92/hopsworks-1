@@ -7,7 +7,6 @@ import io.hops.hopsworks.common.provenance.ProvAppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvFileHit;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.exceptions.ExperimentsException;
-import io.hops.hopsworks.exceptions.JobException;
 import io.hops.hopsworks.restutils.RESTCodes;
 
 import javax.ejb.EJB;
