@@ -91,6 +91,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
+import org.javatuples.Pair;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -265,7 +266,7 @@ public class ElasticController {
     } else if (!this.typeExists(client, Settings.META_INDEX,
         Settings.META_DEFAULT_TYPE)) {
       throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_TYPE_NOT_FOUND, Level.SEVERE,
-        "type: " + Settings.META_DEFAULT_TYPE);
+        "filterType: " + Settings.META_DEFAULT_TYPE);
     }
 
     SearchRequestBuilder srb = client.prepareSearch(Settings.META_INDEX);
@@ -309,7 +310,7 @@ public class ElasticController {
     } else if (!this.typeExists(client, Settings.META_INDEX,
         Settings.META_DEFAULT_TYPE)) {
       throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_TYPE_NOT_FOUND, Level.SEVERE,
-        "type: " + Settings.META_DEFAULT_TYPE);
+        "filterType: " + Settings.META_DEFAULT_TYPE);
     }
 
     String dsName = datasetName;
@@ -429,13 +430,13 @@ public class ElasticController {
         String projectName = index.split("_logs-*")[0];
         if (projects.contains(projectName)) {
           objectsToDelete.
-              put(allObjects.getJSONObject(i).getString("id"), allObjects.getJSONObject(i).getString("type"));
+              put(allObjects.getJSONObject(i).getString("id"), allObjects.getJSONObject(i).getString("filterType"));
         }
       }
     }
     params.put("op", "DELETE");
     for (String id : objectsToDelete.keySet()) {
-      LOG.log(Level.FINE, "deleteProjectSavedObjects-deleting id:{0}, of type:{1}", new Object[]{id,
+      LOG.log(Level.FINE, "deleteProjectSavedObjects-deleting id:{0}, of filterType:{1}", new Object[]{id,
         objectsToDelete.get(id)});
       sendKibanaReq(params, objectsToDelete.get(id), id);
     }
@@ -729,7 +730,7 @@ public class ElasticController {
   }
 
   /**
-   * Checks if a given data type exists. It is a given that the index exists
+   * Checks if a given data filterType exists. It is a given that the index exists
    * <p/>
    * @param client
    * @param typeName
@@ -846,8 +847,8 @@ public class ElasticController {
   public String getIndexFromKibana(JSONObject json){
     String index = null;
 
-    if (json.has("type")) {
-      switch (json.getString("type")) {
+    if (json.has("filterType")) {
+      switch (json.getString("filterType")) {
         case Settings.ELASTIC_INDEX_PATTERN:
           index = json.getString("id");
           break;
@@ -885,8 +886,8 @@ public class ElasticController {
                 .getJSONObject(0).get("id");
             LOG.log(Level.FINE, "dashboard-id:{0}", id);
             String type = (String) new JSONArray((String) json.getJSONObject("attributes").get("panelsJSON"))
-                .getJSONObject(0).get("type");
-            LOG.log(Level.FINE, "dashboard-type:{0}", type);
+                .getJSONObject(0).get("filterType");
+            LOG.log(Level.FINE, "dashboard-filterType:{0}", type);
 
             //Get index from visualization/"saved search"
             //Get and parse all objects
@@ -928,7 +929,7 @@ public class ElasticController {
           .getJSONObject("attributes")
           .getJSONObject("kibanaSavedObjectMeta")
           .getString("searchSourceJSON")).getString("index");
-    } else if (json.getString("type").equals("dashboard")
+    } else if (json.getString("filterType").equals("dashboard")
         && HopsUtils.jsonKeyExists(json, "panelsJSON")) {
       //We need to get the index name from the visualization or saved search this dashboard is
       //created from
@@ -936,8 +937,8 @@ public class ElasticController {
           .get("panelsJSON")).getJSONObject(0).get("id");
       LOG.log(Level.FINE, "dashboard-id:{0}", id);
       String type = (String) new JSONArray((String) json.getJSONObject("attributes")
-          .get("panelsJSON")).getJSONObject(0).get("type");
-      LOG.log(Level.FINE, "dashboard-type:{0}", type);
+          .get("panelsJSON")).getJSONObject(0).get("filterType");
+      LOG.log(Level.FINE, "dashboard-filterType:{0}", type);
 
       //Get index from visualization/"saved search"
       //Get and parse all objects
@@ -1011,7 +1012,40 @@ public class ElasticController {
   }
   
   //PROVENANCE
-  static final int DEFAULT_PROVENANCE_QUERY_SIZE = 500;
+  static final int DEFAULT_PROVENANCE_QUERY_SIZE = 5000;
+  
+  public Map<Long, ProvFileStateHit> provFileState(
+    Collection<Pair<ProvElastic.FileStateFilter, Object>> fileStateFilters,
+    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters)
+    throws GenericException, ServiceException {
+    return provFileStateQuery(provFileStateQB(fileStateFilters, xAttrsFilters, likeXAttrsFilters),
+      DEFAULT_PROVENANCE_QUERY_SIZE);
+  }
+  
+  public long provFileStateCount(
+    Collection<Pair<ProvElastic.FileStateFilter, Object>> fileStateFilters,
+    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters)
+    throws GenericException, ServiceException {
+    return provFileIndexCountQuery(provFileStateQB(fileStateFilters, xAttrsFilters, likeXAttrsFilters));
+  }
+  
+  public List<ProvFileOpHit> provFileOps(
+    Map<String, List<Pair<ProvElastic.FileOpsFilter, Object>>> fileOpsFilters)
+    throws GenericException, ServiceException {
+    return provFileOpsQuery(provFileOpsQB(fileOpsFilters), DEFAULT_PROVENANCE_QUERY_SIZE);
+  }
+  
+  public long provFileOpsCount(
+    Map<String, List<Pair<ProvElastic.FileOpsFilter, Object>>> fileOpsFilters)
+    throws ServiceException, GenericException {
+    return provFileIndexCountQuery(provFileOpsQB(fileOpsFilters));
+  }
+  
+  public Map<String, Map<Provenance.AppState, AppProvenanceHit>> provAppState(
+    Map<String, List<Pair<ProvElastic.AppStateFilter, Object>>> appStateFilters)
+    throws GenericException, ServiceException {
+    return provAppStateQuery(provAppStateQB(appStateFilters), DEFAULT_PROVENANCE_QUERY_SIZE);
+  }
   
   public List<ProvFileStateHit> provFileState(
     ProvFileQueryParams fileParams, ProvMLAssetQueryParams mlAssetParams, ProvFileAppDetailsQueryParams appDetails)
@@ -1035,14 +1069,15 @@ public class ElasticController {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
         "count(no source) and withAppState(multi) cannot be used together");
     }
-    return provFileCountQuery(provFileStateQB(fileParams, mlAssetParams));
+    return provFileIndexCountQuery(provFileStateQB(fileParams, mlAssetParams));
   }
   
   public List<ProvFileOpHit> provFileOps(Long projectInodeId, Long inodeId, String appId, String[] inodeOperations)
     throws ServiceException {
     QueryBuilder inodeOperationsQB = provInodeOperationsQB(inodeOperations);
     List<ProvFileOpHit> queryResult
-      = provFileOpQuery(provFileOpQB(projectInodeId, inodeId, appId, inodeOperationsQB), DEFAULT_PROVENANCE_QUERY_SIZE);
+      = provFileOpsQuery(provFileOpQB(projectInodeId, inodeId, appId, inodeOperationsQB),
+      DEFAULT_PROVENANCE_QUERY_SIZE);
     Collections.sort(queryResult, ProvFileOpHit.timestampComparator);
     return queryResult;
   }
@@ -1076,25 +1111,56 @@ public class ElasticController {
         "Elasticsearch error code: " + response.status().getStatus());
     }
   }
-
-  private long provFileCountQuery(QueryBuilder query) throws ServiceException {
-    long count = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, 0)
-      .getHits().totalHits;
-    LOG.log(Level.WARNING, "query hits: {0}", count);
-    return count;
-  }
   
-  private  List<ProvFileOpHit> provFileOpQuery(QueryBuilder query, int querySize) throws ServiceException {
-    List<ProvFileOpHit> result = new LinkedList<>();
+  private SearchResponse provFileIndexQuery(QueryBuilder query, int querySize) throws ServiceException {
     SearchResponse searchResult = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
       Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, query, querySize);
     SearchHit[] rawHits = searchResult.getHits().getHits();
     LOG.log(Level.WARNING, "query hits: {0} total:{1}",
       new Object[]{rawHits.length, searchResult.getHits().totalHits});
-    for (SearchHit rawHit : rawHits) {
+    return searchResult;
+  }
+  
+  private long provFileIndexCountQuery(QueryBuilder query) throws ServiceException {
+    SearchResponse searchResult = provFileIndexQuery(query, 0);
+    return searchResult.getHits().totalHits;
+  }
+  
+  private List<ProvFileOpHit> provFileOpsQuery(QueryBuilder query, int querySize) throws ServiceException {
+    SearchResponse searchResult = provFileIndexQuery(query, querySize);
+    List<ProvFileOpHit> result = new LinkedList<>();
+    for (SearchHit rawHit : searchResult.getHits().getHits()) {
       ProvFileOpHit hit = new ProvFileOpHit(rawHit);
       result.add(hit);
+    }
+    return result;
+  }
+  
+  private Map<Long, ProvFileStateHit> provFileStateQuery(QueryBuilder query, int querySize) throws ServiceException {
+    SearchResponse searchResult = provFileIndexQuery(query, querySize);
+    Map<Long, ProvFileStateHit> result = new HashMap<>();
+    for (SearchHit rawHit : searchResult.getHits().getHits()) {
+      ProvFileStateHit fpHit = new ProvFileStateHit(rawHit);
+      result.put(fpHit.getInodeId(), fpHit);
+    }
+    return result;
+  }
+  
+  private Map<String, Map<Provenance.AppState, AppProvenanceHit>> provAppStateQuery(QueryBuilder query, int querySize)
+    throws ServiceException {
+    Map<String, Map<Provenance.AppState, AppProvenanceHit>> result = new HashMap<>();
+    SearchHit[] rawHits = rawQuery(Settings.ELASTIC_INDEX_APP_PROVENANCE,
+      Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE, query, querySize)
+      .getHits().getHits();
+    LOG.log(Level.WARNING, "query hits: {0}", rawHits.length);
+    for(SearchHit h : rawHits) {
+      AppProvenanceHit hit = new AppProvenanceHit(h);
+      Map<Provenance.AppState, AppProvenanceHit> appStates = result.get(hit.getAppId());
+      if(appStates == null) {
+        appStates = new TreeMap<>();
+        result.put(hit.getAppId(), appStates);
+      }
+      appStates.put(hit.getAppState(), hit);
     }
     return result;
   }
@@ -1262,6 +1328,60 @@ public class ElasticController {
     if(mlAssetParams.mlType != null)
       query = query.must(termQuery(ProvFileStateHit.ML_TYPE_FIELD, mlAssetParams.mlType));
 //    LOG.log(Level.INFO, "query:{0}", query.toString());
+    return query;
+  }
+  
+  private QueryBuilder provFileStateQB(Collection<Pair<ProvElastic.FileStateFilter, Object>> fileStateFilters,
+    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters)
+    throws GenericException {
+    BoolQueryBuilder query = boolQuery()
+      .must(termQuery(ProvElastic.Common.FILE_STATE_FIELD, true));
+    for(Pair<ProvElastic.FileStateFilter, Object> filter : fileStateFilters) {
+      query = query.must(ProvElastic.getQB(filter.getValue0(), filter.getValue1()));
+    }
+    for(Map.Entry<String, String> filter : xAttrsFilters.entrySet()) {
+      query = query.must(ProvElastic.getXAttrQB(filter.getKey(), filter.getValue()));
+    }
+    for(Map.Entry<String, String> filter : likeXAttrsFilters.entrySet()) {
+      query = query.must(ProvElastic.getLikeXAttrQB(filter.getKey(), filter.getValue()));
+    }
+    return query;
+  }
+  
+  private QueryBuilder provFileOpsQB(Map<String, List<Pair<ProvElastic.FileOpsFilter, Object>>> fileOpsFilters)
+    throws GenericException {
+    BoolQueryBuilder query = boolQuery()
+      .must(termQuery(ProvElastic.Common.ENTRY_TYPE_FIELD, "operation"));
+    for(Map.Entry<String, List<Pair<ProvElastic.FileOpsFilter, Object>>> fieldFilters : fileOpsFilters.entrySet()) {
+      if(fieldFilters.getValue().size() == 1) {
+        Pair<ProvElastic.FileOpsFilter, Object> fieldFilter = fieldFilters.getValue().get(0);
+        query = query.must(ProvElastic.getQB(fieldFilter.getValue0(), fieldFilter.getValue1()));
+      } else if(fieldFilters.getValue().size() > 1) {
+        BoolQueryBuilder fieldQuery = boolQuery();
+        query = query.must(fieldQuery);
+        for (Pair<ProvElastic.FileOpsFilter, Object> fieldFilter : fieldFilters.getValue()) {
+          fieldQuery = fieldQuery.should(ProvElastic.getQB(fieldFilter.getValue0(), fieldFilter.getValue1()));
+        }
+      }
+    }
+    return query;
+  }
+  
+  private QueryBuilder provAppStateQB(Map<String, List<Pair<ProvElastic.AppStateFilter, Object>>> appStateFilters)
+    throws GenericException {
+    BoolQueryBuilder query = boolQuery();
+    for(Map.Entry<String, List<Pair<ProvElastic.AppStateFilter, Object>>> fieldFilters : appStateFilters.entrySet()) {
+      if(fieldFilters.getValue().size() == 1) {
+        Pair<ProvElastic.AppStateFilter, Object> fieldFilter = fieldFilters.getValue().get(0);
+        query = query.must(ProvElastic.getQB(fieldFilter.getValue0(), fieldFilter.getValue1()));
+      } else if(fieldFilters.getValue().size() > 1) {
+        BoolQueryBuilder fieldQuery = boolQuery();
+        query = query.must(fieldQuery);
+        for (Pair<ProvElastic.AppStateFilter, Object> fieldFilter : fieldFilters.getValue()) {
+          fieldQuery = fieldQuery.should(ProvElastic.getQB(fieldFilter.getValue0(), fieldFilter.getValue1()));
+        }
+      }
+    }
     return query;
   }
   

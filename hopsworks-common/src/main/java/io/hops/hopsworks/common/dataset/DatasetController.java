@@ -345,7 +345,7 @@ public class DatasetController {
   public boolean deleteDatasetDir(Dataset dataset, Path location,
       DistributedFileSystemOps udfso) throws IOException {
     OperationsLog log = new OperationsLog(dataset, OperationType.Delete);
-    udfso.unsetMetaEnabled(location);
+//    udfso.unsetMetaEnabled(location);
     boolean success = udfso.rm(location, true);
     if (success) {
       operationsLogFacade.persist(log);

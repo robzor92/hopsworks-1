@@ -38,11 +38,11 @@
  */
 package io.hops.hopsworks.common.provenance;
 
-public enum ProvAppFootprintType {
+public enum AppFootprintType {
   ALL,
   INPUT,            //files read by the application
   OUTPUT,           //files modified or newly created by application
   OUTPUT_ADDED,     //files newly created by application
   TMP,              //files created and deleted by application
-  REMOVED           //files that existed before the application and where deleted by application
+  REMOVED
 }

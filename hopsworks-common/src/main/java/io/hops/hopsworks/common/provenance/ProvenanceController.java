@@ -47,6 +47,9 @@ import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
+import io.hops.hopsworks.common.provenance.v2.ProvFileOps;
+import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
+import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
@@ -202,6 +205,78 @@ public class ProvenanceController {
     return result;
   }
   
+  public Map<Long, ProvFileStateHit> provFileState(ProvFileStateParamBuilder params)
+    throws GenericException, ServiceException {
+    Map<Long, ProvFileStateHit> fileStates = elasticCtrl.provFileState(params.getFileStateFilter(),
+      params.getExactXAttrFilter(), params.getLikeXAttrFilter());
+    if (params.isWithAppState()) {
+      //If withAppStates, update params based on appIds of result files and do a appState index query.
+      //After this filter the fileStates based on the results of the appState query
+      for (ProvFileStateHit fileState : fileStates.values()) {
+        params.withAppStateAppId(getAppId(fileState));
+      }
+      Map<String, Map<Provenance.AppState, AppProvenanceHit>> appStates
+        = elasticCtrl.provAppState(params.getAppStateFilter());
+      Map<Long, ProvFileStateHit> filteredFileStates = new HashMap<>();
+      for(ProvFileStateHit fileState : fileStates.values()) {
+        String appId = getAppId(fileState);
+        if(appStates.containsKey(appId)) {
+          Map<Provenance.AppState, AppProvenanceHit> auxAppStates = appStates.get(appId);
+          fileState.setAppState(buildAppState(auxAppStates));
+          filteredFileStates.put(fileState.getInodeId(), fileState);
+        }
+      }
+      return filteredFileStates;
+    } else {
+      return fileStates;
+    }
+  }
+  
+  public long provFileStateCount(ProvFileStateParamBuilder params)
+    throws GenericException, ServiceException {
+    if(params.isWithAppState()) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "provenance file state count does not currently work with app state expansion");
+    }
+    return elasticCtrl.provFileStateCount(params.getFileStateFilter(), params.getExactXAttrFilter(),
+      params.getLikeXAttrFilter());
+  }
+  
+  public List<ProvFileOpHit> provFileOps(ProvFileOpsParamBuilder params)
+    throws GenericException, ServiceException {
+    return elasticCtrl.provFileOps(params.getFileOpsFilter());
+  }
+  
+  public long provFileOpsCount(ProvFileOpsParamBuilder params)
+    throws ServiceException, GenericException {
+    return elasticCtrl.provFileOpsCount(params.getFileOpsFilter());
+  }
+  
+  private MLAssetAppState buildAppState(Map<Provenance.AppState, AppProvenanceHit> appStates)
+    throws ServiceException {
+    MLAssetAppState mlAssetAppState = new MLAssetAppState();
+    //app states is an ordered map
+    //I assume values will still be ordered based on keys
+    //if this is the case, the correct progression is SUBMITTED->RUNNING->FINISHED/KILLED/FAILED
+    //as such just iterating over the states will provide us with the correct current state
+    for (AppProvenanceHit appState : appStates.values()) {
+      mlAssetAppState.setAppState(appState.getAppState(), appState.getAppStateTimestamp());
+    }
+    return mlAssetAppState;
+  }
+  
+  private String getAppId(ProvFileStateHit fileState) {
+    if(fileState.getAppId().equals("notls")) {
+      if(fileState.getXattrs().containsKey("appId")) {
+        return fileState.getXattrs().get("appId");
+      } else {
+        throw new IllegalArgumentException("withAppId enabled for tls clusters or notls cluster with xattr appIds");
+      }
+    } else {
+      return fileState.getAppId();
+    }
+  }
+  
   public List<ProvFileStateHit> provFileState(ProvFileStateListParamBuilder params)
     throws GenericException, ServiceException, ProjectException {
     if(params.getMlId() != null || params.getInodeId() != null) {
@@ -233,6 +308,7 @@ public class ProvenanceController {
     }
     return fileStates;
   }
+  
   
   public Long provFileStateCount(ProvFileStateListParamBuilder params)
     throws GenericException, ProjectException, ServiceException {
@@ -271,30 +347,34 @@ public class ProvenanceController {
     return fileOps;
   }
   
-  public List<ProvFileHit> provAppFootprint(Integer projectId, String appId, ProvAppFootprintType footprintType)
-    throws ServiceException, ProjectException {
-    String inodeOperations[];
+  private void addAppFootprintFileOps(ProvFileOpsParamBuilder params, AppFootprintType footprintType) {
     switch(footprintType) {
       case ALL:
-        inodeOperations = new String[0];
         break;
       case INPUT:
-        inodeOperations = new String[]{"CREATE", "ACCESS_DATA"};
+        params
+          .withFileOperation(ProvFileOps.CREATE)
+          .withFileOperation(ProvFileOps.ACCESS_DATA);
         break;
       case OUTPUT:
-        inodeOperations = new String[]{"CREATE", "MODIFY_DATA", "DELETE"};
+        params
+          .withFileOperation(ProvFileOps.CREATE)
+          .withFileOperation(ProvFileOps.MODIFY_DATA)
+          .withFileOperation(ProvFileOps.DELETE);
         break;
       case OUTPUT_ADDED:
       case TMP:
       case REMOVED:
-        inodeOperations = new String[]{"CREATE", "DELETE"};
+        params
+          .withFileOperation(ProvFileOps.CREATE)
+          .withFileOperation(ProvFileOps.DELETE);
         break;
       default:
-        throw new IllegalArgumentException("footprint type:" + footprintType + " not managed");
+        throw new IllegalArgumentException("footprint filterType:" + footprintType + " not managed");
     }
-    
-    List<ProvFileOpHit> fileOps
-      = elasticCtrl.provFileOps(getProjectInodeId(projectId),null, appId, inodeOperations);
+  }
+  
+  private List<ProvFileHit> processAppFootprintFileOps(List<ProvFileOpHit> fileOps, AppFootprintType footprintType) {
     Map<Long, ProvFileHit> files = new HashMap<>();
     Set<Long> filesAccessed = new HashSet<>();
     Set<Long> filesCreated = new HashSet<>();
@@ -358,6 +438,14 @@ public class ProvenanceController {
         //continue;
     }
     return new LinkedList<>(files.values());
+  }
+  
+  public List<ProvFileHit> provAppFootprint(ProvFileOpsParamBuilder params, AppFootprintType footprintType)
+    throws GenericException, ServiceException {
+    addAppFootprintFileOps(params, footprintType);
+    List<ProvFileOpHit> searchResult = provFileOps(params);
+    List<ProvFileHit> appFootprint = processAppFootprintFileOps(searchResult, footprintType);
+    return appFootprint;
   }
   
   private Long getProjectInodeId(Integer projectId) throws ProjectException {

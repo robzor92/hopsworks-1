@@ -166,13 +166,17 @@ public class ProvFileOpsCompactByApp {
     }
     
     public void addOp(CompactOpHit op) {
-      ops.add(op);
+      if(ops.isEmpty()) {
+        firstOpTimestamp = op.getTimestamp();
+        firstOpLogicalTime = op.getLogicalTime();
+      }
       if(firstOpTimestamp < op.getTimestamp()) {
         firstOpTimestamp = op.getTimestamp();
       }
       if(firstOpLogicalTime < op.getLogicalTime()) {
         firstOpLogicalTime = op.getLogicalTime();
       }
+      ops.add(op);
     }
   }
   

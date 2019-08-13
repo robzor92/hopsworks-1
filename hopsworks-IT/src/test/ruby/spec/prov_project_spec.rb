@@ -98,16 +98,16 @@ describe "On #{ENV['OS']}" do
         expect(result2.length).to eq 1
         prov_check_asset_with_id(result2, prov_experiment_id(@experiment_app3_name1))
         
-        result3 = get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false, 200)
+        result3 = get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
       end
 
-      it "delete experiments" do
+      it "cleanup" do
         prov_delete_experiment(@project1, @experiment_app1_name1)
         prov_delete_experiment(@project1, @experiment_app2_name1)
         prov_delete_experiment(@project2, @experiment_app3_name1)
       end
       
-      it "check experiments" do 
+      it "check cleanup" do 
         prov_wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
         expect(result1.length).to eq 0
@@ -115,7 +115,7 @@ describe "On #{ENV['OS']}" do
         result2 = get_ml_asset_in_project(@project2, "EXPERIMENT", false)
         expect(result2.length).to eq 0
         
-        result3 = get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false, 404)
+        result3 = check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
       end
     end
 
@@ -237,13 +237,13 @@ describe "On #{ENV['OS']}" do
         prov_check_experiment3(result1, prov_experiment_id(@experiment_app2_name1), "FINISHED")
       end
 
-      it "delete experiments" do
+      it "cleanup" do
         prov_delete_experiment(@project1, @experiment_app1_name1)
         prov_delete_experiment(@project1, @experiment_app1_name2)
         prov_delete_experiment(@project1, @experiment_app2_name1)
       end
 
-      it "check experiments" do 
+      it "check cleanup" do 
         prov_wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", true)
         expect(result1.length).to eq 0
@@ -291,16 +291,16 @@ describe "On #{ENV['OS']}" do
         expect(result2.length).to eq 1
         prov_check_asset_with_id(result2, prov_model_id(@model1_name, @model_version1))
         
-        result3 = get_ml_asset_by_id(@project1, "MODEL", prov_model_id(@model1_name, @model_version2), false, 200)
+        result3 = get_ml_asset_by_id(@project1, "MODEL", prov_model_id(@model1_name, @model_version2), false)
       end
 
-      it "delete models" do
+      it "cleanup" do
         prov_delete_model(@project1, @model1_name)
         prov_delete_model(@project1, @model2_name)
         prov_delete_model(@project2, @model1_name)
       end
       
-      it "check models" do 
+      it "check cleanup" do 
         prov_wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "MODEL", false)
         expect(result1.length).to eq 0
@@ -308,7 +308,7 @@ describe "On #{ENV['OS']}" do
         result2 = get_ml_asset_in_project(@project2, "MODEL", false)
         expect(result2.length).to eq 0
         
-        result3 = get_ml_asset_by_id(@project1, "MODEL", prov_model_id(@model1_name, @model_version2), false, 404)
+        result3 = check_no_ml_asset_by_id(@project1, "MODEL", prov_model_id(@model1_name, @model_version2), false)
       end
     end
     describe 'model with xattr' do
@@ -372,7 +372,7 @@ describe "On #{ENV['OS']}" do
         expect(result2.length).to eq 1
         prov_check_asset_with_id(result2, prov_td_id(@td1_name, @td_version1))
         
-        result3 = get_ml_asset_by_id(@project1, "TRAINING_DATASET", prov_td_id(@td1_name, @td_version1), false, 200)
+        result3 = get_ml_asset_by_id(@project1, "TRAINING_DATASET", prov_td_id(@td1_name, @td_version1), false)
       end
 
       it "delete training datasets" do
@@ -390,7 +390,7 @@ describe "On #{ENV['OS']}" do
         result2 = get_ml_asset_in_project(@project2, "TRAINING_DATASET", false)
         expect(result2.length).to eq 0
         
-        result3 = get_ml_asset_by_id(@project1, "TRAINING_DATASET", prov_td_id(@td1_name, @td_version1), false, 404)
+        result3 = check_no_ml_asset_by_id(@project1, "TRAINING_DATASET", prov_td_id(@td1_name, @td_version1), false)
       end
     end
     describe 'training dataset with xattr' do
@@ -468,14 +468,14 @@ describe "On #{ENV['OS']}" do
         get_ml_asset_by_xattr_count(@project2, "TRAINING_DATASET", "key", "val2", 1)
       end
 
-      it "delete training dataset" do
+      it "cleanup" do
         prov_delete_td(@project1, @td1_name, @td_version1)
         prov_delete_td(@project1, @td1_name, @td_version2)
         prov_delete_td(@project1, @td2_name, @td_version1)
         prov_delete_td(@project2, @td2_name, @td_version1)
       end
 
-      it "check training dataset" do 
+      it "check cleanup" do 
         prov_wait_for_epipe() 
         result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false)
         expect(result1.length).to eq 0
@@ -570,21 +570,21 @@ describe "On #{ENV['OS']}" do
       it "check experiment dataset" do 
         prov_wait_for_epipe()
         experiment_id = prov_experiment_id(@experiment_app1_name1)
-        experiment = get_ml_asset_by_id_2(@project1, "EXPERIMENT", experiment_id, false)
+        experiment = get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false)
         #pp experiment
         test_xattr_field = experiment["map"]["entry"].select { |e| e["key"] == "test_xattr"}
         expect(test_xattr_field.length).to eq 1
         check_xattr(test_xattr_field[0]["value"], @xattrV1)
       end
 
-      it "delete experiment dataset" do
+      it "cleanup" do
         prov_delete_experiment(@project1, @experiment_app1_name1)
       end
 
-      it "check experiment dataset" do 
+      it "check cleanup" do 
         prov_wait_for_epipe() 
         experiment_id = prov_experiment_id(@experiment_app1_name1)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false, 404)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false)
       end
     end
     describe "update xattr" do
@@ -607,7 +607,7 @@ describe "On #{ENV['OS']}" do
       it "check experiment dataset" do 
         prov_wait_for_epipe()
         experiment_id = prov_experiment_id(@experiment_app1_name1)
-        experiment = get_ml_asset_by_id_2(@project1, "EXPERIMENT", experiment_id, false)
+        experiment = get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false)
         #pp experiment
         test_xattr_field = experiment["map"]["entry"].select { |e| e["key"] == "test_xattr"}
         expect(test_xattr_field.length).to eq 1
@@ -621,7 +621,7 @@ describe "On #{ENV['OS']}" do
       it "check experiment dataset" do 
         prov_wait_for_epipe() 
         experiment_id = prov_experiment_id(@experiment_app1_name1)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false, 404)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false)
       end
     end
     describe "delete xattr" do
@@ -651,13 +651,13 @@ describe "On #{ENV['OS']}" do
       it "check experiment dataset" do 
         prov_wait_for_epipe()
         experiment1_id = prov_experiment_id(@experiment_app1_name1)
-        experiment1 = get_ml_asset_by_id_2(@project1, "EXPERIMENT", experiment1_id, false)
+        experiment1 = get_ml_asset_by_id(@project1, "EXPERIMENT", experiment1_id, false)
         #pp experiment
         experiment1_xattr_field = experiment1["map"]["entry"].select { |e| e["key"] == "test_xattr"}
         expect(experiment1_xattr_field.length).to eq 0
 
         experiment2_id = prov_experiment_id(@experiment_app2_name1)
-        experiment2 = get_ml_asset_by_id_2(@project1, "EXPERIMENT", experiment2_id, false)
+        experiment2 = get_ml_asset_by_id(@project1, "EXPERIMENT", experiment2_id, false)
         #pp experiment
         experiment2_xattr_field = experiment2["map"]["entry"].select { |e| e["key"] == "test_xattr"}
         expect(experiment1_xattr_field.length).to eq 0
@@ -671,9 +671,9 @@ describe "On #{ENV['OS']}" do
       it "check experiment dataset" do 
         prov_wait_for_epipe() 
         experiment1_id = prov_experiment_id(@experiment_app1_name1)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment1_id, false, 404)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment1_id, false)
         experiment2_id = prov_experiment_id(@experiment_app2_name1)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment2_id, false, 404)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment2_id, false)
       end
     end
 
@@ -720,7 +720,7 @@ describe "On #{ENV['OS']}" do
       it "check experiment dataset" do 
         prov_wait_for_epipe()
         experiment_id = prov_experiment_id(@experiment_app1_name1)
-        experiment = get_ml_asset_by_id_2(@project1, "EXPERIMENT", experiment_id, false)
+        experiment = get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false)
         #pp experiment
         test_xattr_field = experiment["map"]["entry"].select { |e| e["key"] == "test_xattr"}
         expect(test_xattr_field.length).to eq 1
@@ -734,7 +734,7 @@ describe "On #{ENV['OS']}" do
       it "check experiment dataset" do 
         prov_wait_for_epipe() 
         experiment_id = prov_experiment_id(@experiment_app1_name1)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false, 404)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false)
       end
     end
 
@@ -757,7 +757,7 @@ describe "On #{ENV['OS']}" do
       it "check experiment dataset" do 
         prov_wait_for_epipe()
         experiment_id = prov_experiment_id(@experiment_app1_name1)
-        experiment = get_ml_asset_by_id_2(@project1, "EXPERIMENT", experiment_id, false)
+        experiment = get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false)
         #pp experiment
         test_xattr_field = experiment["map"]["entry"].select { |e| e["key"] == "test_xattr"}
         expect(test_xattr_field.length).to eq 1
@@ -771,7 +771,7 @@ describe "On #{ENV['OS']}" do
       it "check experiment dataset" do 
         prov_wait_for_epipe() 
         experiment_id = prov_experiment_id(@experiment_app1_name1)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false, 404)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false)
       end
     end
 
@@ -859,14 +859,14 @@ describe "On #{ENV['OS']}" do
         expect(experiment.length).to eq 0
       end
 
-      it "delete experiment dataset" do
+      it "cleanup" do
         prov_delete_experiment(@project1, @experiment_app1_name1)
       end
 
       it "check cleanup" do 
         prov_wait_for_epipe() 
         experiment_id = prov_experiment_id(@experiment_app1_name1)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false, 404)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id, false)
       end
     end 
 
@@ -948,9 +948,9 @@ describe "On #{ENV['OS']}" do
         experiment_id1 = prov_experiment_id(@experiment_app1_name1)
         experiment_id2 = prov_experiment_id(@experiment_app2_name1)
         experiment_id3 = prov_experiment_id(@experiment_app1_name2)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false, 404)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id2, false, 404)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id3, false, 404)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id2, false)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id3, false)
       end
     end 
 
@@ -1005,9 +1005,9 @@ describe "On #{ENV['OS']}" do
         experiment_id1 = prov_experiment_id(@experiment_app1_name1)
         experiment_id2 = prov_experiment_id(@experiment_app1_name2)
         experiment_id3 = prov_experiment_id(@experiment_app1_name3)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false, 404)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id2, false, 404)
-        get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id3, false, 404)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id2, false)
+        check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id3, false)
       end
     end
   end
@@ -1072,14 +1072,14 @@ describe "On #{ENV['OS']}" do
       expect(result.length).to eq 2
     end
 
-    it "delete experiment dataset" do
+    it "cleanup" do
       prov_delete_experiment(@project1, @experiment_file_ops)
     end
 
     it "check cleanup" do 
       prov_wait_for_epipe() 
       experiment_id1 = prov_experiment_id(@experiment_file_ops)
-      get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false, 404)
+      check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false)
     end
   end
 
@@ -1194,7 +1194,7 @@ describe "On #{ENV['OS']}" do
     it "check cleanup" do 
       prov_wait_for_epipe() 
       experiment_id1 = prov_experiment_id(@experiment_app_fprint)
-      get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false, 404)
+      check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false)
     end
   end
 
@@ -1255,19 +1255,19 @@ describe "On #{ENV['OS']}" do
     end
 
     it "check file history" do 
-      result = get_file_history(@project1, 300000, "FULL")
+      result = get_file_ops(@project1, 300000, "FULL")
       # pp result
       expect(result.length).to eq 5
     end
 
-    it "delete experiment dataset" do
+    it "cleanup" do
       prov_delete_experiment(@project1, @experiment_file_history)
     end
 
     it "check cleanup" do 
       prov_wait_for_epipe() 
       experiment_id1 = prov_experiment_id(@experiment_file_history)
-      get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false, 404)
+      check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false)
     end
   end
 
@@ -1321,8 +1321,74 @@ describe "On #{ENV['OS']}" do
       prov_wait_for_epipe() 
       experiment_id1 = prov_experiment_id(@experiment_app1_name1)
       experiment_id2 = prov_experiment_id(@experiment_app2_name1)
-      get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false, 404)
-      get_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id2, false, 404)
+      check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false)
+      check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id2, false)
     end
   end 
+
+  describe 'delete Experiments dataset - check cleanup' do
+    it "restart epipe" do
+      execute_remotely @hostname, "sudo systemctl restart epipe"
+    end
+
+    it "create experiments" do
+      prov_create_experiment(@project1, @experiment_app1_name1)
+      prov_create_experiment(@project1, @experiment_app2_name1)
+    end
+
+    it "wait for epipe" do
+      prov_wait_for_epipe() 
+    end
+
+    it "check experiments" do 
+      get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
+      get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
+    end
+
+    it "delete Experiments dataset" do
+      prov_delete_dataset(@project1, "Experiments")
+    end
+
+    it "wait for epipe" do
+      prov_wait_for_epipe() 
+    end
+
+    it "check experiments" do 
+      check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
+      check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
+    end
+  end
+
+  # describe 'delete Project - check cleanup' do
+  #   it "restart epipe" do
+  #     execute_remotely @hostname, "sudo systemctl restart epipe"
+  #   end
+
+  #   it "create experiments" do
+  #     prov_create_experiment(@project1, @experiment_app1_name1)
+  #     prov_create_experiment(@project1, @experiment_app2_name1)
+  #   end
+
+  #   it "wait for epipe" do
+  #     prov_wait_for_epipe() 
+  #   end
+
+  #   it "check experiments" do 
+  #     get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
+  #     get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
+  #   end
+
+  #   it "delete Project" do
+  #     delete_project(@project1)
+  #   end
+
+  #   it "wait for epipe" do
+  #     prov_wait_for_epipe() 
+  #   end
+
+  #   it "check experiments" do 
+  #     check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
+  #     check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
+  #   end
+  # end
 end

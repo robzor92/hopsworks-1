@@ -53,6 +53,12 @@ module ProvenanceHelper
     expect_status(200)
   end
 
+  def prov_delete_dataset(project, dataset)
+    target = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/dataset/#{dataset}"
+    delete target
+    expect_status(200)
+  end 
+
   def prov_delete_experiment(project, experiment_name) 
     pp "delete experiment #{experiment_name} in project #{project[:inode_name]}"
     experiments = "Experiments"
@@ -167,35 +173,47 @@ module ProvenanceHelper
   end 
 
   def get_ml_asset_in_project(project, ml_type, withAppState) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
-    query_params = "?mlType=#{ml_type}&withAppState=#{withAppState}"
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
+    query_params = "?filter_by=ML_TYPE:#{ml_type}"
+    if withAppState
+      query_params = query_params + "&expand=APP_STATE"
+    end
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
   end
 
-  def get_ml_asset_by_id(project, ml_type, ml_id, withAppState, status) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/exact"
-    query_params = "?mlType=#{ml_type}&mlId=#{ml_id}&withAppState=#{withAppState}"
-    pp "#{resource}#{query_params}"
-    result = get "#{resource}#{query_params}"
-    expect_status(status)
-    result
-  end
-
-  def get_ml_asset_by_id_2(project, ml_type, ml_id, withAppState) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/exact"
-    query_params = "?mlType=#{ml_type}&mlId=#{ml_id}&withAppState=#{withAppState}"
+  def check_no_ml_asset_by_id(project, ml_type, ml_id, withAppState) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
+    query_params = "?filter_by=ML_TYPE:#{ml_type}&filter_by=ML_ID:#{ml_id}"
+    if withAppState
+      query_params = query_params + "&expand=APP_STATE"
+    end
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
+    expect(parsed_result.length).to eq 0
+  end
+
+  def get_ml_asset_by_id(project, ml_type, ml_id, withAppState) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
+    query_params = "?filter_by=ML_TYPE:#{ml_type}&filter_by=ML_ID:#{ml_id}"
+    if withAppState
+      query_params = query_params + "&expand=APP_STATE"
+    end
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+    expect(parsed_result.length).to eq 1
+    parsed_result[0]
   end
 
   def get_ml_asset_like_name(project, ml_type, term) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
-    query_params = "?mlType=#{ml_type}&likeFileName=#{term}"
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
+    query_params = "?filter_by=ML_TYPE:#{ml_type}&filter_by=FILE_NAME_LIKE:#{term}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -203,8 +221,8 @@ module ProvenanceHelper
   end
 
   def get_ml_asset_by_xattr(project, ml_type, xattr_key, xattr_val)
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
-    query_params = "?mlType=#{ml_type}&xattrsExact=#{xattr_key}:#{xattr_val}"
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
+    query_params = "?filter_by=ML_TYPE:#{ml_type}&xattr_filter_by=#{xattr_key}:#{xattr_val}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -212,8 +230,8 @@ module ProvenanceHelper
   end
 
   def get_ml_asset_by_xattr_count(project, ml_type, xattr_key, xattr_val, count) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
-    query_params = "?mlType=#{ml_type}&xattrsExact=#{xattr_key}:#{xattr_val}&count=true"
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
+    query_params = "?filter_by=ML_TYPE:#{ml_type}&xattr_filter_by=#{xattr_key}:#{xattr_val}&count=true"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -223,8 +241,8 @@ module ProvenanceHelper
   end
 
   def get_ml_asset_like_xattr(project, ml_type, xattr_key, xattr_val)
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
-    query_params = "?mlType=#{ml_type}&xattrsLike=#{xattr_key}:#{xattr_val}"
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
+    query_params = "?filter_by=ML_TYPE:#{ml_type}&xattr_like=#{xattr_key}:#{xattr_val}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -233,8 +251,8 @@ module ProvenanceHelper
   end
     
   def get_ml_td_count_using_feature_project(project, feature_name) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/list"
-    query_params = "?mlType=TRAINING_DATASET&xattrsExact=features.name:#{feature_name}&count=true"
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
+    query_params = "?filter_by=ML_TYPE:TRAINING_DATASET&xattr_filter_by=features.name:#{feature_name}&count=true"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -243,16 +261,16 @@ module ProvenanceHelper
 
   def get_ml_td_count_using_feature_global(feature_name) 
     resource = "#{ENV['HOPSWORKS_API']}/provenance/list"
-    query_params = "?mlType=TRAINING_DATASET&xattrsExact=features.name:#{feature_name}&count=true"
+    query_params = "?filter_by=ML_TYPE:TRAINING_DATASET&xattr_filter_by==features.name:#{feature_name}&count=true"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
   end
 
-  def get_app_fileOperations(project, appId, type) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/app/#{appId}/fileOperations"
-    query_params = "?type=#{type}"
+  def get_app_fileOperations(project, appId, returnType) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/ops"
+    query_params = "?filter_by=APP_ID:#{appId}&return_type=#{returnType}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -260,17 +278,17 @@ module ProvenanceHelper
   end
 
   def get_app_footprint(project, appId, type) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/app/#{appId}/footprint"
-    query_params = "?type=#{type}"
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/app/#{appId}/footprint/#{type}"
+    query_params = ""
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
   end
 
-  def get_file_history(project, inodeId, type) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/#{inodeId}/history"
-    query_params = "?type=#{type}"
+  def get_file_ops(project, inodeId, returnType) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/#{inodeId}/ops"
+    query_params = "?return_type=#{returnType}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
