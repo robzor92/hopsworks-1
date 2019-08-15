@@ -58,7 +58,6 @@ import io.hops.hopsworks.common.provenance.SimpleResult;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.exceptions.GenericException;
-import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
 import io.hops.hopsworks.restutils.RESTCodes;
@@ -146,10 +145,6 @@ public class ProjectProvenanceResource {
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response getFileStates(
-//    @BeanParam ProvFileDetailsQueryParamsBean fileDetails,
-//    @BeanParam ProvMLAssetListQueryParamsBean mlAssetParams,
-//    @BeanParam ProvFileAppDetailsQueryParamsBean appDetails,
-//    @BeanParam QueryDetailsParamsBean queryDetails,
     @BeanParam ProvFileStateBeanParam params,
     @Context HttpServletRequest req) throws ServiceException, GenericException {
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
@@ -173,10 +168,6 @@ public class ProjectProvenanceResource {
     }
   }
   
-//  @BeanParam ProvFileQueryParamsBean fileParams,
-//  @BeanParam ProvMLAssetQueryParamsBean mlAssetParams,
-//  @BeanParam ProvFileAppDetailsQueryParamsBean appDetailsParams,
-  
   @GET
   @Path("file/ops")
   @Produces(MediaType.APPLICATION_JSON)
@@ -184,7 +175,7 @@ public class ProjectProvenanceResource {
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response getFileOps(
     @BeanParam ProvFileOpsBeanParam params,
-    @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
+    @Context HttpServletRequest req) throws ServiceException, GenericException {
     ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
       .withProjectInodeId(project.getInode().getId())
       .withQueryParamFileOps(params.getFileOpsFilter());
@@ -266,20 +257,5 @@ public class ProjectProvenanceResource {
     FULL,
     COMPACT,
     SUMMARY
-  }
-  public enum FileProvenanceField {
-    FILE_INODE_ID,
-    PROJECT_INODE_ID,
-    DATASET_INODE_ID,
-    USER_ID,
-    APP_ID,
-    FILE_INODE_NAME;
-  }
-
-  public static enum AppProvenanceField {
-    APP_ID,
-    APP_STATE,
-    APP_NAME,
-    APP_USER;
   }
 }

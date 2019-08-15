@@ -41,11 +41,12 @@ package io.hops.hopsworks.api.provenance;
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
 import io.hops.hopsworks.api.filter.NoCacheResponse;
+import io.hops.hopsworks.api.provenance.v2.ProvFileStateBeanParam;
 import io.hops.hopsworks.common.provenance.ProvFileStateHit;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.SimpleResult;
+import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.exceptions.GenericException;
-import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
 import io.swagger.annotations.Api;
@@ -62,7 +63,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.List;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -80,31 +81,30 @@ public class GlobalProvenanceResource {
   private ProvenanceController provenanceCtrl;
   
   @GET
-  @Path("list")
+  @Path("file/state")
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response getFiles(
-    @BeanParam ProvFileDetailsQueryParamsBean fileDetails,
-    @BeanParam ProvMLAssetListQueryParamsBean mlAssetParams,
-    @BeanParam ProvFileAppDetailsQueryParamsBean appDetails,
-    @BeanParam QueryDetailsParamsBean queryDetails,
-    @Context HttpServletRequest req) throws ServiceException, GenericException, ProjectException {
-    logger.log(Level.INFO, "Local content path:{0} file params:{1} ml asset params:{2} " +
-        "app details params:{3} query params:{4}",
-      new Object[]{req.getRequestURL().toString(), fileDetails, mlAssetParams, appDetails,
-        queryDetails});
-    if(queryDetails.isCount()) {
-      Long countResult = provenanceCtrl.provFileStateCount(fileDetails.params(), mlAssetParams.params(),
-        appDetails.params());
+    @BeanParam ProvFileStateBeanParam params,
+    @Context HttpServletRequest req) throws ServiceException, GenericException {
+    logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
+      new Object[]{req.getRequestURL().toString(), params});
+    ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
+      .withQueryParamFileState(params.getFileStateParams())
+      .withQueryParamExactXAttr(params.getExactXAttrParams())
+      .withQueryParamLikeXAttr(params.getLikeXAttrParams())
+      .withQueryParamExpansions(params.getExpansions())
+      .withQueryParamAppState(params.getAppStateParams());
+  
+    if(params.isCount()) {
+      Long countResult = provenanceCtrl.provFileStateCount(paramBuilder);
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
         .entity(new SimpleResult<>(countResult)).build();
     } else {
-      GenericEntity<List<ProvFileStateHit>> searchResults = new GenericEntity<List<ProvFileStateHit>>(
-        provenanceCtrl.provFileState(fileDetails.params(), mlAssetParams.params(),
-          appDetails.params())) {
-      };
-      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(searchResults).build();
+      Collection<ProvFileStateHit> searchResults = provenanceCtrl.provFileState(paramBuilder).values();
+      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
+        .entity(new GenericEntity<Collection<ProvFileStateHit>>(searchResults) {}).build();
     }
   }
 }

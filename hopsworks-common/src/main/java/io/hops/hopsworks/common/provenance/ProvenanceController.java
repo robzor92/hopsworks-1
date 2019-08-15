@@ -40,9 +40,7 @@ package io.hops.hopsworks.common.provenance;
 
 import io.hops.hopsworks.common.dao.dataset.Dataset;
 import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
-import io.hops.hopsworks.common.dao.hdfs.inode.InodeFacade;
 import io.hops.hopsworks.common.dao.project.Project;
-import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
@@ -51,7 +49,6 @@ import io.hops.hopsworks.common.provenance.v2.ProvFileOps;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.exceptions.GenericException;
-import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
 
@@ -71,10 +68,6 @@ import java.util.logging.Level;
 public class ProvenanceController {
   @EJB
   private ElasticController elasticCtrl;
-  @EJB
-  private InodeFacade inodes;
-  @EJB
-  private ProjectFacade projectFacade;
   @EJB
   private DistributedFsService dfs;
   
@@ -277,76 +270,6 @@ public class ProvenanceController {
     }
   }
   
-  public List<ProvFileStateHit> provFileState(ProvFileStateListParamBuilder params)
-    throws GenericException, ServiceException, ProjectException {
-    if(params.getMlId() != null || params.getInodeId() != null) {
-      return elasticCtrl.provFileState(params.fileParams(), params.mlAssetParams(), params.appDetails());
-    } else {
-      return provFileState(params.fileDetails(), params.mlAssetDetails(), params.appDetails());
-    }
-  }
-  
-  public List<ProvFileStateHit> provFileState(ProvFileDetailsQueryParams fileDetails,
-    ProvMLAssetDetailsQueryParams mlAssetDetails, ProvFileAppDetailsQueryParams appDetails)
-    throws ServiceException, ProjectException {
-    List<ProvFileStateHit> fileStates = elasticCtrl.provFileState(fileDetails, mlAssetDetails, appDetails);
-    Map<Long, String> cachedPaths = new HashMap<>();
-    if(fileDetails.withFullPath) {
-      for(ProvFileStateHit fileOp : fileStates) {
-        String filePath = cachedPaths.get(fileOp.getInodeId());
-        if(filePath == null) {
-          Inode fileInode = inodes.findById(fileOp.getInodeId());
-          if(fileInode == null) {
-            filePath = "noInode";
-          } else {
-            filePath = "withInode";
-          }
-          cachedPaths.put(fileOp.getInodeId(), filePath);
-        }
-        fileOp.setFullPath(filePath);
-      }
-    }
-    return fileStates;
-  }
-  
-  
-  public Long provFileStateCount(ProvFileStateListParamBuilder params)
-    throws GenericException, ProjectException, ServiceException {
-    return provFileStateCount(params.fileDetails(), params.mlAssetDetails(), params.appDetails());
-  }
-  
-  public Long provFileStateCount(ProvFileDetailsQueryParams fileDetails,
-    ProvMLAssetDetailsQueryParams mlAssetDetails, ProvFileAppDetailsQueryParams appDetails)
-    throws GenericException, ProjectException, ServiceException {
-    return elasticCtrl.provFileStateCount(fileDetails, mlAssetDetails, appDetails);
-  }
-  
-  public List<ProvFileOpHit> provFileOps(ProvFileOpListParamBuilder params) throws ServiceException, ProjectException {
-    return provFileOps(params.getProjectId(), params.getInodeId(), params.getAppId(), params.isWithFullPath());
-  }
-  
-  public List<ProvFileOpHit> provFileOps(Integer projectId, Long inodeId, String appId, boolean withFullPath)
-    throws ServiceException, ProjectException {
-    List<ProvFileOpHit> fileOps = elasticCtrl.provFileOps(getProjectInodeId(projectId), inodeId, appId, new String[0]);
-    Map<Long, String> cachedPaths = new HashMap<>();
-    if(withFullPath) {
-      for(ProvFileOpHit fileOp : fileOps) {
-        String filePath = cachedPaths.get(fileOp.getInodeId());
-        if(filePath == null) {
-          Inode fileInode = inodes.findById(fileOp.getInodeId());
-          if(fileInode == null) {
-            filePath = "noInode";
-          } else {
-            filePath = "withInode";
-          }
-          cachedPaths.put(fileOp.getInodeId(), filePath);
-        }
-        fileOp.setFullPath(filePath);
-      }
-    }
-    return fileOps;
-  }
-  
   private void addAppFootprintFileOps(ProvFileOpsParamBuilder params, AppFootprintType footprintType) {
     switch(footprintType) {
       case ALL:
@@ -447,17 +370,4 @@ public class ProvenanceController {
     List<ProvFileHit> appFootprint = processAppFootprintFileOps(searchResult, footprintType);
     return appFootprint;
   }
-  
-  private Long getProjectInodeId(Integer projectId) throws ProjectException {
-    if(projectId == null) {
-      return null;
-    }
-    Project project = projectFacade.find(projectId);
-    if (project == null) {
-      throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_NOT_FOUND, Level.INFO,
-        "projectId:" + projectId);
-    }
-    return project.getInode().getId();
-  }
-  
 }

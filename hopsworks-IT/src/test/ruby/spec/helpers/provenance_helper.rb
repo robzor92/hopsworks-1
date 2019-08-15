@@ -260,7 +260,7 @@ module ProvenanceHelper
   end
 
   def get_ml_td_count_using_feature_global(feature_name) 
-    resource = "#{ENV['HOPSWORKS_API']}/provenance/list"
+    resource = "#{ENV['HOPSWORKS_API']}/provenance/file/state"
     query_params = "?filter_by=ML_TYPE:TRAINING_DATASET&xattr_filter_by==features.name:#{feature_name}&count=true"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
