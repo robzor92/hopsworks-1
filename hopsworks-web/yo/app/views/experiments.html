@@ -43,10 +43,10 @@
                             <i class="fa fa-info-circle"
                                uib-tooltip="Case sensitive search for experiment name." tooltip-placement="bottom"></i>
                             <md-datepicker ng-change="jobsCtrl.storeDates('jobsFromDate');jobsCtrl.getAllJobsStatus()"
-                                           ng-model="jobsCtrl.jobsFromDate"
+                                           ng-model="experimentCtrl.experimentsFromDate"
                                            md-placeholder="From"></md-datepicker>
                             <md-datepicker ng-change="jobsCtrl.storeDates('jobsToDate');jobsCtrl.getAllJobsStatus()"
-                                           ng-model="jobsCtrl.jobsToDate"
+                                           ng-model="experimentCtrl.experimentsToDate"
                                            md-placeholder="To"></md-datepicker>
                         </label>
                     </div>
