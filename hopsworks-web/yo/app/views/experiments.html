@@ -36,25 +36,25 @@
                 </div>
 
                 <div class="row form-inline">
-                    <div class="col-sm-9 col-md-9 col-lg-9 form-group">
+                    <div class="col-sm-12 col-md-12 col-lg-12 form-group">
                         <label>Search
                             <input class="form-control" style="margin-left: 10px;" ng-model="experimentCtrl.experimentsFilter"
                                    ng-model-options="{debounce: 800}" ng-change="experimentCtrl.getAll()">
                             <i class="fa fa-info-circle"
                                uib-tooltip="Case sensitive search for experiment name." tooltip-placement="bottom"></i>
-                            <md-datepicker ng-change="jobsCtrl.storeDates('jobsFromDate');jobsCtrl.getAllJobsStatus()"
+                            <md-datepicker ng-change="experimentCtrl.getAll()"
                                            ng-model="experimentCtrl.experimentsFromDate"
                                            md-placeholder="From"></md-datepicker>
-                            <md-datepicker ng-change="jobsCtrl.storeDates('jobsToDate');jobsCtrl.getAllJobsStatus()"
+                            <md-datepicker ng-change="experimentCtrl.getAll()"
                                            ng-model="experimentCtrl.experimentsToDate"
                                            md-placeholder="To"></md-datepicker>
                         </label>
-                    </div>
-                    <div class="col-sm-3 col-md-3 col-lg-3 form-group">
+
                         <div class="pull-right btn-group">
                             <span style="float: right; margin-right:30px; " class="glyphicon glyphicon-refresh fa-2x" ng-click="experimentCtrl.getAll()" role="button" tabindex="0"> </span>
                         </div>
                     </div>
+
                 </div>
             <table class="table table-hover">
                 <thead style="border:none;">

@@ -3,9 +3,10 @@ package io.hops.hopsworks.api.experiments.provenance;
 import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.experiments.dto.provenance.ExperimentProvenanceDTO;
-import io.hops.hopsworks.common.provenance.ProvAppFootprintType;
+import io.hops.hopsworks.common.provenance.AppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvFileHit;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
+import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.restutils.RESTCodes;
 
@@ -51,24 +52,34 @@ public class ExperimentFileProvenanceBuilder {
       try {
         String appId = mlId.substring(0, mlId.lastIndexOf("_"));
 
-        List<ProvFileHit> filesReadHits = provenanceController.provAppFootprint(project.getId(), appId,
-            ProvAppFootprintType.INPUT);
+        ProvFileOpsParamBuilder builder = new ProvFileOpsParamBuilder();
+        builder.withProjectInodeId(project.getInode().getId());
+        builder.withAppId(appId);
+
+        List<ProvFileHit> filesReadHits = provenanceController.provAppFootprint(builder, AppFootprintType.INPUT);
         ArrayList<String> filesRead = new ArrayList<>();
         for(ProvFileHit file : filesReadHits) {
           filesRead.add(file.getInodeName());
         }
         dto.setFilesRead(filesRead.toArray(new String[0]));
 
-        List<ProvFileHit> filesOutputHits = provenanceController.provAppFootprint(project.getId(), appId,
-            ProvAppFootprintType.OUTPUT_ADDED);
+        builder = new ProvFileOpsParamBuilder();
+        builder.withProjectInodeId(project.getInode().getId());
+        builder.withAppId(appId);
+
+        List<ProvFileHit> filesOutputHits = provenanceController.provAppFootprint(builder,
+            AppFootprintType.OUTPUT_ADDED);
         ArrayList<String> filesOutput = new ArrayList<>();
         for(ProvFileHit file : filesOutputHits) {
           filesOutput.add(file.getInodeName());
         }
         dto.setFilesOutput(filesOutput.toArray(new String[0]));
 
-        List<ProvFileHit> filesDeletedHits = provenanceController.provAppFootprint(project.getId(), appId,
-            ProvAppFootprintType.REMOVED);
+        builder = new ProvFileOpsParamBuilder();
+        builder.withProjectInodeId(project.getInode().getId());
+        builder.withAppId(appId);
+
+        List<ProvFileHit> filesDeletedHits = provenanceController.provAppFootprint(builder, AppFootprintType.REMOVED);
         ArrayList<String> filesDeleted = new ArrayList<>();
         for(ProvFileHit file : filesDeletedHits) {
           filesDeleted.add(file.getInodeName());

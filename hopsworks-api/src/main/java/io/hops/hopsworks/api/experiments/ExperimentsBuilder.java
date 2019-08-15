@@ -12,14 +12,14 @@ import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDescription;
 
 import io.hops.hopsworks.common.provenance.ProvFileStateHit;
-import io.hops.hopsworks.common.provenance.ProvFileStateListParamBuilder;
 import io.hops.hopsworks.common.provenance.Provenance;
 
 import io.hops.hopsworks.common.provenance.ProvenanceController;
+import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.common.util.DateUtils;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
-import io.hops.hopsworks.exceptions.ProjectException;
+import io.hops.hopsworks.exceptions.InvalidQueryException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import org.json.JSONObject;
 
@@ -29,8 +29,11 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.UriInfo;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -77,21 +80,21 @@ public class ExperimentsBuilder {
 
   //Build collection
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project)
-      throws ServiceException, ProjectException, GenericException, ExperimentsException {
+      throws ServiceException, GenericException, ExperimentsException {
     ExperimentDTO dto = new ExperimentDTO();
     uri(dto, uriInfo, project);
     expand(dto, resourceRequest);
 
     if(dto.isExpand()) {
-      ProvFileStateListParamBuilder provFilesParamBuilder = new ProvFileStateListParamBuilder();
-      provFilesParamBuilder.withProjectId(project.getId());
-      provFilesParamBuilder.withMlType(Provenance.MLType.EXPERIMENT.name());
-      provFilesParamBuilder.withAppState(true);
+      ProvFileStateParamBuilder provFilesParamBuilder = new ProvFileStateParamBuilder()
+          .withProjectInodeId(project.getInode().getId())
+          .withMlType(Provenance.MLType.EXPERIMENT.name())
+          .withAppState();
+
       buildFilter(provFilesParamBuilder, resourceRequest.getFilter());
 
-      GenericEntity<List<ProvFileStateHit>> searchResults = new GenericEntity<List<ProvFileStateHit>>(
-          provenanceController.provFileState(provFilesParamBuilder.fileDetails(),
-              provFilesParamBuilder.mlAssetDetails(), provFilesParamBuilder.appDetails())) {
+      GenericEntity<Collection<ProvFileStateHit>> searchResults = new GenericEntity<Collection<ProvFileStateHit>>(
+          provenanceController.provFileState(provFilesParamBuilder).values()) {
       };
 
       for(ProvFileStateHit fileProvStateHit: searchResults.getEntity()) {
@@ -160,7 +163,7 @@ public class ExperimentsBuilder {
     return experimentDTO;
   }
 
-  private void buildFilter(ProvFileStateListParamBuilder provFilesParamBuilder,
+  private void buildFilter(ProvFileStateParamBuilder provFilesParamBuilder,
                                             Set<? extends AbstractFacade.FilterBy> filters) {
     if(filters != null) {
       for (AbstractFacade.FilterBy filterBy : filters) {
@@ -169,11 +172,30 @@ public class ExperimentsBuilder {
           map.put("config.name", filterBy.getValue());
           provFilesParamBuilder.withXAttrsLike(map);
         }
+        if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_CREATED_LT.name()) == 0) {
+          provFilesParamBuilder.createdBefore(getDate(filterBy.getField(), filterBy.getValue()).getTime());
+        }
+        if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_CREATED_GT.name()) == 0) {
+          provFilesParamBuilder.createdAfter(getDate(filterBy.getField(), filterBy.getValue()).getTime());
+        }
       }
     }
   }
 
-  private enum Filters {
-    NAME
+  public Date getDate(String field, String value) {
+    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    try {
+      return formatter.parse(value);
+    } catch (ParseException e) {
+      throw new InvalidQueryException(
+          "Filter value for " + field + " needs to set valid format. Expected:yyyy-mm-dd hh:mm:ss but found: " + value);
+    }
+  }
+
+  protected enum Filters {
+    NAME,
+    DATE_CREATED_LT,
+    DATE_CREATED_GT,
+    USER
   }
 }

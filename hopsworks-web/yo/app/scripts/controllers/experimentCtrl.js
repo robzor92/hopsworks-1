@@ -40,9 +40,9 @@ angular.module('hopsWorksApp')
             self.query = "";
 
             self.experimentsToDate = new Date();
-            self.experimentsToDate.setMinutes(self.jobsToDate.getMinutes() + 60*24);
+            self.experimentsToDate.setMinutes(self.experimentsToDate.getMinutes() + 60*24);
             self.experimentsFromDate = new Date();
-            self.experimentsFromDate.setMinutes(self.jobsToDate.getMinutes() - 60*24*30);
+            self.experimentsFromDate.setMinutes(self.experimentsToDate.getMinutes() - 60*24*30);
 
             var startLoading = function(label) {
                 self.loading = true;
@@ -97,7 +97,11 @@ angular.module('hopsWorksApp')
             self.buildQuery = function() {
                 self.query = "";
                 if(self.experimentsFilter !== "") {
-                    self.query = self.query + '?filter_by=name:' + self.experimentsFilter;
+                    self.query = '?filter_by=name:' + self.experimentsFilter + "&filter_by=date_created_lt:" + self.experimentsToDate.toISOString().replace('Z','')
+                        + "&filter_by=date_created_gt:" + self.experimentsFromDate.toISOString().replace('Z','');
+                } else {
+                    self.query = '?filter_by=date_created_lt:' + self.experimentsToDate.toISOString().replace('Z','')
+                        + "&filter_by=date_created_gt:" + self.experimentsFromDate.toISOString().replace('Z','');
                 }
             };
 
