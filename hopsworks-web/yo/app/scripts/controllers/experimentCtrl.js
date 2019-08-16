@@ -25,7 +25,7 @@ angular.module('hopsWorksApp')
 
             var self = this;
 
-            $scope.pageSize = 10;
+            self.pageSize = 10;
             $scope.sortKey = 'start';
             $scope.reverse = true;
             self.projectId = $routeParams.projectID;
@@ -40,6 +40,10 @@ angular.module('hopsWorksApp')
             self.experimentsFilter = "";
 
             self.query = "";
+
+            self.membersList = [];
+            self.members = [];
+            self.userEmail = "";
 
             self.experimentsToDate = new Date();
             self.experimentsToDate.setMinutes(self.experimentsToDate.getMinutes() + 60*24);
@@ -143,13 +147,11 @@ angular.module('hopsWorksApp')
                 $location.path('project/' + self.projectId + '/datasets/Models/' + modelSplit[0] + '/' + modelSplit[1]);
             };
 
-            self.membersList = [];
-            self.members = [];
-            self.userEmail = "";
-            self.getUserProfile = function () {
+            self.init = function () {
               UserService.profile().then(
                 function (success) {
                   self.userEmail = success.data.email;
+                  self.getMembers();
                 },
                 function (error) {
                     if (typeof error.data.usrMsg !== 'undefined') {
@@ -160,9 +162,7 @@ angular.module('hopsWorksApp')
                 });
             };
 
-            self.getUserProfile();
-
-            self.init = function () {
+            self.getMembers = function () {
               MembersService.query({id: self.projectId}).$promise.then(
                 function (success) {
                   self.members = success;
@@ -184,8 +184,8 @@ angular.module('hopsWorksApp')
                             break;
                         }
                     }
-                    self.getAll();
                   }
+                  self.getAll();
                 },
                 function (error) {
                     if (typeof error.data.usrMsg !== 'undefined') {
