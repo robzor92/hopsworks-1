@@ -35,8 +35,8 @@
                     </div>
                 </div>
 
-                <div class="row form-inline">
-                    <div class="col-sm-12 col-md-12 col-lg-12 form-group">
+                <div class="row">
+                    <div class="col-sm-9 col-md-9 col-lg-9 form-inline">
                         <label>Search
                             <input class="form-control" style="margin-left: 10px;" ng-model="experimentCtrl.experimentsFilter"
                                    ng-model-options="{debounce: 800}" ng-change="experimentCtrl.getAll()">
@@ -49,10 +49,24 @@
                                            ng-model="experimentCtrl.experimentsToDate"
                                            md-placeholder="To"></md-datepicker>
                         </label>
+                    </div>
 
-                        <div class="pull-right btn-group">
-                            <span style="float: right; margin-right:30px; " class="glyphicon glyphicon-refresh fa-2x" ng-click="experimentCtrl.getAll()" role="button" tabindex="0"> </span>
-                        </div>
+
+                    <div class="col-sm-2 col-md-2 col-lg-2">
+                            <ui-select ng-model="experimentCtrl.memberSelected" theme="bootstrap"
+                                       on-select="experimentCtrl.updateMember(); experimentCtrl.getAll();" style="z-index: 1;" id="memberList">
+                                <ui-select-match >
+                                    <span ng-bind="experimentCtrl.memberSelected.name"></span>
+                                </ui-select-match>
+                                <ui-select-choices repeat="member in (experimentCtrl.membersList | filter: $select.search) track by member.name">
+                                    <span ng-bind="member.name | highlight: $select.search"></span>
+                                </ui-select-choices>
+                            </ui-select>
+                    </div>
+                    <div class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="pull-right btn-group">
+                        <span style="float: right; margin-right:30px; " class="glyphicon glyphicon-refresh fa-2x" ng-click="experimentCtrl.getAll()" role="button" tabindex="0"> </span>
+                    </div>
                     </div>
 
                 </div>

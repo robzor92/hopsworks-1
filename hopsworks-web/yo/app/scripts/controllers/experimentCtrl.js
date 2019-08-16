@@ -18,9 +18,9 @@
  * Controller for the job UI dialog.
  */
 angular.module('hopsWorksApp')
-    .controller('ExperimentCtrl', ['$scope', '$timeout', 'growl', '$location', 'ModalService', 'ProjectService', 'ExperimentService', 'TensorBoardService', '$interval',
+    .controller('ExperimentCtrl', ['$scope', '$timeout', 'growl', '$location', 'MembersService', 'ModalService', 'ProjectService', 'ExperimentService', 'TensorBoardService', '$interval',
         '$routeParams', '$route', '$sce', '$window',
-        function($scope, $timeout, growl, $location, ModalService, ProjectService, ExperimentService, TensorBoardService, $interval,
+        function($scope, $timeout, growl, $location, MembersService, ModalService, ProjectService, ExperimentService, TensorBoardService, $interval,
             $routeParams, $route, $sce, $window) {
 
             var self = this;
@@ -138,5 +138,39 @@ angular.module('hopsWorksApp')
                 $location.path('project/' + self.projectId + '/datasets/Models/' + modelSplit[0] + '/' + modelSplit[1]);
             };
             self.getAll();
-        }
+
+            self.membersList = [];
+            self.members = [];
+
+            self.getMembers = function () {
+              MembersService.query({id: self.projectId}).$promise.then(
+                function (success) {
+                  self.members = success;
+                  if(self.members.length > 0){
+                    //Get current user team role
+                    self.members.forEach(function (member) {
+                        if(member.user.email !== 'serving@hopsworks.se') {
+                            self.membersList.push({'id': 1, 'name': member.user.fname + ' ' + member.user.lname, 'uid': member.user.uid});
+                        }
+                    });
+                    self.memberSelected = self.membersList[0];
+                  }
+                },
+                function (error) {
+                    if (typeof error.data.usrMsg !== 'undefined') {
+                        growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 8000});
+                    } else {
+                        growl.error("", {title: error.data.errorMsg, ttl: 8000});
+                    }
+                });
+            };
+
+            self.getMembers();
+
+            self.memberSelected = self.membersList[0];
+
+            self.updateMember = function() {
+
+            };
+            }
     ]);
