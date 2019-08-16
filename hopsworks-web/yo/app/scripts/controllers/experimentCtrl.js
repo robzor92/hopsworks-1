@@ -18,9 +18,9 @@
  * Controller for the job UI dialog.
  */
 angular.module('hopsWorksApp')
-    .controller('ExperimentCtrl', ['$scope', '$timeout', 'growl', '$location', 'MembersService', 'ModalService', 'ProjectService', 'ExperimentService', 'TensorBoardService', '$interval',
+    .controller('ExperimentCtrl', ['$scope', '$timeout', 'growl', '$location', 'MembersService', 'UserService', 'ModalService', 'ProjectService', 'ExperimentService', 'TensorBoardService', '$interval',
         '$routeParams', '$route', '$sce', '$window',
-        function($scope, $timeout, growl, $location, MembersService, ModalService, ProjectService, ExperimentService, TensorBoardService, $interval,
+        function($scope, $timeout, growl, $location, MembersService, UserService, ModalService, ProjectService, ExperimentService, TensorBoardService, $interval,
             $routeParams, $route, $sce, $window) {
 
             var self = this;
@@ -29,6 +29,8 @@ angular.module('hopsWorksApp')
             $scope.sortKey = 'start';
             $scope.reverse = true;
             self.projectId = $routeParams.projectID;
+
+            self.memberSelected = {};
 
             self.experiments = []
 
@@ -143,6 +145,22 @@ angular.module('hopsWorksApp')
 
             self.membersList = [];
             self.members = [];
+            self.userEmail = "";
+            self.getUserProfile = function () {
+              UserService.profile().then(
+                function (success) {
+                  self.userEmail = success.data.email;
+                },
+                function (error) {
+                    if (typeof error.data.usrMsg !== 'undefined') {
+                        growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 8000});
+                    } else {
+                        growl.error("", {title: error.data.errorMsg, ttl: 8000});
+                    }
+                });
+            };
+
+            self.getUserProfile();
 
             self.init = function () {
               MembersService.query({id: self.projectId}).$promise.then(
@@ -152,13 +170,20 @@ angular.module('hopsWorksApp')
                     //Get current user team role
                     self.members.forEach(function (member) {
                         if(member.user.email !== 'serving@hopsworks.se') {
-                            self.membersList.push({'name': member.user.fname + ' ' + member.user.lname, 'uid': member.user.uid});
+                            self.membersList.push({'name': member.user.fname + ' ' + member.user.lname, 'uid': member.user.uid, 'email': member.user.email});
                         }
                     });
+
                     if(self.membersList.length > 1) {
                         self.membersList.push({'name': 'All Members'})
                     }
-                    self.memberSelected = self.membersList[0];
+
+                    for(var i = 0; i < self.membersList.length; i++) {
+                        if(self.membersList[i].email === self.userEmail) {
+                            self.memberSelected = self.membersList[i];
+                            break;
+                        }
+                    }
                     self.getAll();
                   }
                 },
