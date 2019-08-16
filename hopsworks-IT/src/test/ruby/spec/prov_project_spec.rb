@@ -1063,11 +1063,11 @@ describe "On #{ENV['OS']}" do
     end
 
     it "check mock fileOperations" do 
-      result = get_app_fileOperations(@project1, @app_file_ops1, "FULL")
+      result = get_app_file_ops(@project1, @app_file_ops1, "FULL", "LIST")
       # pp result
       expect(result.length).to eq 3
 
-      result = get_app_fileOperations(@project1, @app_file_ops1, "COMPACT")
+      result = get_app_file_ops(@project1, @app_file_ops1, "COMPACT", "LIST")
       # pp result
       expect(result.length).to eq 2
     end
@@ -1255,7 +1255,7 @@ describe "On #{ENV['OS']}" do
     end
 
     it "check file history" do 
-      result = get_file_ops(@project1, 300000, "FULL")
+      result = get_file_ops(@project1, 300000, "FULL", "LIST")
       # pp result
       expect(result.length).to eq 5
     end

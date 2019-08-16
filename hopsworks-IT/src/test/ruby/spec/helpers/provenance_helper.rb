@@ -268,9 +268,18 @@ module ProvenanceHelper
     parsed_result = JSON.parse(result)
   end
 
-  def get_app_fileOperations(project, appId, returnType) 
+  def get_file_ops(project, inodeId, ops_compaction, return_type) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/#{inodeId}/ops"
+    query_params = "?ops_compaction=#{ops_compaction}&return_type=#{return_type}"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+  end
+
+  def get_app_file_ops(project, appId, ops_compaction, return_type) 
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/ops"
-    query_params = "?filter_by=APP_ID:#{appId}&return_type=#{returnType}"
+    query_params = "?filter_by=APP_ID:#{appId}&ops_compaction=#{ops_compaction}&return_type=#{return_type}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -280,15 +289,6 @@ module ProvenanceHelper
   def get_app_footprint(project, appId, type) 
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/app/#{appId}/footprint/#{type}"
     query_params = ""
-    pp "#{resource}#{query_params}"
-    result = get "#{resource}#{query_params}"
-    expect_status(200)
-    parsed_result = JSON.parse(result)
-  end
-
-  def get_file_ops(project, inodeId, returnType) 
-    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/#{inodeId}/ops"
-    query_params = "?return_type=#{returnType}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)

@@ -33,13 +33,23 @@ public class ProvFileOpsBeanParam {
     allowMultiple = true)
   private Set<String> fileOpsFilter;
   
-  @QueryParam("count")
-  @DefaultValue("false")
-  private boolean count;
-  
   @QueryParam("return_type")
-  @DefaultValue("FULL")
-  ProjectProvenanceResource.FileOpsReturnType returnType;
+  @DefaultValue("LIST")
+  private ProjectProvenanceResource.FileStructReturnType returnType;
+  
+  @QueryParam("ops_compaction")
+  @DefaultValue("NONE")
+  private ProjectProvenanceResource.FileOpsCompactionType opsCompaction;
+  
+  public ProvFileOpsBeanParam(
+    @QueryParam("filter_by") Set<String> fileOpsFilter,
+    @QueryParam("return_type") @DefaultValue("LIST") ProjectProvenanceResource.FileStructReturnType returnType,
+    @QueryParam("ops_compaction") @DefaultValue("NONE") ProjectProvenanceResource.FileOpsCompactionType opsCompaction) {
+    
+    this.fileOpsFilter = fileOpsFilter;
+    this.returnType = returnType;
+    this.opsCompaction = opsCompaction;
+  }
   
   public Set<String> getFileOpsFilter() {
     return fileOpsFilter;
@@ -49,28 +59,28 @@ public class ProvFileOpsBeanParam {
     this.fileOpsFilter = fileOpsFilter;
   }
   
-  public boolean isCount() {
-    return count;
-  }
-  
-  public void setCount(boolean count) {
-    this.count = count;
-  }
-  
-  public ProjectProvenanceResource.FileOpsReturnType getReturnType() {
+  public ProjectProvenanceResource.FileStructReturnType getReturnType() {
     return returnType;
   }
   
-  public void setReturnType(ProjectProvenanceResource.FileOpsReturnType returnType) {
+  public void setReturnType(ProjectProvenanceResource.FileStructReturnType returnType) {
     this.returnType = returnType;
+  }
+  
+  public ProjectProvenanceResource.FileOpsCompactionType getOpsCompaction() {
+    return opsCompaction;
+  }
+  
+  public void setOpsCompaction(ProjectProvenanceResource.FileOpsCompactionType opsCompaction) {
+    this.opsCompaction = opsCompaction;
   }
   
   @Override
   public String toString() {
     return "ProvFileStateBeanParam{"
       + "file ops:" + fileOpsFilter.toString()
-      + "count:" + count
-      + "return filterType:" + returnType
+      + "ops compaction:" + opsCompaction
+      + "return type:" + returnType
       + '}';
   }
 }

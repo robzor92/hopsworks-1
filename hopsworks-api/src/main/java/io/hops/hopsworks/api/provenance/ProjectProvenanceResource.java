@@ -48,10 +48,7 @@ import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.provenance.AppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvDatasetState;
-import io.hops.hopsworks.common.provenance.ProvFileOpsCompactByApp;
 import io.hops.hopsworks.common.provenance.ProvFileHit;
-import io.hops.hopsworks.common.provenance.ProvFileOpHit;
-import io.hops.hopsworks.common.provenance.ProvFileOpsSummaryByApp;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.SimpleResult;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
@@ -59,7 +56,6 @@ import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
-import io.hops.hopsworks.restutils.RESTCodes;
 import io.swagger.annotations.Api;
 
 import java.util.List;
@@ -171,7 +167,8 @@ public class ProjectProvenanceResource {
       .withQueryParamFileOps(params.getFileOpsFilter());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
-    return getFileOps(paramBuilder, params.isCount(), params.getReturnType());
+    return ProvenanceResourceHelper.getFileOps(noCacheResponse, provenanceCtrl, paramBuilder,
+      params.getOpsCompaction(), params.getReturnType());
   }
   
   @GET
@@ -208,7 +205,8 @@ public class ProjectProvenanceResource {
       .withQueryParamFileOps(params.getFileOpsFilter());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
-    return getFileOps(paramBuilder, params.isCount(), params.getReturnType());
+    return ProvenanceResourceHelper.getFileOps(noCacheResponse, provenanceCtrl, paramBuilder, params.getOpsCompaction(),
+      params.getReturnType());
   }
   
   @GET
@@ -234,41 +232,13 @@ public class ProjectProvenanceResource {
       .entity(new GenericEntity<List<ProvFileHit>>(result) {}).build();
   }
   
-  private Response getFileOps(ProvFileOpsParamBuilder params, boolean count,
-    FileOpsReturnType returnType)
-    throws ServiceException, GenericException {
-    if(count) {
-      Long result = provenanceCtrl.provFileOpsCount(params);
-      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-        .entity(new SimpleResult<>(result)).build();
-    } else {
-      List<ProvFileOpHit> result = provenanceCtrl.provFileOps(params);
-      switch(returnType) {
-        case FULL:
-          return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-            .entity(new GenericEntity<List<ProvFileOpHit>>(result) {}).build();
-        case COMPACT:
-          List<ProvFileOpsCompactByApp> compactResults = ProvFileOpsCompactByApp.compact(result);
-          return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-            .entity(new GenericEntity<List<ProvFileOpsCompactByApp>>(compactResults) {}).build();
-        case SUMMARY:
-          List<ProvFileOpsSummaryByApp> summaryResults = ProvFileOpsSummaryByApp.summary(result);
-          return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-            .entity(new GenericEntity<List<ProvFileOpsSummaryByApp>>(summaryResults) {}).build();
-        default:
-          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
-            "footprint filterType: " + returnType);
-      }
-    }
-  }
-  
   public enum FileStructReturnType {
     LIST,
     TREE,
     COUNT;
   }
-  public enum FileOpsReturnType {
-    FULL,
+  public enum FileOpsCompactionType {
+    NONE,
     COMPACT,
     SUMMARY
   }
