@@ -103,7 +103,9 @@ angular.module('hopsWorksApp')
                     self.query = '?filter_by=date_created_lt:' + self.experimentsToDate.toISOString().replace('Z','')
                         + "&filter_by=date_created_gt:" + self.experimentsFromDate.toISOString().replace('Z','');
                 }
-                self.query = self.query + '&filter_by=user:' + self.memberSelected.uid;
+                if(self.memberSelected.name !== 'All Members') {
+                    self.query = self.query + '&filter_by=user:' + self.memberSelected.uid;
+                }
             };
 
             self.getAll = function() {
@@ -153,6 +155,9 @@ angular.module('hopsWorksApp')
                             self.membersList.push({'name': member.user.fname + ' ' + member.user.lname, 'uid': member.user.uid});
                         }
                     });
+                    if(self.membersList.length > 1) {
+                        self.membersList.push({'name': 'All Members'})
+                    }
                     self.memberSelected = self.membersList[0];
                     self.getAll();
                   }
