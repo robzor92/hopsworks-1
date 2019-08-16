@@ -29,7 +29,7 @@ public class ProvenanceResourceHelper {
         Collection<ProvFileStateHit> listResult = provenanceCtrl.provFileState(params).values();
         return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
           .entity(new GenericEntity<Collection<ProvFileStateHit>>(listResult) {}).build();
-      case TREE:
+      case MIN_TREE:
         Map<Long, ProvenanceController.StructNode> treeResult = provenanceCtrl.provFileStateTree(params);
         return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
           .entity(new GenericEntity<Map<Long, ProvenanceController.StructNode>>(treeResult) {}).build();

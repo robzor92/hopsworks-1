@@ -234,7 +234,8 @@ public class ProjectProvenanceResource {
   
   public enum FileStructReturnType {
     LIST,
-    TREE,
+    MIN_TREE,
+    FULL_TREE,
     COUNT;
   }
   public enum FileOpsCompactionType {
