@@ -41,19 +41,25 @@ angular.module('hopsWorksApp')
 
             self.modelLink = null;
 
+            self.pageSize = 3;
+
+            self.currentPage = 1;
+            self.totalItems = 0;
+
             self.query = "";
+
+            self.experimentsSubset = [];
 
             self.buildQuery = function() {
                 self.query = "";
                 if (self.showProvenanceView === true && self.showResultsView === true) {
-                    self.query = "?expand=provenance&expand=results"
+                    self.query = "?expand=provenance&expand=results&offset=" + offset + "&limit=" + self.pageSize
                 } else if (self.showProvenanceView === true && self.showResultsView === false) {
                     self.query = "?expand=provenance"
                 } else if (self.showProvenanceView === false && self.showResultsView === true) {
                     self.query = "?expand=results"
                 }
             };
-
 
             $scope.sortBy = function(sortType) {
 
@@ -105,6 +111,9 @@ angular.module('hopsWorksApp')
                             self.experiment = success.data;
                             self.buildModelLink();
                             self.initResultsTable();
+                            if(self.experiment.results.results) {
+                                self.totalItems = self.experiment.results.results.length;
+                            }
                             if(self.experiment.optimizationKey) {
                                 $scope.sortType = self.experiment.optimizationKey;
                             } else {
@@ -194,11 +203,7 @@ angular.module('hopsWorksApp')
                         }
 
                         try {
-                            console.log('gogo')
                             for(var optIndex = 0; optIndex < self.all_headers.length; optIndex++) {
-                            console.log('loop')
-                            console.log(self.all_headers[optIndex])
-                            console.log($scope.sortType)
                                 if(self.all_headers[optIndex] === $scope.sortType) {
                                     if (self.experiment.direction === 'min') {
                                         console.log('sorting')
@@ -228,6 +233,10 @@ angular.module('hopsWorksApp')
                     self.modelLink = 'Models/' + modelName + '/' + modelVersion;
                 }
             };
+
+            self.getNewPage = function() {
+
+            }
 
             self.goToModel = function (path) {
                 self.close();

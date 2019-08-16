@@ -5,6 +5,7 @@ import io.hops.hopsworks.common.dao.project.Project;
 
 import io.hops.hopsworks.common.experiments.ExperimentConfigurationConverter;
 import io.hops.hopsworks.common.experiments.dto.results.ExperimentResultSummaryDTO;
+import io.hops.hopsworks.common.experiments.dto.results.ExperimentResultsDTO;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
@@ -59,7 +60,9 @@ public class ExperimentResultsBuilder {
             + mlId + "/.summary";
         if(dfso.exists(summaryPath)) {
           String summaryJson = dfso.cat(new Path(summaryPath));
-          dto.setResults(experimentConfigurationConverter.unmarshalResults(summaryJson).getResults());
+          dto.setResults(apply(experimentConfigurationConverter.unmarshalResults(summaryJson).getResults(),
+              resourceRequest.getLimit(), resourceRequest.getOffset()));
+
         }
       } catch (Exception e) {
         throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_RETRIEVAL_ERROR, Level.FINE,
@@ -71,5 +74,17 @@ public class ExperimentResultsBuilder {
       }
     }
     return dto;
+  }
+
+  public ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, int limit, int offset) {
+
+    ExperimentResultsDTO[] experimentResultsDTO = new ExperimentResultsDTO[limit];
+
+
+    for(int i = 0; offset + i < offset + limit; i++) {
+      experimentResultsDTO[i] = dto[offset + i];
+    }
+
+    return experimentResultsDTO;
   }
 }

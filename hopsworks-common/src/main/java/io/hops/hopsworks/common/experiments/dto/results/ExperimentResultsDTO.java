@@ -13,6 +13,8 @@ public class ExperimentResultsDTO {
 
   private ExperimentResult[] metrics;
 
+  private String optimizationKey;
+
   public ExperimentResult[] getHyperparameters() {
     return hyperparameters;
   }
@@ -27,5 +29,9 @@ public class ExperimentResultsDTO {
 
   public void setMetrics(ExperimentResult[] metrics) {
     this.metrics = metrics;
+  }
+
+  public void setOptimizationKey(String optimizationKey) {
+    this.optimizationKey = optimizationKey;
   }
 }

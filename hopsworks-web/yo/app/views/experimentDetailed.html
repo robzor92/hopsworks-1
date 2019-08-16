@@ -154,7 +154,10 @@
       </tr>
       </thead>
       <tbody>
-      <tr data-ng-repeat="experiment in experimentDetailCtrl.experiments | orderBy:sortType:reverse" >
+      <tr dir-paginate="experiment in experimentDetailCtrl.experiments| itemsPerPage:experimentDetailCtrl.pageSize | orderBy:sortType:reverse"
+          pagination-id="experiments_pagination"
+          current-page="experimentDetailCtrl.currentPage"
+          total-items="experimentDetailCtrl.totalItems">
         <td data-ng-repeat="cell in experiment.row">
           <div ng-if="cell.image">
             <button type="button" class="btn btn-default fa fa-camera" title="Preview"
@@ -167,6 +170,14 @@
       </tr>
       </tbody>
     </table>
+    <dir-pagination-controls
+            class="pull-right"
+            max-size="experimentDetailCtrl.pageSize"
+            pagination-id="experiments_pagination"
+            direction-links="true"
+            boundary-links="true"
+            on-page-change="experimentDetailCtrl.getNewPage()">
+    </dir-pagination-controls>
     <div ng-if="experimentDetailCtrl.all_headers.length == 0" style="margin-left:35px;">
       <div ng-if="experimentDetailCtrl.experiment.state === 'RUNNING'">
         This experiment is still running, results are visible once the experiment reached <span style="color: #00A000"> FINISHED </span> state.
