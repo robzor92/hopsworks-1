@@ -103,6 +103,7 @@ angular.module('hopsWorksApp')
                     self.query = '?filter_by=date_created_lt:' + self.experimentsToDate.toISOString().replace('Z','')
                         + "&filter_by=date_created_gt:" + self.experimentsFromDate.toISOString().replace('Z','');
                 }
+                self.query = self.query + '&filter_by=user:' + self.memberSelected.uid;
             };
 
             self.getAll = function() {
@@ -137,23 +138,23 @@ angular.module('hopsWorksApp')
                 var modelSplit = model.split('_')
                 $location.path('project/' + self.projectId + '/datasets/Models/' + modelSplit[0] + '/' + modelSplit[1]);
             };
-            self.getAll();
 
             self.membersList = [];
             self.members = [];
 
-            self.getMembers = function () {
+            self.init = function () {
               MembersService.query({id: self.projectId}).$promise.then(
                 function (success) {
                   self.members = success;
-                  if(self.members.length > 0){
+                  if(self.members.length > 0) {
                     //Get current user team role
                     self.members.forEach(function (member) {
                         if(member.user.email !== 'serving@hopsworks.se') {
-                            self.membersList.push({'id': 1, 'name': member.user.fname + ' ' + member.user.lname, 'uid': member.user.uid});
+                            self.membersList.push({'name': member.user.fname + ' ' + member.user.lname, 'uid': member.user.uid});
                         }
                     });
                     self.memberSelected = self.membersList[0];
+                    self.getAll();
                   }
                 },
                 function (error) {
@@ -165,12 +166,6 @@ angular.module('hopsWorksApp')
                 });
             };
 
-            self.getMembers();
-
-            self.memberSelected = self.membersList[0];
-
-            self.updateMember = function() {
-
-            };
-            }
+            self.init();
+        }
     ]);

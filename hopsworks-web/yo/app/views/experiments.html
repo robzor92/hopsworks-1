@@ -85,8 +85,8 @@
                     <td> {{experiment.name}} </td>
                     <td> {{experiment.metric}} </td>
                     <td> {{experiment.userFullName}} </td>
-                    <td> {{experiment.started}} </td>
-                    <td> {{experiment.finished}} </td>
+                    <td> {{experiment.started | date:'medium'}} </td>
+                    <td> {{experiment.finished | date:'medium'}} </td>
                     <td>
                         <span ng-if="experiment.state === 'NEW' || experiment.state === 'SUBMITTED' || experiment.state === 'RUNNING'" style="color: #0066bb">
                           {{experiment.state}}

@@ -171,12 +171,12 @@ public class ExperimentsBuilder {
           HashMap<String, String> map = new HashMap<>();
           map.put("config.name", filterBy.getValue());
           provFilesParamBuilder.withXAttrsLike(map);
-        }
-        if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_CREATED_LT.name()) == 0) {
+        } else if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_CREATED_LT.name()) == 0) {
           provFilesParamBuilder.createdBefore(getDate(filterBy.getField(), filterBy.getValue()).getTime());
-        }
-        if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_CREATED_GT.name()) == 0) {
+        } else if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_CREATED_GT.name()) == 0) {
           provFilesParamBuilder.createdAfter(getDate(filterBy.getField(), filterBy.getValue()).getTime());
+        } else if(filterBy.getParam().compareToIgnoreCase(Filters.USER.name()) == 0) {
+          provFilesParamBuilder.withUserId(filterBy.getValue());
         }
       }
     }
