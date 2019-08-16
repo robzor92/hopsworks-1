@@ -118,7 +118,7 @@ public class ProvFileStateParamBuilder {
     return this;
   }
   
-  public ProvFileStateParamBuilder withInodeId(Long inodeId) {
+  public ProvFileStateParamBuilder withFileInodeId(Long inodeId) {
     fileStateFilter.put(ProvElastic.FileStateFilter.INODE_ID.queryParamName,
       Pair.with(ProvElastic.FileStateFilter.INODE_ID, inodeId));
     return this;
@@ -226,10 +226,7 @@ public class ProvFileStateParamBuilder {
     return this;
   }
   
-  public boolean isWithAppState() {
-    if(expansions.size() == 1) {
-      return true;
-    }
-    return false;
+  public boolean hasExpansionWithAppState() {
+    return expansions.contains(ProvElastic.FileStateExpansions.APP_STATE);
   }
 }

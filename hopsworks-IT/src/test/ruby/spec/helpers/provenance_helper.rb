@@ -231,7 +231,7 @@ module ProvenanceHelper
 
   def get_ml_asset_by_xattr_count(project, ml_type, xattr_key, xattr_val, count) 
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
-    query_params = "?filter_by=ML_TYPE:#{ml_type}&xattr_filter_by=#{xattr_key}:#{xattr_val}&count=true"
+    query_params = "?filter_by=ML_TYPE:#{ml_type}&xattr_filter_by=#{xattr_key}:#{xattr_val}&return_type=COUNT"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -252,7 +252,7 @@ module ProvenanceHelper
     
   def get_ml_td_count_using_feature_project(project, feature_name) 
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
-    query_params = "?filter_by=ML_TYPE:TRAINING_DATASET&xattr_filter_by=features.name:#{feature_name}&count=true"
+    query_params = "?filter_by=ML_TYPE:TRAINING_DATASET&xattr_filter_by=features.name:#{feature_name}&return_type=COUNT"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -261,7 +261,7 @@ module ProvenanceHelper
 
   def get_ml_td_count_using_feature_global(feature_name) 
     resource = "#{ENV['HOPSWORKS_API']}/provenance/file/state"
-    query_params = "?filter_by=ML_TYPE:TRAINING_DATASET&xattr_filter_by==features.name:#{feature_name}&count=true"
+    query_params = "?filter_by=ML_TYPE:TRAINING_DATASET&xattr_filter_by==features.name:#{feature_name}&return_type=COUNT"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)

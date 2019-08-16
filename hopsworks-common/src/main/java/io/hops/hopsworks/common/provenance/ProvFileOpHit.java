@@ -43,7 +43,7 @@ public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
   private String readableTimestamp;
   private String inodeName;
   private String xattrName;
-  private String fullPath;
+  private String inodePath;
   
   public ProvFileOpHit() {}
 
@@ -82,6 +82,9 @@ public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
           this.xattrName = entry.getValue().toString();
           break;
         case ProvElastic.Common.ENTRY_TYPE_FIELD:
+          break;
+        case ProvElastic.Ops.INODE_PATH:
+          this.inodePath = entry.getValue().toString();
           break;
         default:
           LOG.log(Level.WARNING, "unknown key:{0} value:{1}", new Object[]{entry.getKey(), entry.getValue()});
@@ -196,12 +199,12 @@ public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
     this.xattrName = xattrName;
   }
   
-  public String getFullPath() {
-    return fullPath;
+  public String getInodePath() {
+    return inodePath;
   }
   
-  public void setFullPath(String fullPath) {
-    this.fullPath = fullPath;
+  public void setInodePath(String inodePath) {
+    this.inodePath = inodePath;
   }
   
   public static class TimestampComparator implements Comparator<ProvFileOpHit> {

@@ -40,6 +40,7 @@ package io.hops.hopsworks.common.provenance;
 
 import io.hops.hopsworks.common.dao.dataset.Dataset;
 import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
+import io.hops.hopsworks.common.dao.hdfs.inode.InodeFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.elastic.ElasticController;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
@@ -54,6 +55,7 @@ import io.hops.hopsworks.restutils.RESTCodes;
 
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,6 +64,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 
 @Stateless
@@ -70,6 +73,8 @@ public class ProvenanceController {
   private ElasticController elasticCtrl;
   @EJB
   private DistributedFsService dfs;
+  @EJB
+  private InodeFacade inodeFacade;
   
   public static final String PROJECT_PROVENANCE_STATUS_XATTR_NAME = "provenance.meta_status";
   
@@ -198,11 +203,18 @@ public class ProvenanceController {
     return result;
   }
   
+  public Map<Long, StructNode> provFileStateTree(ProvFileStateParamBuilder params)
+    throws GenericException, ServiceException {
+    Map<Long, ProvFileStateHit> fileStates = provFileState(params);
+    Map<Long, StructNode> result = getFileStateTree(fileStates);
+    return result;
+  }
   public Map<Long, ProvFileStateHit> provFileState(ProvFileStateParamBuilder params)
     throws GenericException, ServiceException {
+    Map<Long, ProvFileStateHit> result = new HashMap<>();
     Map<Long, ProvFileStateHit> fileStates = elasticCtrl.provFileState(params.getFileStateFilter(),
       params.getExactXAttrFilter(), params.getLikeXAttrFilter());
-    if (params.isWithAppState()) {
+    if (params.hasExpansionWithAppState()) {
       //If withAppStates, update params based on appIds of result files and do a appState index query.
       //After this filter the fileStates based on the results of the appState query
       for (ProvFileStateHit fileState : fileStates.values()) {
@@ -210,24 +222,94 @@ public class ProvenanceController {
       }
       Map<String, Map<Provenance.AppState, AppProvenanceHit>> appStates
         = elasticCtrl.provAppState(params.getAppStateFilter());
-      Map<Long, ProvFileStateHit> filteredFileStates = new HashMap<>();
       for(ProvFileStateHit fileState : fileStates.values()) {
         String appId = getAppId(fileState);
         if(appStates.containsKey(appId)) {
           Map<Provenance.AppState, AppProvenanceHit> auxAppStates = appStates.get(appId);
           fileState.setAppState(buildAppState(auxAppStates));
-          filteredFileStates.put(fileState.getInodeId(), fileState);
+          result.put(fileState.getInodeId(), fileState);
         }
       }
-      return filteredFileStates;
     } else {
-      return fileStates;
+      result.putAll(fileStates);
+    }
+    return result;
+  }
+  
+  
+  public static class TreeStruct {
+    TreeSet<Long> pendingInodeIds = new TreeSet<>();
+    Map<Long, StructNode> auxStruct = new HashMap<>();
+  }
+  
+  @XmlRootElement
+  public static class StructNode {
+    private final Long inodeId;
+    private String name;
+    private ProvFileStateHit fileState;
+    private final Map<Long, StructNode> directChildren = new HashMap<>();
+    
+    public StructNode(Long inodeId) {
+      this.inodeId = inodeId;
+    }
+  
+    public void addChild(StructNode child) {
+      directChildren.put(child.fileState.getInodeId(), child);
+    }
+  
+    public Long getInodeId() {
+      return inodeId;
+    }
+  
+    public String getName() {
+      return name;
+    }
+  
+    public void setName(String name) {
+      this.name = name;
+    }
+  
+    public ProvFileStateHit getFileState() {
+      return fileState;
+    }
+  
+    public void setFileState(ProvFileStateHit fileState) {
+      this.fileState = fileState;
+    }
+  
+    public Map<Long, StructNode> getDirectChildren() {
+      return directChildren;
+    }
+  }
+  
+  private Map<Long, StructNode> getFileStateTree(Map<Long, ProvFileStateHit> fileStates) {
+    TreeStruct treeS = new TreeStruct();
+    processFileState(treeS, fileStates);
+    return treeS.auxStruct;
+  }
+  
+  private void processFileState(TreeStruct treeS, Map<Long, ProvFileStateHit> fileStates) {
+    for(ProvFileStateHit fileState : fileStates.values()) {
+      StructNode parentNode = treeS.auxStruct.get(fileState.getParentInodeId());
+      if(parentNode == null) {
+        treeS.pendingInodeIds.add(fileState.getParentInodeId());
+        parentNode = new StructNode(fileState.getParentInodeId());
+        treeS.auxStruct.put(fileState.getParentInodeId(), parentNode);
+      }
+      StructNode childNode = treeS.auxStruct.get(fileState.getInodeId());
+      if(childNode == null) {
+        childNode = new StructNode(fileState.getInodeId());
+        treeS.auxStruct.put(fileState.getInodeId(), childNode);
+        parentNode.addChild(childNode);
+      }
+      childNode.setName(fileState.getInodeName());
+      childNode.setFileState(fileState);
     }
   }
   
   public long provFileStateCount(ProvFileStateParamBuilder params)
     throws GenericException, ServiceException {
-    if(params.isWithAppState()) {
+    if(params.hasExpansionWithAppState()) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
         "provenance file state count does not currently work with app state expansion");
     }

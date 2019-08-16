@@ -55,6 +55,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -215,7 +216,7 @@ public class InodeFacade extends AbstractFacade<Inode> {
       return null;
     }
   }
-
+  
   /**
    *
    * @param path
@@ -332,7 +333,23 @@ public class InodeFacade extends AbstractFacade<Inode> {
       return null;
     }
   }
-
+  
+  /**
+   * find inode by id
+   * <p/>
+   * @param id
+   * @return
+   */
+  public List<Inode> findByInodePKInList(InodePK... inodePKs) {
+    TypedQuery<Inode> q = em.createNamedQuery("Inode.findByPrimaryKeyInList", Inode.class);
+    q.setParameter("inodePkList", Arrays.asList(inodePKs));
+    try {
+      return q.getResultList();
+    } catch (NoResultException e) {
+      return null;
+    }
+  }
+  
   /**
    * Get the project base directory of which the given Inode is a descendant.
    * <p/>

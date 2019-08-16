@@ -57,6 +57,8 @@ public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
   private Map<String, String> xattrs = new HashMap<>();
   private MLAssetAppState appState;
   private String fullPath;
+  private Long partitionId;
+  private Long parentInodeId;
   
   public ProvFileStateHit(){
   }
@@ -105,6 +107,12 @@ public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
           this.userName = entry.getValue().toString();
           break;
         case ML_ALIVE_FIELD:
+          break;
+        case ProvElastic.Common.PARTITION_ID :
+          this.partitionId = ((Number) entry.getValue()).longValue();
+          break;
+        case ProvElastic.Common.PARENT_INODE_ID :
+          this.parentInodeId = ((Number) entry.getValue()).longValue();
           break;
         default:
           if(entry.getValue() == null) {
@@ -278,5 +286,21 @@ public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
   
   public void setFullPath(String fullPath) {
     this.fullPath = fullPath;
+  }
+  
+  public Long getPartitionId() {
+    return partitionId;
+  }
+  
+  public void setPartitionId(Long partitionId) {
+    this.partitionId = partitionId;
+  }
+  
+  public Long getParentInodeId() {
+    return parentInodeId;
+  }
+  
+  public void setParentInodeId(Long parentInodeId) {
+    this.parentInodeId = parentInodeId;
   }
 }

@@ -1150,7 +1150,7 @@ public class DataSetService {
 //    Users user = jWTHelper.getUserPrincipal(sc);
 //
 //    DsPath dsPath = pathValidator.validatePath(this.project, path);
-//    org.apache.hadoop.fs.Path fullPath = dsPath.getFullPath();
+//    org.apache.hadoop.fs.Path fullPath = dsPath.getInodePath();
 //    Dataset ds = dsPath.getDs();
 //    if (ds.isShared() && ds.getEditable() == DatasetPermissions.OWNER_ONLY && !ds.isPublicDs()) {
 //      throw new DatasetException(RESTCodes.DatasetErrorCode.COMPRESSION_ERROR, Level.FINE);

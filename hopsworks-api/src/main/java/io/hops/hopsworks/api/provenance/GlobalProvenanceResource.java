@@ -42,9 +42,7 @@ import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
 import io.hops.hopsworks.api.filter.NoCacheResponse;
 import io.hops.hopsworks.api.provenance.v2.ProvFileStateBeanParam;
-import io.hops.hopsworks.common.provenance.ProvFileStateHit;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
-import io.hops.hopsworks.common.provenance.SimpleResult;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ServiceException;
@@ -60,10 +58,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -96,15 +92,7 @@ public class GlobalProvenanceResource {
       .withQueryParamLikeXAttr(params.getLikeXAttrParams())
       .withQueryParamExpansions(params.getExpansions())
       .withQueryParamAppState(params.getAppStateParams());
-  
-    if(params.isCount()) {
-      Long countResult = provenanceCtrl.provFileStateCount(paramBuilder);
-      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-        .entity(new SimpleResult<>(countResult)).build();
-    } else {
-      Collection<ProvFileStateHit> searchResults = provenanceCtrl.provFileState(paramBuilder).values();
-      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-        .entity(new GenericEntity<Collection<ProvFileStateHit>>(searchResults) {}).build();
-    }
+    return ProvenanceResourceHelper.getFileStates(noCacheResponse, provenanceCtrl, paramBuilder,
+      params.getReturnType());
   }
 }

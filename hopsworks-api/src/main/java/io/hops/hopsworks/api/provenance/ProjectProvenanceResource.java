@@ -52,7 +52,6 @@ import io.hops.hopsworks.common.provenance.ProvFileOpsCompactByApp;
 import io.hops.hopsworks.common.provenance.ProvFileHit;
 import io.hops.hopsworks.common.provenance.ProvFileOpHit;
 import io.hops.hopsworks.common.provenance.ProvFileOpsSummaryByApp;
-import io.hops.hopsworks.common.provenance.ProvFileStateHit;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.SimpleResult;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
@@ -63,7 +62,6 @@ import io.hops.hopsworks.jwt.annotation.JWTRequired;
 import io.hops.hopsworks.restutils.RESTCodes;
 import io.swagger.annotations.Api;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -147,8 +145,6 @@ public class ProjectProvenanceResource {
   public Response getFileStates(
     @BeanParam ProvFileStateBeanParam params,
     @Context HttpServletRequest req) throws ServiceException, GenericException {
-    logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
-      new Object[]{req.getRequestURL().toString(), params});
     ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
       .withProjectInodeId(project.getInode().getId())
       .withQueryParamFileState(params.getFileStateParams())
@@ -156,16 +152,10 @@ public class ProjectProvenanceResource {
       .withQueryParamLikeXAttr(params.getLikeXAttrParams())
       .withQueryParamExpansions(params.getExpansions())
       .withQueryParamAppState(params.getAppStateParams());
-    
-    if(params.isCount()) {
-      Long countResult = provenanceCtrl.provFileStateCount(paramBuilder);
-      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-        .entity(new SimpleResult<>(countResult)).build();
-    } else {
-      Collection<ProvFileStateHit> searchResults = provenanceCtrl.provFileState(paramBuilder).values();
-      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-        .entity(new GenericEntity<Collection<ProvFileStateHit>>(searchResults) {}).build();
-    }
+    logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
+      new Object[]{req.getRequestURL().toString(), params});
+    return ProvenanceResourceHelper.getFileStates(noCacheResponse, provenanceCtrl, paramBuilder,
+      params.getReturnType());
   }
   
   @GET
@@ -182,6 +172,25 @@ public class ProjectProvenanceResource {
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     return getFileOps(paramBuilder, params.isCount(), params.getReturnType());
+  }
+  
+  @GET
+  @Path("file/{inodeId}/state")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response getFileStates(
+    @PathParam("inodeId") Long fileInodeId,
+    @BeanParam ProvFileStateBeanParam params,
+    @Context HttpServletRequest req) throws GenericException, ServiceException {
+    ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
+      .withProjectInodeId(project.getInode().getId())
+      .withFileInodeId(fileInodeId)
+      .withQueryParamFileState(params.getFileStateParams());
+    logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
+      new Object[]{req.getRequestURL().toString(), params});
+    return ProvenanceResourceHelper.getFileStates(noCacheResponse, provenanceCtrl, paramBuilder,
+      params.getReturnType());
   }
   
   @GET
@@ -253,6 +262,11 @@ public class ProjectProvenanceResource {
     }
   }
   
+  public enum FileStructReturnType {
+    LIST,
+    TREE,
+    COUNT;
+  }
   public enum FileOpsReturnType {
     FULL,
     COMPACT,

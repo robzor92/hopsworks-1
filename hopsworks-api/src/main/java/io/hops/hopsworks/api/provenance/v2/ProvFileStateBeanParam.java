@@ -15,6 +15,7 @@
  */
 package io.hops.hopsworks.api.provenance.v2;
 
+import io.hops.hopsworks.api.provenance.ProjectProvenanceResource;
 import io.swagger.annotations.ApiParam;
 
 import javax.ws.rs.DefaultValue;
@@ -43,7 +44,7 @@ public class ProvFileStateBeanParam {
   private Set<String> likeXAttrParams;
   
   @QueryParam("expand")
-  @ApiParam(value = "ex. expand=APP_STATE", allowableValues = "expand=appState")
+  @ApiParam(value = "ex. expand=APP_STATE&expand=DIR_TREE", allowableValues = "expand=appState&expand=DIR_TREE")
   private Set<String> expansions;
   
   @QueryParam("app_filter_by")
@@ -52,9 +53,9 @@ public class ProvFileStateBeanParam {
     allowMultiple = true)
   private Set<String> appStateParams;
   
-  @QueryParam("count")
-  @DefaultValue("false")
-  private boolean count;
+  @QueryParam("return_type")
+  @DefaultValue("LIST")
+  private ProjectProvenanceResource.FileStructReturnType returnType;
   
   public ProvFileStateBeanParam(
     @QueryParam("filter_by") Set<String> fileStateParams,
@@ -62,13 +63,13 @@ public class ProvFileStateBeanParam {
     @QueryParam("xattr_like") Set<String> xAttrLikeParams,
     @QueryParam("expand") Set<String> expansions,
     @QueryParam("exp_filter_by") Set<String> appStateParams,
-    @QueryParam("count")  @DefaultValue("false") boolean count) {
+    @QueryParam("return_type") @DefaultValue("LIST") ProjectProvenanceResource.FileStructReturnType returnType) {
     this.fileStateParams = fileStateParams;
     this.exactXAttrParams = xAttrParams;
     this.likeXAttrParams = xAttrLikeParams;
     this.expansions = expansions;
     this.appStateParams = appStateParams;
-    this.count = count;
+    this.returnType = returnType;
   }
   
   public Set<String> getFileStateParams() {
@@ -111,12 +112,12 @@ public class ProvFileStateBeanParam {
     this.appStateParams = appStateParams;
   }
   
-  public boolean isCount() {
-    return count;
+  public ProjectProvenanceResource.FileStructReturnType getReturnType() {
+    return returnType;
   }
   
-  public void setCount(boolean count) {
-    this.count = count;
+  public void setReturnType(ProjectProvenanceResource.FileStructReturnType returnType) {
+    this.returnType = returnType;
   }
   
   @Override
@@ -127,7 +128,7 @@ public class ProvFileStateBeanParam {
       + "like xattr:" + likeXAttrParams.toString()
       + "expansions:" + expansions
       + "app state:" + appStateParams.toString()
-      + "count=" + count
+      + "return type:" + returnType
       + '}';
   }
 }

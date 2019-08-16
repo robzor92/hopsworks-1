@@ -367,5 +367,11 @@ public class ProvElastic {
     public static final String XATTR_NAME_FIELD = "xattr";
     public static final String ENTRY_TYPE_FIELD = "entry_type";
     public static final String FILE_STATE_FIELD = "alive";
+    public static final String PARTITION_ID = "partition_id";
+    public static final String PARENT_INODE_ID = "parent_inode_id";
+  }
+  
+  public static class Ops {
+    public static final String INODE_PATH = "inode_path";
   }
 }
