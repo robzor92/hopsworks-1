@@ -6,11 +6,16 @@ import io.hops.hopsworks.api.experiments.results.ExperimentResultsBuilder;
 import io.hops.hopsworks.api.experiments.tensorboard.TensorBoardBuilder;
 import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.AbstractFacade;
+import io.hops.hopsworks.common.dao.hdfsUser.HdfsUsers;
+import io.hops.hopsworks.common.dao.hdfsUser.HdfsUsersFacade;
 import io.hops.hopsworks.common.dao.project.Project;
+import io.hops.hopsworks.common.dao.user.UserFacade;
+import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.experiments.ExperimentConfigurationConverter;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDescription;
 
+import io.hops.hopsworks.common.hdfs.HdfsUsersController;
 import io.hops.hopsworks.common.provenance.ProvFileStateHit;
 import io.hops.hopsworks.common.provenance.Provenance;
 
@@ -53,6 +58,12 @@ public class ExperimentsBuilder {
   private ExperimentResultsBuilder experimentResultsBuilder;
   @EJB
   private ExperimentConfigurationConverter experimentConfigurationConverter;
+  @EJB
+  private UserFacade userFacade;
+  @EJB
+  private HdfsUsersFacade hdfsUsersFacade;
+  @EJB
+  private HdfsUsersController hdfsUsersController;
 
   public ExperimentDTO uri(ExperimentDTO dto, UriInfo uriInfo, Project project) {
     dto.setHref(uriInfo.getBaseUriBuilder().path(ResourceRequest.Name.PROJECT.toString().toLowerCase())
@@ -91,7 +102,7 @@ public class ExperimentsBuilder {
           .withMlType(Provenance.MLType.EXPERIMENT.name())
           .withAppState();
 
-      buildFilter(provFilesParamBuilder, resourceRequest.getFilter());
+      buildFilter(provFilesParamBuilder, resourceRequest.getFilter(), project);
 
       GenericEntity<Collection<ProvFileStateHit>> searchResults = new GenericEntity<Collection<ProvFileStateHit>>(
           provenanceController.provFileState(provFilesParamBuilder).values()) {
@@ -164,7 +175,7 @@ public class ExperimentsBuilder {
   }
 
   private void buildFilter(ProvFileStateParamBuilder provFilesParamBuilder,
-                                            Set<? extends AbstractFacade.FilterBy> filters) {
+                                            Set<? extends AbstractFacade.FilterBy> filters, Project project) {
     if(filters != null) {
       for (AbstractFacade.FilterBy filterBy : filters) {
         if(filterBy.getParam().compareToIgnoreCase(Filters.NAME.name()) == 0) {
@@ -176,7 +187,11 @@ public class ExperimentsBuilder {
         } else if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_CREATED_GT.name()) == 0) {
           provFilesParamBuilder.createdAfter(getDate(filterBy.getField(), filterBy.getValue()).getTime());
         } else if(filterBy.getParam().compareToIgnoreCase(Filters.USER.name()) == 0) {
-          provFilesParamBuilder.withUserId(filterBy.getValue());
+          String userId = filterBy.getValue();
+          Users user = userFacade.find(Integer.parseInt(userId));
+          String hdfsUserStr = hdfsUsersController.getHdfsUserName(project, user);
+          HdfsUsers hdfsUsers = hdfsUsersFacade.findByName(hdfsUserStr);
+          provFilesParamBuilder.withUserId(hdfsUsers.getId().toString());
         }
       }
     }
