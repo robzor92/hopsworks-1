@@ -4,6 +4,7 @@ import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 
 import io.hops.hopsworks.common.experiments.ExperimentConfigurationConverter;
+import io.hops.hopsworks.common.experiments.dto.results.ExperimentResult;
 import io.hops.hopsworks.common.experiments.dto.results.ExperimentResultSummaryDTO;
 import io.hops.hopsworks.common.experiments.dto.results.ExperimentResultsDTO;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
@@ -19,6 +20,9 @@ import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.UriInfo;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.logging.Level;
 
 @Stateless
@@ -48,10 +52,11 @@ public class ExperimentResultsBuilder {
   }
 
   public ExperimentResultSummaryDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
-                                          String mlId) throws ExperimentsException {
+                                          String mlId, String optimizationKey) throws ExperimentsException {
     ExperimentResultSummaryDTO dto = new ExperimentResultSummaryDTO();
     uri(dto, uriInfo, project, mlId);
     expand(dto, resourceRequest);
+    dto.setCount(0l);
     if (dto.isExpand()) {
       DistributedFileSystemOps dfso = null;
       try {
@@ -60,8 +65,12 @@ public class ExperimentResultsBuilder {
             + mlId + "/.summary";
         if(dfso.exists(summaryPath)) {
           String summaryJson = dfso.cat(new Path(summaryPath));
-          dto.setResults(apply(experimentConfigurationConverter.unmarshalResults(summaryJson).getResults(),
-              resourceRequest.getLimit(), resourceRequest.getOffset()));
+          ExperimentResultsDTO[] results = experimentConfigurationConverter
+              .unmarshalResults(summaryJson).getResults();
+          dto.setCount((long)results.length);
+          results = apply(experimentConfigurationConverter.unmarshalResults(summaryJson).getResults(),
+              resourceRequest.getLimit(), resourceRequest.getOffset(), optimizationKey);
+          dto.setResults(results);
         }
       } catch (Exception e) {
         throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_RETRIEVAL_ERROR, Level.SEVERE,
@@ -75,18 +84,45 @@ public class ExperimentResultsBuilder {
     return dto;
   }
 
-  public ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, int limit, int offset) {
+  public ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, int limit, int offset, String optimizationKey) {
 
-    ExperimentResultsDTO[] experimentResultsDTO = new ExperimentResultsDTO[limit];
+    Arrays.sort(dto, new OptKeyComparator(optimizationKey));
+
+    ArrayList<ExperimentResultsDTO> results = new ArrayList<>();
 
     if(dto != null && dto.length > 0) {
-      for (int i = 0; offset + i < offset + limit; i++) {
-        experimentResultsDTO[i] = dto[offset + i];
+      for (int i = 0; offset + i < (offset + limit) && (offset + i) < dto.length; i++) {
+        results.add(dto[offset + i]);
       }
     } else {
       return dto;
     }
 
-    return experimentResultsDTO;
+    return results.toArray(new ExperimentResultsDTO[results.size()]);
+  }
+
+  public static class OptKeyComparator implements Comparator {
+    private String optimizationKey;
+
+    OptKeyComparator(String optimizationKey) {
+      this.optimizationKey = optimizationKey;
+    }
+
+    @Override
+    public int compare(Object experimentA, Object experimentB) {
+      ExperimentResultsDTO firstExperiment = (ExperimentResultsDTO) experimentA;
+      ExperimentResultsDTO secondExperiment = (ExperimentResultsDTO) experimentB;
+      return getOptimizationValue(firstExperiment, optimizationKey)
+          .compareTo(getOptimizationValue(secondExperiment, optimizationKey));
+    }
+
+    public Double getOptimizationValue(ExperimentResultsDTO experiment, String optimizationKey) {
+      for(ExperimentResult metric: experiment.getMetrics()) {
+        if(metric.getKey().compareTo(optimizationKey) == 0) {
+          return Double.parseDouble(metric.getValue());
+        }
+      }
+      return 0.0;
+    }
   }
 }

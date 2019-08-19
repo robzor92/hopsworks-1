@@ -113,7 +113,7 @@ angular.module('hopsWorksApp')
                             self.buildModelLink();
                             self.initResultsTable();
                             if(self.experiment.results.results) {
-                                self.totalItems = self.experiment.results.results.length;
+                                self.totalItems = self.experiment.results.count;
                             }
                             if(self.experiment.optimizationKey) {
                                 $scope.sortType = self.experiment.optimizationKey;
@@ -203,25 +203,6 @@ angular.module('hopsWorksApp')
                             });
                         }
 
-                        try {
-                            for(var optIndex = 0; optIndex < self.all_headers.length; optIndex++) {
-                                if(self.all_headers[optIndex] === $scope.sortType) {
-                                    if (self.experiment.direction === 'min') {
-                                        console.log('sorting')
-                                        self.experiments.sort(function(a, b) {
-                                            return (parseFloat(a.row[optIndex].data) - parseFloat(b.row[optIndex].data))
-                                        });
-                                    } else if (self.experiment.direction === 'max') {
-                                        console.log('sorting')
-                                        self.experiments.sort(function(a, b) {
-                                            return (parseFloat(b.row[optIndex].data) - parseFloat(a.row[optIndex].data))
-                                        });
-                                    }
-                                }
-                            }
-                        } catch (error) {
-                            console.error(error);
-                        }
                     }
                 }
             };
@@ -236,7 +217,8 @@ angular.module('hopsWorksApp')
             };
 
             self.getNewPage = function() {
-
+                self.offset = self.pageSize * (self.currentPage - 1);
+                self.getExperiment();
             }
 
             self.goToModel = function (path) {

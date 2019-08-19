@@ -108,6 +108,8 @@ public class ExperimentsBuilder {
           provenanceController.provFileStateList(provFilesParamBuilder).values()) {
       };
 
+      dto.setCount((long)searchResults.getEntity().size());
+
       for(FileState fileProvStateHit: searchResults.getEntity()) {
         ExperimentDTO experimentDTO = build(uriInfo, resourceRequest, project, fileProvStateHit);
         if(experimentDTO != null) {
@@ -166,7 +168,8 @@ public class ExperimentsBuilder {
         experimentDTO.setProvenance(experimentFileProvenanceBuilder.build(uriInfo,
             resourceRequest.get(ResourceRequest.Name.PROVENANCE), project, fileProvenanceHit.getMlId()));
         experimentDTO.setResults(experimentResultsBuilder.build(uriInfo,
-            resourceRequest.get(ResourceRequest.Name.RESULTS), project, fileProvenanceHit.getMlId()));
+            resourceRequest.get(ResourceRequest.Name.RESULTS), project, fileProvenanceHit.getMlId(),
+            experimentDescription.getOptimizationKey()));
       } else {
         return null;
       }

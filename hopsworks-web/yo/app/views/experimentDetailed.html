@@ -72,11 +72,11 @@
       </tr>
       <tr ng-if="experimentDetailCtrl.experiment.started">
         <td>Started</td>
-        <td>{{experimentDetailCtrl.experiment.started}}</td>'
+        <td>{{experimentDetailCtrl.experiment.started | date:'medium'}}</td>'
       </tr>
       <tr ng-if="experimentDetailCtrl.experiment.finished">
         <td>Finished</td>
-        <td>{{experimentDetailCtrl.experiment.finished}}</td>
+        <td>{{experimentDetailCtrl.experiment.finished | date:'medium'}}</td>
       </tr>
       <tr ng-if="experimentDetailCtrl.experiment.experimentType">
         <td>ExperimentType</td>
