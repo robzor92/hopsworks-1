@@ -50,7 +50,7 @@ import io.hops.hopsworks.common.dataset.DatasetController;
 import io.hops.hopsworks.common.provenance.AppProvenanceHit;
 import io.hops.hopsworks.common.provenance.ProvElastic;
 import io.hops.hopsworks.common.provenance.ProvFileOpHit;
-import io.hops.hopsworks.common.provenance.ProvFileStateHit;
+import io.hops.hopsworks.common.provenance.v2.xml.FileState;
 import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
@@ -1003,7 +1003,7 @@ public class ElasticController {
   //PROVENANCE
   static final int DEFAULT_PROVENANCE_QUERY_SIZE = 5000;
   
-  public Map<Long, ProvFileStateHit> provFileState(
+  public Map<Long, FileState> provFileState(
     Collection<Pair<ProvElastic.FileStateFilter, Object>> fileStateFilters,
     Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters)
     throws GenericException, ServiceException {
@@ -1090,11 +1090,11 @@ public class ElasticController {
     return result;
   }
   
-  private Map<Long, ProvFileStateHit> provFileStateQuery(QueryBuilder query, int querySize) throws ServiceException {
+  private Map<Long, FileState> provFileStateQuery(QueryBuilder query, int querySize) throws ServiceException {
     SearchResponse searchResult = provFileIndexQuery(query, querySize);
-    Map<Long, ProvFileStateHit> result = new HashMap<>();
+    Map<Long, FileState> result = new HashMap<>();
     for (SearchHit rawHit : searchResult.getHits().getHits()) {
-      ProvFileStateHit fpHit = new ProvFileStateHit(rawHit);
+      FileState fpHit = new FileState(rawHit);
       result.put(fpHit.getInodeId(), fpHit);
     }
     return result;
@@ -1123,7 +1123,7 @@ public class ElasticController {
     Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters)
     throws GenericException {
     BoolQueryBuilder query = boolQuery()
-      .must(termQuery(ProvElastic.Common.FILE_STATE_FIELD, true));
+      .must(termQuery(ProvElastic.Common.ENTRY_TYPE_FIELD, "state"));
     for(Pair<ProvElastic.FileStateFilter, Object> filter : fileStateFilters) {
       query = query.must(ProvElastic.getQB(filter.getValue0(), filter.getValue1()));
     }

@@ -73,6 +73,9 @@ import io.hops.hopsworks.common.dao.metadata.Template;
   @NamedQuery(name = "Inode.findById",
           query
           = "SELECT i FROM Inode i WHERE i.id = :id"),
+  @NamedQuery(name = "Inode.findByIdInList",
+          query
+          = "SELECT i FROM Inode i WHERE i.id IN :idList"),
   @NamedQuery(name = "Inode.findByParentId",
           query
           = "SELECT i FROM Inode i WHERE i.inodePK.parentId = :parentId"),

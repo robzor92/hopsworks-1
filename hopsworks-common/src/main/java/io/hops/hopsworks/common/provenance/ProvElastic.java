@@ -97,18 +97,15 @@ public class ProvElastic {
   }
   
   public enum FileOpsFilter implements ElasticFilters {
-    PROJECT_I_ID("PROJECT_I_ID", "project_i_id", FilterType.EXACT, new LongFilterVal()),
-    FILE_INODE_ID("FILE_INODE_ID", "inode_id", FilterType.EXACT, new LongFilterVal()),
-    FILE_NAME("FILE_NAME", "i_name", FilterType.EXACT, new StringFilterVal()),
-    FILE_NAME_LIKE("FILE_NAME_LIKE", "i_name", FilterType.LIKE, new StringFilterVal()),
-    FILE_OPERATION("FILE_OPERATION", "inode_operation", FilterType.EXACT,
-      new FileOpFilterVal()),
-    USER_ID("USER_ID", "io_user_id", FilterType.EXACT, new IntFilterVal()),
-    APP_ID("APP_ID", "io_app_id", FilterType.EXACT, new StringFilterVal()),
-    TIMESTAMP_LT("TIMESTAMP_LT", "io_timestamp", FilterType.RANGE_LT,
-      new LongFilterVal()),
-    TIMESTAMP_GT("TIMESTAMP_GT", "io_timestamp", FilterType.RANGE_GT,
-      new LongFilterVal());
+    PROJECT_I_ID("PROJECT_I_ID", Common.PROJECT_INODE_ID_FIELD, FilterType.EXACT, new LongFilterVal()),
+    FILE_INODE_ID("FILE_INODE_ID", Common.INODE_ID_FIELD, FilterType.EXACT, new LongFilterVal()),
+    FILE_NAME("FILE_NAME", Common.INODE_NAME_FIELD, FilterType.EXACT, new StringFilterVal()),
+    FILE_NAME_LIKE("FILE_NAME_LIKE", Common.INODE_NAME_FIELD, FilterType.LIKE, new StringFilterVal()),
+    FILE_OPERATION("FILE_OPERATION", Op.INODE_OPERATION_FIELD, FilterType.EXACT, new FileOpFilterVal()),
+    USER_ID("USER_ID", Common.USER_ID_FIELD, FilterType.EXACT, new IntFilterVal()),
+    APP_ID("APP_ID", Common.APP_ID_FIELD, FilterType.EXACT, new StringFilterVal()),
+    TIMESTAMP_LT("TIMESTAMP_LT", Op.TIMESTAMP_FIELD, FilterType.RANGE_LT, new LongFilterVal()),
+    TIMESTAMP_GT("TIMESTAMP_GT", Op.TIMESTAMP_FIELD, FilterType.RANGE_GT, new LongFilterVal());
     public final String queryParamName;
     public final String elasticParamName;
     public final FilterType filterType;
@@ -158,16 +155,16 @@ public class ProvElastic {
   }
   
   public enum FileStateFilter implements ElasticFilters {
-    PROJECT_I_ID("PROJECT_I_ID", "project_i_id", FilterType.EXACT),
-    INODE_ID("INODE_ID", "inode_id", FilterType.EXACT),
-    FILE_NAME("FILE_NAME", "inode_name", FilterType.EXACT),
-    FILE_NAME_LIKE("FILE_NAME_LIKE", "inode_name", FilterType.LIKE),
-    USER_ID("USER_ID", "user_id", FilterType.EXACT),
-    APP_ID("APP_ID", "app_id", FilterType.EXACT),
-    CREATE_TIMESTAMP_LT("CREATE_TIMESTAMP_LT", "timestamp", FilterType.RANGE_LT),
-    CREATE_TIMESTAMP_GT("CREATE_TIMESTAMP_GT", "timestamp", FilterType.RANGE_GT),
-    ML_TYPE("ML_TYP", "ml_type", FilterType.EXACT),
-    ML_ID("ML_ID", "ml_id", FilterType.EXACT);
+    PROJECT_I_ID("PROJECT_I_ID", Common.PROJECT_INODE_ID_FIELD, FilterType.EXACT),
+    INODE_ID("INODE_ID", Common.INODE_ID_FIELD, FilterType.EXACT),
+    FILE_NAME("FILE_NAME", Common.INODE_NAME_FIELD, FilterType.EXACT),
+    FILE_NAME_LIKE("FILE_NAME_LIKE", Common.INODE_NAME_FIELD, FilterType.LIKE),
+    USER_ID("USER_ID", Common.USER_ID_FIELD, FilterType.EXACT),
+    APP_ID("APP_ID", Common.APP_ID_FIELD, FilterType.EXACT),
+    CREATE_TIMESTAMP_LT("CREATE_TIMESTAMP_LT", State.CREATE_TIMESTAMP_FIELD, FilterType.RANGE_LT),
+    CREATE_TIMESTAMP_GT("CREATE_TIMESTAMP_GT", State.CREATE_TIMESTAMP_FIELD, FilterType.RANGE_GT),
+    ML_TYPE("ML_TYP", ML.ML_TYPE, FilterType.EXACT),
+    ML_ID("ML_ID", ML.ML_ID, FilterType.EXACT);
     public final String queryParamName;
     public final String elasticParamName;
     public final FilterType filterType;
@@ -356,22 +353,37 @@ public class ProvElastic {
   }
   
   public static class Common {
-    public static final String PROJECT_INODE_ID_FIELD = "project_i_id";
     public static final String INODE_ID_FIELD = "inode_id";
-    public static final String INODE_OPERATION_FIELD = "inode_operation";
-    public static final String APP_ID_FIELD = "io_app_id";
-    public static final String LOGICAL_TIME_FIELD = "io_logical_time";
-    public static final String TIMESTAMP_FIELD = "io_timestamp";
-    public static final String READABLE_TIMESTAMP_FIELD = "i_readable_t";
-    public static final String INODE_NAME_FIELD = "i_name";
-    public static final String XATTR_NAME_FIELD = "xattr";
+    public static final String APP_ID_FIELD = "app_id";
+    public static final String USER_ID_FIELD = "user_id";
+    public static final String PROJECT_INODE_ID_FIELD = "project_i_id";
+    public static final String DATASET_INODE_ID_FIELD = "dataset_i_id";
+    public static final String PARENT_INODE_ID_FIELD = "parent_i_id";
+    public static final String INODE_NAME_FIELD = "inode_name";
+    public static final String PROJECT_NAME_FIELD = "project_name";
     public static final String ENTRY_TYPE_FIELD = "entry_type";
-    public static final String FILE_STATE_FIELD = "alive";
     public static final String PARTITION_ID = "partition_id";
-    public static final String PARENT_INODE_ID = "parent_inode_id";
   }
   
-  public static class Ops {
+  public static class State {
+    public static final String CREATE_TIMESTAMP_FIELD = "create_timestamp";
+    public static final String READABLE_CREATE_TIMESTAMP_FIELD = "r_create_timestamp";
+  }
+  
+  public static class ML {
+    public static final String ML_ID = "ml_id";
+    public static final String ML_TYPE = "ml_type";
+  }
+  
+  public static class Op {
+    public static final String INODE_OPERATION_FIELD = "inode_operation";
+    public static final String LOGICAL_TIME_FIELD = "logical_time";
+    public static final String TIMESTAMP_FIELD = "timestamp";
+    public static final String READABLE_TIMESTAMP_FIELD = "r_timestamp";
+  }
+  
+  public static class OpOptional {
     public static final String INODE_PATH = "inode_path";
+    public static final String XATTR_NAME_FIELD = "xattr";
   }
 }

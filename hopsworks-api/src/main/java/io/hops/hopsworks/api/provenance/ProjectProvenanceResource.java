@@ -48,9 +48,8 @@ import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.provenance.AppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvDatasetState;
-import io.hops.hopsworks.common.provenance.ProvFileHit;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
-import io.hops.hopsworks.common.provenance.SimpleResult;
+import io.hops.hopsworks.common.provenance.v2.xml.SimpleResult;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.exceptions.GenericException;
@@ -227,9 +226,8 @@ public class ProjectProvenanceResource {
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     
-    List<ProvFileHit> result = provenanceCtrl.provAppFootprint(paramBuilder, footprintType);
-    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-      .entity(new GenericEntity<List<ProvFileHit>>(result) {}).build();
+    return ProvenanceResourceHelper.getAppFootprint(noCacheResponse, provenanceCtrl, paramBuilder, footprintType,
+      params.getReturnType());
   }
   
   public enum FileStructReturnType {

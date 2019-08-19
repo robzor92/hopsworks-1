@@ -55,7 +55,6 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -200,7 +199,7 @@ public class InodeFacade extends AbstractFacade<Inode> {
       return null;
     }
   }
-
+  
   /**
    * find inode by id
    * <p/>
@@ -212,6 +211,22 @@ public class InodeFacade extends AbstractFacade<Inode> {
     q.setParameter("id", id);
     try {
       return q.getSingleResult();
+    } catch (NoResultException e) {
+      return null;
+    }
+  }
+  
+  /**
+   * find inode by id
+   * <p/>
+   * @param id
+   * @return
+   */
+  public List<Inode> findByIdList(List<Long> ids) {
+    TypedQuery<Inode> q = em.createNamedQuery("Inode.findByIdInList", Inode.class);
+    q.setParameter("idList", ids);
+    try {
+      return q.getResultList();
     } catch (NoResultException e) {
       return null;
     }
@@ -340,9 +355,9 @@ public class InodeFacade extends AbstractFacade<Inode> {
    * @param id
    * @return
    */
-  public List<Inode> findByInodePKInList(InodePK... inodePKs) {
+  public List<Inode> findByInodePKList(List<InodePK> inodePKs) {
     TypedQuery<Inode> q = em.createNamedQuery("Inode.findByPrimaryKeyInList", Inode.class);
-    q.setParameter("inodePkList", Arrays.asList(inodePKs));
+    q.setParameter("inodePkList", inodePKs);
     try {
       return q.getResultList();
     } catch (NoResultException e) {

@@ -49,22 +49,26 @@ import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOps;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
+import io.hops.hopsworks.common.provenance.v2.xml.FileState;
+import io.hops.hopsworks.common.provenance.v2.xml.FileStateTree;
+import io.hops.hopsworks.common.provenance.v2.xml.FootprintFileState;
+import io.hops.hopsworks.common.provenance.v2.xml.FootprintFileStateTree;
+import io.hops.hopsworks.common.provenance.v2.xml.TreeHelper;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
+import org.javatuples.Pair;
 
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 @Stateless
@@ -203,26 +207,42 @@ public class ProvenanceController {
     return result;
   }
   
-  public Map<Long, StructNode> provFileStateTree(ProvFileStateParamBuilder params)
+  public Pair<Map<Long, FileStateTree>, Map<Long, FileStateTree>> provFileStateTree(
+    ProvFileStateParamBuilder params, boolean fullTree)
     throws GenericException, ServiceException {
-    Map<Long, ProvFileStateHit> fileStates = provFileState(params);
-    Map<Long, StructNode> result = getFileStateTree(fileStates);
-    return result;
+    Map<Long, FileState> fileStates = provFileStateList(params);
+    Pair<Map<Long, ProvenanceController.BasicTreeBuilder<FileState>>,
+      Map<Long, ProvenanceController.BasicTreeBuilder<FileState>>> result
+      = getFileStateTree(fileStates, () -> new FileStateTree(), fullTree);
+    return Pair.with((Map<Long, FileStateTree>)(Map)result.getValue0(),
+      (Map<Long, FileStateTree>)(Map)(result.getValue1()));
   }
-  public Map<Long, ProvFileStateHit> provFileState(ProvFileStateParamBuilder params)
+  
+  public Pair<Map<Long, FootprintFileStateTree>, Map<Long, FootprintFileStateTree>> provAppFootprintTree(
+    ProvFileOpsParamBuilder params, AppFootprintType footprintType, boolean fullTree)
     throws GenericException, ServiceException {
-    Map<Long, ProvFileStateHit> result = new HashMap<>();
-    Map<Long, ProvFileStateHit> fileStates = elasticCtrl.provFileState(params.getFileStateFilter(),
+    Map<Long, FootprintFileState> fileStates = provAppFootprintList(params, footprintType);
+    Pair<Map<Long, ProvenanceController.BasicTreeBuilder<FootprintFileState>>,
+      Map<Long, ProvenanceController.BasicTreeBuilder<FootprintFileState>>> result
+      = getFileStateTree(fileStates, () -> new FootprintFileStateTree(), fullTree);
+    return Pair.with((Map<Long, FootprintFileStateTree>)(Map)result.getValue0(),
+      (Map<Long, FootprintFileStateTree>)(Map)(result.getValue1()));
+  }
+  
+  public Map<Long, FileState> provFileStateList(ProvFileStateParamBuilder params)
+    throws GenericException, ServiceException {
+    Map<Long, FileState> result = new HashMap<>();
+    Map<Long, FileState> fileStates = elasticCtrl.provFileState(params.getFileStateFilter(),
       params.getExactXAttrFilter(), params.getLikeXAttrFilter());
     if (params.hasExpansionWithAppState()) {
       //If withAppStates, update params based on appIds of result files and do a appState index query.
       //After this filter the fileStates based on the results of the appState query
-      for (ProvFileStateHit fileState : fileStates.values()) {
+      for (FileState fileState : fileStates.values()) {
         params.withAppStateAppId(getAppId(fileState));
       }
       Map<String, Map<Provenance.AppState, AppProvenanceHit>> appStates
         = elasticCtrl.provAppState(params.getAppStateFilter());
-      for(ProvFileStateHit fileState : fileStates.values()) {
+      for(FileState fileState : fileStates.values()) {
         String appId = getAppId(fileState);
         if(appStates.containsKey(appId)) {
           Map<Provenance.AppState, AppProvenanceHit> auxAppStates = appStates.get(appId);
@@ -236,75 +256,23 @@ public class ProvenanceController {
     return result;
   }
   
-  
-  public static class TreeStruct {
-    TreeSet<Long> pendingInodeIds = new TreeSet<>();
-    Map<Long, StructNode> auxStruct = new HashMap<>();
+  public interface BasicFileState {
+    Long getInodeId();
+    String getInodeName();
+    Long getProjectInodeId();
+    String getProjectName();
+    boolean isProject();
+    Long getParentInodeId();
   }
   
-  @XmlRootElement
-  public static class StructNode {
-    private final Long inodeId;
-    private String name;
-    private ProvFileStateHit fileState;
-    private final Map<Long, StructNode> directChildren = new HashMap<>();
-    
-    public StructNode(Long inodeId) {
-      this.inodeId = inodeId;
-    }
-  
-    public void addChild(StructNode child) {
-      directChildren.put(child.fileState.getInodeId(), child);
-    }
-  
-    public Long getInodeId() {
-      return inodeId;
-    }
-  
-    public String getName() {
-      return name;
-    }
-  
-    public void setName(String name) {
-      this.name = name;
-    }
-  
-    public ProvFileStateHit getFileState() {
-      return fileState;
-    }
-  
-    public void setFileState(ProvFileStateHit fileState) {
-      this.fileState = fileState;
-    }
-  
-    public Map<Long, StructNode> getDirectChildren() {
-      return directChildren;
-    }
-  }
-  
-  private Map<Long, StructNode> getFileStateTree(Map<Long, ProvFileStateHit> fileStates) {
-    TreeStruct treeS = new TreeStruct();
-    processFileState(treeS, fileStates);
-    return treeS.auxStruct;
-  }
-  
-  private void processFileState(TreeStruct treeS, Map<Long, ProvFileStateHit> fileStates) {
-    for(ProvFileStateHit fileState : fileStates.values()) {
-      StructNode parentNode = treeS.auxStruct.get(fileState.getParentInodeId());
-      if(parentNode == null) {
-        treeS.pendingInodeIds.add(fileState.getParentInodeId());
-        parentNode = new StructNode(fileState.getParentInodeId());
-        treeS.auxStruct.put(fileState.getParentInodeId(), parentNode);
-      }
-      StructNode childNode = treeS.auxStruct.get(fileState.getInodeId());
-      if(childNode == null) {
-        childNode = new StructNode(fileState.getInodeId());
-        treeS.auxStruct.put(fileState.getInodeId(), childNode);
-        parentNode.addChild(childNode);
-      }
-      childNode.setName(fileState.getInodeName());
-      childNode.setFileState(fileState);
-    }
+  public interface BasicTreeBuilder<S extends BasicFileState> {
+    void setInodeId(Long inodeId);
+    Long getInodeId();
+    void setName(String name);
+    String getName();
+    void setFileState(S fileState);
+    S getFileState();
+    void addChild(BasicTreeBuilder<S> child) throws GenericException;
   }
   
   public long provFileStateCount(ProvFileStateParamBuilder params)
@@ -317,7 +285,7 @@ public class ProvenanceController {
       params.getLikeXAttrFilter());
   }
   
-  public List<ProvFileOpHit> provFileOps(ProvFileOpsParamBuilder params)
+  public List<ProvFileOpHit> provFileOpsList(ProvFileOpsParamBuilder params)
     throws GenericException, ServiceException {
     return elasticCtrl.provFileOps(params.getFileOpsFilter());
   }
@@ -340,7 +308,7 @@ public class ProvenanceController {
     return mlAssetAppState;
   }
   
-  private String getAppId(ProvFileStateHit fileState) {
+  private String getAppId(FileState fileState) {
     if(fileState.getAppId().equals("notls")) {
       if(fileState.getXattrs().containsKey("appId")) {
         return fileState.getXattrs().get("appId");
@@ -379,14 +347,16 @@ public class ProvenanceController {
     }
   }
   
-  private List<ProvFileHit> processAppFootprintFileOps(List<ProvFileOpHit> fileOps, AppFootprintType footprintType) {
-    Map<Long, ProvFileHit> files = new HashMap<>();
+  private Map<Long, FootprintFileState> processAppFootprintFileOps(List<ProvFileOpHit> fileOps,
+    AppFootprintType footprintType) {
+    Map<Long, FootprintFileState> files = new HashMap<>();
     Set<Long> filesAccessed = new HashSet<>();
     Set<Long> filesCreated = new HashSet<>();
     Set<Long> filesModified = new HashSet<>();
     Set<Long> filesDeleted = new HashSet<>();
     for(ProvFileOpHit fileOp : fileOps) {
-      files.put(fileOp.getInodeId(), new ProvFileHit(fileOp.getInodeId(), fileOp.getInodeName()));
+      files.put(fileOp.getInodeId(), new FootprintFileState(fileOp.getInodeId(), fileOp.getInodeName(),
+        fileOp.getParentInodeId(), fileOp.getProjectInodeId()));
       switch(fileOp.getInodeOperation()) {
         case "CREATE":
           filesCreated.add(fileOp.getInodeId());
@@ -442,14 +412,52 @@ public class ProvenanceController {
       default:
         //continue;
     }
-    return new LinkedList<>(files.values());
+    return files;
   }
   
-  public List<ProvFileHit> provAppFootprint(ProvFileOpsParamBuilder params, AppFootprintType footprintType)
+  public Map<Long, FootprintFileState> provAppFootprintList(ProvFileOpsParamBuilder params,
+    AppFootprintType footprintType)
     throws GenericException, ServiceException {
     addAppFootprintFileOps(params, footprintType);
-    List<ProvFileOpHit> searchResult = provFileOps(params);
-    List<ProvFileHit> appFootprint = processAppFootprintFileOps(searchResult, footprintType);
+    List<ProvFileOpHit> searchResult = provFileOpsList(params);
+    Map<Long, FootprintFileState> appFootprint = processAppFootprintFileOps(searchResult, footprintType);
     return appFootprint;
+  }
+  
+  public <S extends ProvenanceController.BasicFileState>
+    Pair<Map<Long, ProvenanceController.BasicTreeBuilder<S>>, Map<Long, ProvenanceController.BasicTreeBuilder<S>>>
+    getFileStateTree(Map<Long, S> fileStates, Supplier<ProvenanceController.BasicTreeBuilder<S>> instanceBuilder,
+    boolean fullTree)
+    throws GenericException, ServiceException {
+    TreeHelper.TreeStruct<S> treeS = new TreeHelper.TreeStruct<>(instanceBuilder);
+    treeS.processBasicFileState(fileStates);
+    if(fullTree) {
+      while(!treeS.complete()) {
+        while (treeS.findInInodes()) {
+          List<Long> inodeIdBatch = treeS.nextFindInInodes();
+          List<Inode> inodeBatch = inodeFacade.findByIdList(inodeIdBatch);
+          treeS.processInodeBatch(inodeIdBatch, inodeBatch);
+        }
+        while (treeS.findInProvenance()) {
+          List<Long> inodeIdBatch = treeS.nextFindInInodes();
+          ProvFileOpsParamBuilder elasticPathQueryParams = elasticPathQueryParams(inodeIdBatch);
+          List<ProvFileOpHit> inodeBatch = elasticCtrl.provFileOps(elasticPathQueryParams.getFileOpsFilter());
+          treeS.processProvenanceBatch(inodeIdBatch, inodeBatch);
+        }
+      }
+      return treeS.getFullTree();
+    } else {
+      return treeS.getMinTree();
+    }
+  }
+  
+  public ProvFileOpsParamBuilder elasticPathQueryParams(List<Long> inodeIds) {
+    ProvFileOpsParamBuilder params = new ProvFileOpsParamBuilder()
+      .withFileOperation(ProvFileOps.CREATE)
+      .withFileOperation(ProvFileOps.DELETE);
+    for(Long inodeId : inodeIds) {
+      params.withFileInodeId(inodeId);
+    }
+    return params;
   }
 }

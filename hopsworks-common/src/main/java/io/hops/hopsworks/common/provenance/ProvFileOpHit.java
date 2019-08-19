@@ -38,12 +38,16 @@ public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
   private long inodeId;
   private String inodeOperation;
   private String appId;
+  private Integer userId;
+  private Long parentInodeId;
+  private Long projectInodeId;
   private int logicalTime;
   private long timestamp;
   private String readableTimestamp;
   private String inodeName;
   private String xattrName;
   private String inodePath;
+  private Long partitionId;
   
   public ProvFileOpHit() {}
 
@@ -63,28 +67,43 @@ public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
         case ProvElastic.Common.APP_ID_FIELD:
           this.appId = entry.getValue().toString();
           break;
-        case ProvElastic.Common.INODE_OPERATION_FIELD:
-          this.inodeOperation = entry.getValue().toString();
+        case ProvElastic.Common.USER_ID_FIELD:
+          this.userId = ((Number) entry.getValue()).intValue();
           break;
-        case ProvElastic.Common.LOGICAL_TIME_FIELD:
-          this.logicalTime = ((Number) entry.getValue()).intValue();
-          break;
-        case ProvElastic.Common.TIMESTAMP_FIELD:
-          this.timestamp = ((Number) entry.getValue()).longValue();
-          break;
-        case ProvElastic.Common.READABLE_TIMESTAMP_FIELD:
-          this.readableTimestamp = entry.getValue().toString();
+        case ProvElastic.Common.PARENT_INODE_ID_FIELD:
+          this.parentInodeId = ((Number) entry.getValue()).longValue();
           break;
         case ProvElastic.Common.INODE_NAME_FIELD:
           this.inodeName = entry.getValue().toString();
           break;
-        case ProvElastic.Common.XATTR_NAME_FIELD:
+        case ProvElastic.Common.PARTITION_ID:
+          this.partitionId = ((Number) entry.getValue()).longValue();
+          break;
+        case ProvElastic.Op.INODE_OPERATION_FIELD:
+          this.inodeOperation = entry.getValue().toString();
+          break;
+        case ProvElastic.Op.LOGICAL_TIME_FIELD:
+          this.logicalTime = ((Number) entry.getValue()).intValue();
+          break;
+        case ProvElastic.Op.TIMESTAMP_FIELD:
+          this.timestamp = ((Number) entry.getValue()).longValue();
+          break;
+        case ProvElastic.Op.READABLE_TIMESTAMP_FIELD:
+          this.readableTimestamp = entry.getValue().toString();
+          break;
+        case ProvElastic.OpOptional.XATTR_NAME_FIELD:
           this.xattrName = entry.getValue().toString();
           break;
-        case ProvElastic.Common.ENTRY_TYPE_FIELD:
-          break;
-        case ProvElastic.Ops.INODE_PATH:
+        case ProvElastic.OpOptional.INODE_PATH:
           this.inodePath = entry.getValue().toString();
+          break;
+        case ProvElastic.Common.PROJECT_INODE_ID_FIELD:
+          this.projectInodeId = ((Number) entry.getValue()).longValue();
+          break;
+        case ProvElastic.Common.ENTRY_TYPE_FIELD:
+        case ProvElastic.Common.DATASET_INODE_ID_FIELD:
+        case ProvElastic.ML.ML_ID:
+        case ProvElastic.ML.ML_TYPE:
           break;
         default:
           LOG.log(Level.WARNING, "unknown key:{0} value:{1}", new Object[]{entry.getKey(), entry.getValue()});
@@ -205,6 +224,38 @@ public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
   
   public void setInodePath(String inodePath) {
     this.inodePath = inodePath;
+  }
+  
+  public Long getParentInodeId() {
+    return parentInodeId;
+  }
+  
+  public void setParentInodeId(Long parentInodeId) {
+    this.parentInodeId = parentInodeId;
+  }
+  
+  public Integer getUserId() {
+    return userId;
+  }
+  
+  public void setUserId(Integer userId) {
+    this.userId = userId;
+  }
+  
+  public Long getPartitionId() {
+    return partitionId;
+  }
+  
+  public void setPartitionId(Long partitionId) {
+    this.partitionId = partitionId;
+  }
+  
+  public Long getProjectInodeId() {
+    return projectInodeId;
+  }
+  
+  public void setProjectInodeId(Long projectInodeId) {
+    this.projectInodeId = projectInodeId;
   }
   
   public static class TimestampComparator implements Comparator<ProvFileOpHit> {

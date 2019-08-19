@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU Affero General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-package io.hops.hopsworks.common.provenance;
+package io.hops.hopsworks.common.provenance.v2.xml;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -21,49 +21,40 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.bind.annotation.XmlRootElement;
+
+import io.hops.hopsworks.common.provenance.MLAssetAppState;
+import io.hops.hopsworks.common.provenance.ProvElastic;
+import io.hops.hopsworks.common.provenance.ProvenanceController;
 import org.elasticsearch.search.SearchHit;
 
 @XmlRootElement
-public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
-  public static final String ML_INODE_ID_FIELD = "inode_id";
-  public static final String ML_USER_ID_FIELD = "user_id";
-  public static final String ML_APP_ID_FIELD = "app_id";
-  public static final String ML_PROJECT_INODE_ID_FIELD = "project_i_id";
-  public static final String ML_INODE_NAME_FIELD = "inode_name";
-  public static final String ML_ID_FIELD = "ml_id";
-  public static final String ML_TYPE_FIELD = "ml_type";
-  public static final String ML_USER_NAME_FIELD = "user_name";
-  public static final String ML_PROJECT_NAME_FIELD = "project_name";
-  public static final String ML_CREATE_TIME_FIELD = "timestamp";
-  public static final String ML_R_CREATE_TIME_FIELD = "readable_timestamp";
-  public static final String ML_ALIVE_FIELD = "alive";
+public class FileState implements Comparator<FileState>, ProvenanceController.BasicFileState {
   
-  private static final Logger LOG = Logger.getLogger(ProvFileStateHit.class.getName());
+  private static final Logger LOG = Logger.getLogger(FileState.class.getName());
   private String id;
   private float score;
   private Map<String, Object> map;
   
-  private long inodeId;
+  private Long inodeId;
   private String appId;
-  private int userId;
-  private long projectInodeId;
+  private Integer userId;
+  private Long projectInodeId;
   private String inodeName;
+  private String projectName;
   private String mlType;
   private String mlId;
-  private long createTime;
+  private Long createTime;
   private String readableCreateTime;
-  private String userName;
-  private String projectName;
   private Map<String, String> xattrs = new HashMap<>();
   private MLAssetAppState appState;
   private String fullPath;
   private Long partitionId;
   private Long parentInodeId;
   
-  public ProvFileStateHit(){
+  public FileState(){
   }
   
-  public ProvFileStateHit(SearchHit hit) {
+  public FileState(SearchHit hit) {
     this.id = hit.getId();
     this.score = hit.getScore();
     //the source of the retrieved record (i.e. all the indexed information)
@@ -73,46 +64,44 @@ public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       //set the name explicitly so that it's easily accessible in the frontend
       switch (entry.getKey()) {
-        case ML_INODE_ID_FIELD:
+        case ProvElastic.Common.INODE_ID_FIELD:
           this.inodeId = ((Number) entry.getValue()).longValue();
           break;
-        case ML_APP_ID_FIELD:
+        case ProvElastic.Common.APP_ID_FIELD:
           this.appId = entry.getValue().toString();
           break;
-        case ML_USER_ID_FIELD:
+        case ProvElastic.Common.USER_ID_FIELD:
           this.userId = ((Number) entry.getValue()).intValue();
           break;
-        case ML_PROJECT_INODE_ID_FIELD:
+        case ProvElastic.Common.PROJECT_INODE_ID_FIELD:
           this.projectInodeId = ((Number) entry.getValue()).longValue();
           break;
-        case ML_INODE_NAME_FIELD:
+        case ProvElastic.Common.PARENT_INODE_ID_FIELD :
+          this.parentInodeId = ((Number) entry.getValue()).longValue();
+          break;
+        case ProvElastic.Common.INODE_NAME_FIELD:
           this.inodeName = entry.getValue().toString();
           break;
-        case ML_TYPE_FIELD:
-          this.mlType = entry.getValue().toString();
-          break;
-        case ML_ID_FIELD:
-          this.mlId = entry.getValue().toString();
-          break;
-        case ML_CREATE_TIME_FIELD:
-          this.createTime = ((Number) entry.getValue()).longValue();
-          break;
-        case ML_R_CREATE_TIME_FIELD:
-          this.readableCreateTime = entry.getValue().toString();
-          break;
-        case ML_PROJECT_NAME_FIELD:
+        case ProvElastic.Common.PROJECT_NAME_FIELD:
           this.projectName = entry.getValue().toString();
-          break;
-        case ML_USER_NAME_FIELD:
-          this.userName = entry.getValue().toString();
-          break;
-        case ML_ALIVE_FIELD:
           break;
         case ProvElastic.Common.PARTITION_ID :
           this.partitionId = ((Number) entry.getValue()).longValue();
           break;
-        case ProvElastic.Common.PARENT_INODE_ID :
-          this.parentInodeId = ((Number) entry.getValue()).longValue();
+        case ProvElastic.ML.ML_TYPE:
+          this.mlType = entry.getValue().toString();
+          break;
+        case ProvElastic.ML.ML_ID:
+          this.mlId = entry.getValue().toString();
+          break;
+        case ProvElastic.State.CREATE_TIMESTAMP_FIELD:
+          this.createTime = ((Number) entry.getValue()).longValue();
+          break;
+        case ProvElastic.State.READABLE_CREATE_TIMESTAMP_FIELD:
+          this.readableCreateTime = entry.getValue().toString();
+          break;
+        case ProvElastic.Common.DATASET_INODE_ID_FIELD:
+        case ProvElastic.Common.ENTRY_TYPE_FIELD:
           break;
         default:
           if(entry.getValue() == null) {
@@ -145,7 +134,7 @@ public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
   }
   
   @Override
-  public int compare(ProvFileStateHit o1, ProvFileStateHit o2) {
+  public int compare(FileState o1, FileState o2) {
     return Float.compare(o2.getScore(), o1.getScore());
   }
 
@@ -176,7 +165,8 @@ public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
     this.map = map;
   }
 
-  public long getInodeId() {
+  @Override
+  public Long getInodeId() {
     return inodeId;
   }
 
@@ -200,14 +190,16 @@ public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
     this.userId = userId;
   }
 
-  public long getProjectInodeId() {
+  @Override
+  public Long getProjectInodeId() {
     return projectInodeId;
   }
 
-  public void setProjectInodeId(long projectInodeId) {
+  public void setProjectInodeId(Long projectInodeId) {
     this.projectInodeId = projectInodeId;
   }
 
+  @Override
   public String getInodeName() {
     return inodeName;
   }
@@ -232,11 +224,11 @@ public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
     this.mlId = mlId;
   }
 
-  public long getCreateTime() {
+  public Long getCreateTime() {
     return createTime;
   }
 
-  public void setCreateTime(long createTime) {
+  public void setCreateTime(Long createTime) {
     this.createTime = createTime;
   }
 
@@ -246,22 +238,6 @@ public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
 
   public void setReadableCreateTime(String readableCreateTime) {
     this.readableCreateTime = readableCreateTime;
-  }
-
-  public String getUserName() {
-    return userName;
-  }
-
-  public void setUserName(String userName) {
-    this.userName = userName;
-  }
-
-  public String getProjectName() {
-    return projectName;
-  }
-
-  public void setProjectName(String projectName) {
-    this.projectName = projectName;
   }
 
   public Map<String, String> getXattrs() {
@@ -296,11 +272,34 @@ public class ProvFileStateHit implements Comparator<ProvFileStateHit> {
     this.partitionId = partitionId;
   }
   
+  @Override
   public Long getParentInodeId() {
     return parentInodeId;
   }
   
   public void setParentInodeId(Long parentInodeId) {
     this.parentInodeId = parentInodeId;
+  }
+  
+  public void setInodeId(Long inodeId) {
+    this.inodeId = inodeId;
+  }
+  
+  public void setUserId(Integer userId) {
+    this.userId = userId;
+  }
+  
+  @Override
+  public String getProjectName() {
+    return projectName;
+  }
+  
+  public void setProjectName(String projectName) {
+    this.projectName = projectName;
+  }
+  
+  @Override
+  public boolean isProject() {
+    return projectInodeId == inodeId;
   }
 }
