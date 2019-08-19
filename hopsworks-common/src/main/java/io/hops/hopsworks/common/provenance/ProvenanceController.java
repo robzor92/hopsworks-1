@@ -260,7 +260,6 @@ public class ProvenanceController {
     Long getInodeId();
     String getInodeName();
     Long getProjectInodeId();
-    String getProjectName();
     boolean isProject();
     Long getParentInodeId();
   }
@@ -432,14 +431,16 @@ public class ProvenanceController {
     TreeHelper.TreeStruct<S> treeS = new TreeHelper.TreeStruct<>(instanceBuilder);
     treeS.processBasicFileState(fileStates);
     if(fullTree) {
-      while(!treeS.complete()) {
+      int maxDepth = 100;
+      while(!treeS.complete() && maxDepth > 0 ) {
+        maxDepth--;
         while (treeS.findInInodes()) {
           List<Long> inodeIdBatch = treeS.nextFindInInodes();
           List<Inode> inodeBatch = inodeFacade.findByIdList(inodeIdBatch);
           treeS.processInodeBatch(inodeIdBatch, inodeBatch);
         }
         while (treeS.findInProvenance()) {
-          List<Long> inodeIdBatch = treeS.nextFindInInodes();
+          List<Long> inodeIdBatch = treeS.nextFindInProvenance();
           ProvFileOpsParamBuilder elasticPathQueryParams = elasticPathQueryParams(inodeIdBatch);
           List<ProvFileOpHit> inodeBatch = elasticCtrl.provFileOps(elasticPathQueryParams.getFileOpsFilter());
           treeS.processProvenanceBatch(inodeIdBatch, inodeBatch);

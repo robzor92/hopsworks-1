@@ -73,56 +73,49 @@ public class TreeHelper {
     public void processBasicFileState(Map<Long, S> fileStates) throws GenericException {
       for (S fileState : fileStates.values()) {
         if (fileState.isProject()) {
-          ProvenanceController.BasicTreeBuilder<S> projectNode = getProjectNode(fileState);
+          ProvenanceController.BasicTreeBuilder<S> projectNode = getOrBuildProjectNode(fileState);
           projectNode.setFileState(fileState);
         } else {
-          ProvenanceController.BasicTreeBuilder<S> parentNode = getParentNode(fileState);
-          ProvenanceController.BasicTreeBuilder<S> node = getNode(fileState);
+          ProvenanceController.BasicTreeBuilder<S> parentNode = getOrBuildParentNode(fileState);
+          ProvenanceController.BasicTreeBuilder<S> node = getOrBuildNode(fileState);
           parentNode.addChild(node);
         }
       }
     }
     
-    private ProvenanceController.BasicTreeBuilder<S> getProjectNode(S fileState) {
+    private ProvenanceController.BasicTreeBuilder<S> getOrBuildProjectNode(S fileState) {
       ProvenanceController.BasicTreeBuilder<S> projectNode = projectNodes.get(fileState.getProjectInodeId());
       if (projectNode == null) {
         projectNode = instanceBuilder.get();
         projectNode.setInodeId(fileState.getProjectInodeId());
-        projectNode.setName(fileState.getProjectName());
         allNodes.put(projectNode.getInodeId(), projectNode);
         projectNodes.put(projectNode.getInodeId(), projectNode);
+        findInInodes.add(projectNode.getInodeId());
       }
       return projectNode;
     }
   
-    private ProvenanceController.BasicTreeBuilder<S> getParentNode(S fileState) {
-      ProvenanceController.BasicTreeBuilder<S> projectNode = getProjectNode(fileState);
-      ProvenanceController.BasicTreeBuilder<S> parentNode = allNodes.get(fileState.getParentInodeId());
+    private ProvenanceController.BasicTreeBuilder<S> getOrBuildParentNode(S fileState) {
+      getOrBuildProjectNode(fileState);
+      ProvenanceController.BasicTreeBuilder<S> parentNode = getOrBuildParentNode(fileState.getParentInodeId());
+      return parentNode;
+    }
+    
+    private ProvenanceController.BasicTreeBuilder<S> getOrBuildParentNode(Long parentInodeId) {
+      ProvenanceController.BasicTreeBuilder<S> parentNode = allNodes.get(parentInodeId);
       if (parentNode == null) {
         parentNode = instanceBuilder.get();
-        parentNode.setInodeId(fileState.getParentInodeId());
+        parentNode.setInodeId(parentInodeId);
         allNodes.put(parentNode.getInodeId(), parentNode);
-        if(!parentNode.getInodeId().equals(projectNode.getInodeId())) {
+        if(!projectNodes.containsKey(parentNode.getInodeId())) {
           findInInodes.add(parentNode.getInodeId());
           incompleteNodes.put(parentNode.getInodeId(), parentNode);
         }
       }
       return parentNode;
     }
-    
-    private ProvenanceController.BasicTreeBuilder<S> getParentNode(Long parentInodeId) {
-      ProvenanceController.BasicTreeBuilder<S> parentNode = allNodes.get(parentInodeId);
-      if(parentNode == null) {
-        parentNode = instanceBuilder.get();
-        parentNode.setInodeId(parentInodeId);
-        allNodes.put(parentNode.getInodeId(), parentNode);
-        findInInodes.add(parentNode.getInodeId());
-        incompleteNodes.put(parentNode.getInodeId(), parentNode);
-      }
-      return parentNode;
-    }
   
-    private ProvenanceController.BasicTreeBuilder<S> getNode(S fileState) {
+    private ProvenanceController.BasicTreeBuilder<S> getOrBuildNode(S fileState) {
       incompleteNodes.remove(fileState.getInodeId());
       findInInodes.remove(fileState.getInodeId());
       ProvenanceController.BasicTreeBuilder<S> node = allNodes.get(fileState.getInodeId());
@@ -156,31 +149,42 @@ public class TreeHelper {
       return batch;
     }
     
-    public void processInodeBatch(List<Long> inodeBatch, List<Inode> inodes) {
+    public void processInodeBatch(List<Long> inodeBatch, List<Inode> inodes) throws GenericException {
       pendingInInodes.removeAll(inodeBatch);
       Set<Long> inodesNotFound = new HashSet<>(inodeBatch);
       for(Inode inode : inodes) {
         inodesNotFound.remove(inode.getId());
         ProvenanceController.BasicTreeBuilder<S> node = incompleteNodes.remove(inode.getId());
-        node.setName(inode.getInodePK().getName());
-        ProvenanceController.BasicTreeBuilder<S> parentNode = getParentNode(inode.getInodePK().getParentId());
-//        if(!allNodes.containsKey(inode.getInodePK().getParentId())) {
-//          parentNode(inode.getInodePK().getParentId());
-//        }
+        if(node != null) {
+          node.setName(inode.getInodePK().getName());
+          ProvenanceController.BasicTreeBuilder<S> parentNode = getOrBuildParentNode(inode.getInodePK().getParentId());
+          parentNode.addChild(node);
+        } else {
+          node = projectNodes.get(inode.getId());
+          if(node != null) {
+            node.setName(inode.getInodePK().getName());
+          }
+        }
       }
       findInProvenance.addAll(inodesNotFound);
     }
     
-    public void processProvenanceBatch(List<Long> inodeBatch, List<ProvFileOpHit> inodes) {
+    public void processProvenanceBatch(List<Long> inodeBatch, List<ProvFileOpHit> inodes) throws GenericException {
       pendingInProvenance.removeAll(inodeBatch);
       Set<Long> inodesNotFound = new HashSet<>(inodeBatch);
       for(ProvFileOpHit inode : inodes) {
         inodesNotFound.remove(inode.getInodeId());
         ProvenanceController.BasicTreeBuilder<S> node = incompleteNodes.remove(inode.getId());
-        node.setName(inode.getInodeName());
-//        if(!allNodes.containsKey(inode.getParentInodeId())) {
-//          newParentNode(inode.getParentInodeId());
-//        }
+        if(node != null) {
+          node.setName(inode.getInodeName());
+          ProvenanceController.BasicTreeBuilder<S> parentNode = getOrBuildParentNode(inode.getParentInodeId());
+          parentNode.addChild(node);
+        } else {
+          node = projectNodes.get(inode.getId());
+          if(node != null) {
+            node.setName(inode.getInodeName());
+          }
+        }
       }
       notFound.addAll(inodesNotFound);
     }

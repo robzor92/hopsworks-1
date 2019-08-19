@@ -289,7 +289,6 @@ public class FileState implements Comparator<FileState>, ProvenanceController.Ba
     this.userId = userId;
   }
   
-  @Override
   public String getProjectName() {
     return projectName;
   }

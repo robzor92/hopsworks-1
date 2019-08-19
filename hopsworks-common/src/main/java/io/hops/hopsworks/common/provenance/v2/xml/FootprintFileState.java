@@ -25,7 +25,6 @@ public class FootprintFileState implements ProvenanceController.BasicFileState {
   private String inodeName;
   private Long parentInodeId;
   private Long projectInodeId;
-  private String projectName;
   
   public FootprintFileState() {}
   
@@ -74,14 +73,5 @@ public class FootprintFileState implements ProvenanceController.BasicFileState {
   @Override
   public boolean isProject() {
     return projectInodeId == inodeId;
-  }
-  
-  @Override
-  public String getProjectName() {
-    return projectName;
-  }
-  
-  public void setProjectName(String projectName) {
-    this.projectName = projectName;
   }
 }

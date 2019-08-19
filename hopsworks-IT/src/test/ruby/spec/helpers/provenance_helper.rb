@@ -182,6 +182,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
+    parsed_result["result"]
   end
 
   def check_no_ml_asset_by_id(project, ml_type, ml_id, withAppState) 
@@ -194,7 +195,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    expect(parsed_result.length).to eq 0
+    expect(parsed_result["result"].length).to eq 0
   end
 
   def get_ml_asset_by_id(project, ml_type, ml_id, withAppState) 
@@ -208,7 +209,7 @@ module ProvenanceHelper
     expect_status(200)
     parsed_result = JSON.parse(result)
     expect(parsed_result.length).to eq 1
-    parsed_result[0]
+    parsed_result["result"][0]
   end
 
   def get_ml_asset_like_name(project, ml_type, term) 
@@ -218,6 +219,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
+    parsed_result["result"]
   end
 
   def get_ml_asset_by_xattr(project, ml_type, xattr_key, xattr_val)
@@ -227,6 +229,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
+    parsed_result["result"]
   end
 
   def get_ml_asset_by_xattr_count(project, ml_type, xattr_key, xattr_val, count) 
@@ -237,7 +240,7 @@ module ProvenanceHelper
     expect_status(200)
     parsed_result = JSON.parse(result)
     expect(parsed_result["result"]["value"]).to eq count
-    parsed_result
+    parsed_result["result"]
   end
 
   def get_ml_asset_like_xattr(project, ml_type, xattr_key, xattr_val)
@@ -247,7 +250,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    parsed_result
+    parsed_result["result"]
   end
     
   def get_ml_td_count_using_feature_project(project, feature_name) 
@@ -257,6 +260,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
+    parsed_result["result"]
   end
 
   def get_ml_td_count_using_feature_global(feature_name) 
@@ -266,6 +270,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
+    parsed_result["result"]
   end
 
   def get_file_ops(project, inodeId, ops_compaction, return_type) 
@@ -293,5 +298,6 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
+    parsed_result["result"]
   end
 end

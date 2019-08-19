@@ -68,5 +68,25 @@ describe "On #{ENV['OS']}" do
   #  delete_project(@project1)
   #end
 
-  
+  describe 'simple experiments' do
+    it "create experiments" do
+      prov_create_experiment(@project1, @experiment_app1_name1)
+      prov_create_experiment(@project1, @experiment_app2_name1)
+      prov_create_experiment(@project2, @experiment_app3_name1)
+    end
+
+    it "check experiments" do 
+      prov_wait_for_epipe() 
+      result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
+      expect(result1.length).to eq 2
+      prov_check_asset_with_id(result1, prov_experiment_id(@experiment_app1_name1))
+      prov_check_asset_with_id(result1, prov_experiment_id(@experiment_app2_name1))
+
+      result2 = get_ml_asset_in_project(@project2, "EXPERIMENT", false)
+      expect(result2.length).to eq 1
+      prov_check_asset_with_id(result2, prov_experiment_id(@experiment_app3_name1))
+      
+      result3 = get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
+    end
+  end
 end
