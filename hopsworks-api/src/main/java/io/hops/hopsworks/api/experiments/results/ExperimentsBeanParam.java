@@ -1,9 +1,8 @@
-package io.hops.hopsworks.api.experiments;
+package io.hops.hopsworks.api.experiments.results;
 
 import io.hops.hopsworks.api.jobs.SortBy;
 import io.swagger.annotations.ApiParam;
 
-import javax.ws.rs.BeanParam;
 import javax.ws.rs.QueryParam;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -14,10 +13,6 @@ public class ExperimentsBeanParam {
       allowableValues = "optimization_key:desc,optimization_key:asc")
   private String sortBy;
   private final Set<SortBy> sortBySet;
-  @QueryParam("filter_by")
-  private Set<FilterBy> filter;
-  @BeanParam
-  private ExpansionBeanParam expansions;
 
   private Set<SortBy> getSortBy(String param) {
     if (param == null || param.isEmpty()) {
@@ -34,26 +29,8 @@ public class ExperimentsBeanParam {
     return sortBys;
   }
 
-
-  public ExperimentsBeanParam(@QueryParam("filter_by") Set<FilterBy> filter, @QueryParam("sort_by") String sortBy) {
-    this.filter = filter;
+  public ExperimentsBeanParam(@QueryParam("sort_by") String sortBy) {
     this.sortBy = sortBy;
     sortBySet = getSortBy(sortBy);
-  }
-
-  public Set<FilterBy> getFilter() {
-    return filter;
-  }
-
-  public void setFilter(Set<FilterBy> filter) {
-    this.filter = filter;
-  }
-
-  public ExpansionBeanParam getExpansions() {
-    return expansions;
-  }
-
-  public void setExpansions(ExpansionBeanParam expansions) {
-    this.expansions = expansions;
   }
 }
