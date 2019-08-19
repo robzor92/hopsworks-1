@@ -21,7 +21,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import java.util.logging.Level;
 
@@ -53,7 +52,8 @@ public class ExperimentResultsResource {
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
   @JWTRequired(acceptedTokens={Audience.API}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
-  public Response getResults(@Context SecurityContext sc, @Context UriInfo uriInfo, @BeanParam Pagination pagination)
+  public Response getResults(@Context UriInfo uriInfo,
+                             @BeanParam Pagination pagination)
       throws ExperimentsException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.RESULTS);
     resourceRequest.setOffset(pagination.getOffset());

@@ -33,7 +33,7 @@ public class ExperimentFileProvenanceResource {
   @EJB
   private ExperimentFileProvenanceBuilder experimentFileProvenanceBuilder;
 
-  public ExperimentFileProvenanceResource(){
+  public ExperimentFileProvenanceResource() {
   }
 
   public ExperimentFileProvenanceResource setProject(Project project, String experimentId) {

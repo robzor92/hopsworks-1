@@ -51,13 +51,14 @@ angular.module('hopsWorksApp')
             self.experimentsSubset = [];
 
             self.buildQuery = function() {
+                var offset = self.pageSize * (self.currentPage - 1);
                 self.query = "";
                 if (self.showProvenanceView === true && self.showResultsView === true) {
-                    self.query = "?expand=provenance&expand=results&offset=" + offset + "&limit=" + self.pageSize
+                    self.query = "?expand=provenance&expand=results(offset=" + offset + "&limit=" + self.pageSize + ")"
                 } else if (self.showProvenanceView === true && self.showResultsView === false) {
                     self.query = "?expand=provenance"
                 } else if (self.showProvenanceView === false && self.showResultsView === true) {
-                    self.query = "?expand=results"
+                    self.query = "?expand=results(offset=" + offset + "&limit=" + self.pageSize + ")"
                 }
             };
 
