@@ -88,6 +88,10 @@ public class ExperimentResultsBuilder {
   public ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, ResourceRequest resourceRequest,
                                       String optimizationKey) throws ExperimentsException {
 
+    if(dto == null || dto.length == 1) {
+      return dto;
+    }
+
     Integer limit = resourceRequest.getLimit();
 
     if(limit == null) {
@@ -109,7 +113,7 @@ public class ExperimentResultsBuilder {
 
     ArrayList<ExperimentResultsDTO> results = new ArrayList<>();
 
-    if(dto != null && dto.length > 0) {
+    if(dto.length > 0) {
       for (int i = 0; offset + i < (offset + limit) && (offset + i) < dto.length; i++) {
         results.add(dto[offset + i]);
       }
