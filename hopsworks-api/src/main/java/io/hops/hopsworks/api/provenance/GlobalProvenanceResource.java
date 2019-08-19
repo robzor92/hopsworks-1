@@ -87,7 +87,8 @@ public class GlobalProvenanceResource {
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
-      .withQueryParamFileState(params.getFileStateParams())
+      .withQueryParamFileStateFilterBy(params.getFileStateParams())
+      .withQueryParamFileStateSortBy(params.getFileStateSortBy())
       .withQueryParamExactXAttr(params.getExactXAttrParams())
       .withQueryParamLikeXAttr(params.getLikeXAttrParams())
       .withQueryParamExpansions(params.getExpansions())

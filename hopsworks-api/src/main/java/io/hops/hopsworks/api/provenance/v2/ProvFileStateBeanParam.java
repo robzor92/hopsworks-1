@@ -20,6 +20,7 @@ import io.swagger.annotations.ApiParam;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
+import java.util.List;
 import java.util.Set;
 
 public class ProvFileStateBeanParam {
@@ -30,6 +31,12 @@ public class ProvFileStateBeanParam {
       "filter_by=ML_TYPE:EXPERIMENT, filter_by=ML_ID:id",
     allowMultiple = true)
   private Set<String> fileStateParams;
+  
+  @QueryParam("sort_by")
+  @ApiParam(value = "ex. sort_by=CREATE_TIMESTAMP:asc",
+    allowableValues = "sort_by=CREATE_TIMESTAMP:asc, sort_by=CREATE_TIMESTAMP:desc",
+    allowMultiple = true)
+  private List<String> fileStateSortBy;
   
   @QueryParam("xattr_filter_by")
   @ApiParam(value = "ex. xattr_filter_by=name:val",
@@ -59,12 +66,14 @@ public class ProvFileStateBeanParam {
   
   public ProvFileStateBeanParam(
     @QueryParam("filter_by") Set<String> fileStateParams,
+    @QueryParam("sort_by") List<String> fileStateSortBy,
     @QueryParam("xattr_filter_by") Set<String> xAttrParams,
     @QueryParam("xattr_like") Set<String> xAttrLikeParams,
     @QueryParam("expand") Set<String> expansions,
     @QueryParam("exp_filter_by") Set<String> appStateParams,
     @QueryParam("return_type") @DefaultValue("LIST") ProjectProvenanceResource.FileStructReturnType returnType) {
     this.fileStateParams = fileStateParams;
+    this.fileStateSortBy = fileStateSortBy;
     this.exactXAttrParams = xAttrParams;
     this.likeXAttrParams = xAttrLikeParams;
     this.expansions = expansions;
@@ -78,6 +87,14 @@ public class ProvFileStateBeanParam {
   
   public void setFileStateParams(Set<String> fileStateParams) {
     this.fileStateParams = fileStateParams;
+  }
+  
+  public List<String> getFileStateSortBy() {
+    return fileStateSortBy;
+  }
+  
+  public void setFileStateSortBy(List<String> fileStateSortBy) {
+    this.fileStateSortBy = fileStateSortBy;
   }
   
   public Set<String> getExactXAttrParams() {
@@ -123,7 +140,8 @@ public class ProvFileStateBeanParam {
   @Override
   public String toString() {
     return "ProvFileStateBeanParam{"
-      + "file state:" + fileStateParams.toString()
+      + "file state filter by:" + fileStateParams.toString()
+      + "file state sort by:" + fileStateSortBy.toString()
       + "exact xattr:" + exactXAttrParams.toString()
       + "like xattr:" + likeXAttrParams.toString()
       + "expansions:" + expansions

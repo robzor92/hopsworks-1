@@ -151,52 +151,6 @@ public class ProvenanceController {
     }
   }
   
-  private void upgradeDatasetsMetaStatus(Project project, DistributedFileSystemOps dfso) throws GenericException {
-    try {
-      for (Dataset ds : project.getDatasetCollection()) {
-        if(isHive(ds) || isFeatureStore(ds)) {
-          //TODO - bug?
-          continue;
-        }
-        if (Inode.MetaStatus.META_ENABLED.equals(ds.getInode().getMetaStatus())) {
-          String datasetPath = Utils.getDatasetPath(project.getName(), ds.getName());
-          dfso.setProvenanceEnabled(datasetPath);
-        }
-      }
-    } catch (IOException e) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-        "dataset provenance persistance exception");
-    }
-  }
-  
-  private void downgradeDatasetsMetaStatus(Project project, DistributedFileSystemOps dfso) throws GenericException {
-    try {
-      for (Dataset ds : project.getDatasetCollection()) {
-        if(isHive(ds) || isFeatureStore(ds)) {
-          //TODO - bug?
-          continue;
-        }
-        if (Inode.MetaStatus.PROVENANCE_ENABLED.equals(ds.getInode().getMetaStatus())) {
-          String datasetPath = Utils.getDatasetPath(project.getName(), ds.getName());
-          dfso.setMetaEnabled(datasetPath);
-        }
-      }
-    } catch (IOException e) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-        "dataset provenance persistance exception");
-    }
-  }
-  
-  private boolean isHive(Dataset ds) {
-    String hiveDB = ds.getProject().getName() + ".db";
-    return hiveDB.equals(ds.getName());
-  }
-  
-  private boolean isFeatureStore(Dataset ds) {
-    String hiveDB = ds.getProject().getName() + "_featurestore.db";
-    return hiveDB.equals(ds.getName());
-  }
-  
   public List<ProvDatasetState> getDatasetsProvenanceStatus(Project project) {
     List<ProvDatasetState> result = new ArrayList<>();
     for (Dataset ds : project.getDatasetCollection()) {
@@ -207,32 +161,11 @@ public class ProvenanceController {
     return result;
   }
   
-  public Pair<Map<Long, FileStateTree>, Map<Long, FileStateTree>> provFileStateTree(
-    ProvFileStateParamBuilder params, boolean fullTree)
-    throws GenericException, ServiceException {
-    Map<Long, FileState> fileStates = provFileStateList(params);
-    Pair<Map<Long, ProvenanceController.BasicTreeBuilder<FileState>>,
-      Map<Long, ProvenanceController.BasicTreeBuilder<FileState>>> result
-      = getFileStateTree(fileStates, () -> new FileStateTree(), fullTree);
-    return Pair.with((Map<Long, FileStateTree>)(Map)result.getValue0(),
-      (Map<Long, FileStateTree>)(Map)(result.getValue1()));
-  }
-  
-  public Pair<Map<Long, FootprintFileStateTree>, Map<Long, FootprintFileStateTree>> provAppFootprintTree(
-    ProvFileOpsParamBuilder params, AppFootprintType footprintType, boolean fullTree)
-    throws GenericException, ServiceException {
-    Map<Long, FootprintFileState> fileStates = provAppFootprintList(params, footprintType);
-    Pair<Map<Long, ProvenanceController.BasicTreeBuilder<FootprintFileState>>,
-      Map<Long, ProvenanceController.BasicTreeBuilder<FootprintFileState>>> result
-      = getFileStateTree(fileStates, () -> new FootprintFileStateTree(), fullTree);
-    return Pair.with((Map<Long, FootprintFileStateTree>)(Map)result.getValue0(),
-      (Map<Long, FootprintFileStateTree>)(Map)(result.getValue1()));
-  }
-  
   public Map<Long, FileState> provFileStateList(ProvFileStateParamBuilder params)
     throws GenericException, ServiceException {
     Map<Long, FileState> result = new HashMap<>();
-    Map<Long, FileState> fileStates = elasticCtrl.provFileState(params.getFileStateFilter(),
+    Map<Long, FileState> fileStates = elasticCtrl.provFileState(
+      params.getFileStateFilter(), params.getFileStateSortBy(),
       params.getExactXAttrFilter(), params.getLikeXAttrFilter());
     if (params.hasExpansionWithAppState()) {
       //If withAppStates, update params based on appIds of result files and do a appState index query.
@@ -256,22 +189,15 @@ public class ProvenanceController {
     return result;
   }
   
-  public interface BasicFileState {
-    Long getInodeId();
-    String getInodeName();
-    Long getProjectInodeId();
-    boolean isProject();
-    Long getParentInodeId();
-  }
-  
-  public interface BasicTreeBuilder<S extends BasicFileState> {
-    void setInodeId(Long inodeId);
-    Long getInodeId();
-    void setName(String name);
-    String getName();
-    void setFileState(S fileState);
-    S getFileState();
-    void addChild(BasicTreeBuilder<S> child) throws GenericException;
+  public Pair<Map<Long, FileStateTree>, Map<Long, FileStateTree>> provFileStateTree(
+    ProvFileStateParamBuilder params, boolean fullTree)
+    throws GenericException, ServiceException {
+    Map<Long, FileState> fileStates = provFileStateList(params);
+    Pair<Map<Long, ProvenanceController.BasicTreeBuilder<FileState>>,
+      Map<Long, ProvenanceController.BasicTreeBuilder<FileState>>> result
+      = processAsTree(fileStates, () -> new FileStateTree(), fullTree);
+    return Pair.with((Map<Long, FileStateTree>)(Map)result.getValue0(),
+      (Map<Long, FileStateTree>)(Map)(result.getValue1()));
   }
   
   public long provFileStateCount(ProvFileStateParamBuilder params)
@@ -294,29 +220,34 @@ public class ProvenanceController {
     return elasticCtrl.provFileOpsCount(params.getFileOpsFilter());
   }
   
-  private MLAssetAppState buildAppState(Map<Provenance.AppState, AppProvenanceHit> appStates)
-    throws ServiceException {
-    MLAssetAppState mlAssetAppState = new MLAssetAppState();
-    //app states is an ordered map
-    //I assume values will still be ordered based on keys
-    //if this is the case, the correct progression is SUBMITTED->RUNNING->FINISHED/KILLED/FAILED
-    //as such just iterating over the states will provide us with the correct current state
-    for (AppProvenanceHit appState : appStates.values()) {
-      mlAssetAppState.setAppState(appState.getAppState(), appState.getAppStateTimestamp());
-    }
-    return mlAssetAppState;
+  public Map<Long, FootprintFileState> provAppFootprintList(ProvFileOpsParamBuilder params,
+    AppFootprintType footprintType)
+    throws GenericException, ServiceException {
+    addAppFootprintFileOps(params, footprintType);
+    List<ProvFileOpHit> searchResult = provFileOpsList(params);
+    Map<Long, FootprintFileState> appFootprint = processAppFootprintFileOps(searchResult, footprintType);
+    return appFootprint;
   }
   
-  private String getAppId(FileState fileState) {
-    if(fileState.getAppId().equals("notls")) {
-      if(fileState.getXattrs().containsKey("appId")) {
-        return fileState.getXattrs().get("appId");
-      } else {
-        throw new IllegalArgumentException("withAppId enabled for tls clusters or notls cluster with xattr appIds");
-      }
-    } else {
-      return fileState.getAppId();
+  public Pair<Map<Long, FootprintFileStateTree>, Map<Long, FootprintFileStateTree>> provAppFootprintTree(
+    ProvFileOpsParamBuilder params, AppFootprintType footprintType, boolean fullTree)
+    throws GenericException, ServiceException {
+    Map<Long, FootprintFileState> fileStates = provAppFootprintList(params, footprintType);
+    Pair<Map<Long, ProvenanceController.BasicTreeBuilder<FootprintFileState>>,
+      Map<Long, ProvenanceController.BasicTreeBuilder<FootprintFileState>>> result
+      = processAsTree(fileStates, () -> new FootprintFileStateTree(), fullTree);
+    return Pair.with((Map<Long, FootprintFileStateTree>)(Map)result.getValue0(),
+      (Map<Long, FootprintFileStateTree>)(Map)(result.getValue1()));
+  }
+  
+  public ProvFileOpsParamBuilder elasticPathQueryParams(List<Long> inodeIds) {
+    ProvFileOpsParamBuilder params = new ProvFileOpsParamBuilder()
+      .withFileOperation(ProvFileOps.CREATE)
+      .withFileOperation(ProvFileOps.DELETE);
+    for(Long inodeId : inodeIds) {
+      params.withFileInodeId(inodeId);
     }
+    return params;
   }
   
   private void addAppFootprintFileOps(ProvFileOpsParamBuilder params, AppFootprintType footprintType) {
@@ -414,18 +345,9 @@ public class ProvenanceController {
     return files;
   }
   
-  public Map<Long, FootprintFileState> provAppFootprintList(ProvFileOpsParamBuilder params,
-    AppFootprintType footprintType)
-    throws GenericException, ServiceException {
-    addAppFootprintFileOps(params, footprintType);
-    List<ProvFileOpHit> searchResult = provFileOpsList(params);
-    Map<Long, FootprintFileState> appFootprint = processAppFootprintFileOps(searchResult, footprintType);
-    return appFootprint;
-  }
-  
-  public <S extends ProvenanceController.BasicFileState>
+  private <S extends ProvenanceController.BasicFileState>
     Pair<Map<Long, ProvenanceController.BasicTreeBuilder<S>>, Map<Long, ProvenanceController.BasicTreeBuilder<S>>>
-    getFileStateTree(Map<Long, S> fileStates, Supplier<ProvenanceController.BasicTreeBuilder<S>> instanceBuilder,
+    processAsTree(Map<Long, S> fileStates, Supplier<ProvenanceController.BasicTreeBuilder<S>> instanceBuilder,
     boolean fullTree)
     throws GenericException, ServiceException {
     TreeHelper.TreeStruct<S> treeS = new TreeHelper.TreeStruct<>(instanceBuilder);
@@ -452,13 +374,92 @@ public class ProvenanceController {
     }
   }
   
-  public ProvFileOpsParamBuilder elasticPathQueryParams(List<Long> inodeIds) {
-    ProvFileOpsParamBuilder params = new ProvFileOpsParamBuilder()
-      .withFileOperation(ProvFileOps.CREATE)
-      .withFileOperation(ProvFileOps.DELETE);
-    for(Long inodeId : inodeIds) {
-      params.withFileInodeId(inodeId);
+  private MLAssetAppState buildAppState(Map<Provenance.AppState, AppProvenanceHit> appStates)
+    throws ServiceException {
+    MLAssetAppState mlAssetAppState = new MLAssetAppState();
+    //app states is an ordered map
+    //I assume values will still be ordered based on keys
+    //if this is the case, the correct progression is SUBMITTED->RUNNING->FINISHED/KILLED/FAILED
+    //as such just iterating over the states will provide us with the correct current state
+    for (AppProvenanceHit appState : appStates.values()) {
+      mlAssetAppState.setAppState(appState.getAppState(), appState.getAppStateTimestamp());
     }
-    return params;
+    return mlAssetAppState;
+  }
+  
+  private String getAppId(FileState fileState) {
+    if(fileState.getAppId().equals("notls")) {
+      if(fileState.getXattrs().containsKey("appId")) {
+        return fileState.getXattrs().get("appId");
+      } else {
+        throw new IllegalArgumentException("withAppId enabled for tls clusters or notls cluster with xattr appIds");
+      }
+    } else {
+      return fileState.getAppId();
+    }
+  }
+  
+  private void upgradeDatasetsMetaStatus(Project project, DistributedFileSystemOps dfso) throws GenericException {
+    try {
+      for (Dataset ds : project.getDatasetCollection()) {
+        if(isHive(ds) || isFeatureStore(ds)) {
+          //TODO - bug?
+          continue;
+        }
+        if (Inode.MetaStatus.META_ENABLED.equals(ds.getInode().getMetaStatus())) {
+          String datasetPath = Utils.getDatasetPath(project.getName(), ds.getName());
+          dfso.setProvenanceEnabled(datasetPath);
+        }
+      }
+    } catch (IOException e) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "dataset provenance persistance exception");
+    }
+  }
+  
+  private void downgradeDatasetsMetaStatus(Project project, DistributedFileSystemOps dfso) throws GenericException {
+    try {
+      for (Dataset ds : project.getDatasetCollection()) {
+        if(isHive(ds) || isFeatureStore(ds)) {
+          //TODO - bug?
+          continue;
+        }
+        if (Inode.MetaStatus.PROVENANCE_ENABLED.equals(ds.getInode().getMetaStatus())) {
+          String datasetPath = Utils.getDatasetPath(project.getName(), ds.getName());
+          dfso.setMetaEnabled(datasetPath);
+        }
+      }
+    } catch (IOException e) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "dataset provenance persistance exception");
+    }
+  }
+  
+  private boolean isHive(Dataset ds) {
+    String hiveDB = ds.getProject().getName() + ".db";
+    return hiveDB.equals(ds.getName());
+  }
+  
+  private boolean isFeatureStore(Dataset ds) {
+    String hiveDB = ds.getProject().getName() + "_featurestore.db";
+    return hiveDB.equals(ds.getName());
+  }
+  
+  public interface BasicFileState {
+    Long getInodeId();
+    String getInodeName();
+    Long getProjectInodeId();
+    boolean isProject();
+    Long getParentInodeId();
+  }
+  
+  public interface BasicTreeBuilder<S extends BasicFileState> {
+    void setInodeId(Long inodeId);
+    Long getInodeId();
+    void setName(String name);
+    String getName();
+    void setFileState(S fileState);
+    S getFileState();
+    void addChild(BasicTreeBuilder<S> child) throws GenericException;
   }
 }

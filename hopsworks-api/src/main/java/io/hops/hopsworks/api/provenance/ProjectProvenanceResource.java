@@ -142,7 +142,8 @@ public class ProjectProvenanceResource {
     @Context HttpServletRequest req) throws ServiceException, GenericException {
     ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
       .withProjectInodeId(project.getInode().getId())
-      .withQueryParamFileState(params.getFileStateParams())
+      .withQueryParamFileStateFilterBy(params.getFileStateParams())
+      .withQueryParamFileStateSortBy(params.getFileStateSortBy())
       .withQueryParamExactXAttr(params.getExactXAttrParams())
       .withQueryParamLikeXAttr(params.getLikeXAttrParams())
       .withQueryParamExpansions(params.getExpansions())
@@ -182,7 +183,12 @@ public class ProjectProvenanceResource {
     ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
       .withProjectInodeId(project.getInode().getId())
       .withFileInodeId(fileInodeId)
-      .withQueryParamFileState(params.getFileStateParams());
+      .withQueryParamFileStateFilterBy(params.getFileStateParams())
+      .withQueryParamFileStateSortBy(params.getFileStateSortBy())
+      .withQueryParamExactXAttr(params.getExactXAttrParams())
+      .withQueryParamLikeXAttr(params.getLikeXAttrParams())
+      .withQueryParamExpansions(params.getExpansions())
+      .withQueryParamAppState(params.getAppStateParams());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     return ProvenanceResourceHelper.getFileStates(noCacheResponse, provenanceCtrl, paramBuilder,

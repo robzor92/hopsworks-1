@@ -19,6 +19,7 @@ import io.hops.hopsworks.common.provenance.v2.ProvFileOps;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.javatuples.Pair;
 
 import java.util.EnumSet;
@@ -46,6 +47,11 @@ public class ProvElastic {
     LIKE,
     RANGE_LT,
     RANGE_GT;
+  }
+  
+  public interface ElasticSortBy {
+    String paramName();
+    String elasticField();
   }
   
   public interface FilterValBuilder {
@@ -196,6 +202,32 @@ public class ProvElastic {
     }
   }
   
+  public enum FileStateSortBy implements ElasticSortBy {
+    CREATE_TIMESTAMP("CREATE_TIMESTAMP", State.CREATE_TIMESTAMP_FIELD);
+    private final String queryParamName;
+    private final String elasticParamName;
+  
+    FileStateSortBy(String queryParamName, String elasticParamName) {
+      this.queryParamName = queryParamName;
+      this.elasticParamName = elasticParamName;
+    }
+    
+    @Override
+    public String toString() {
+      return queryParamName;
+    }
+    
+    @Override
+    public String elasticField() {
+      return elasticParamName;
+    }
+    
+    @Override
+    public String paramName() {
+      return queryParamName;
+    }
+  }
+  
   public enum AppStateFilter implements ElasticFilters {
     APP_ID("APP_ID", "app_id", FilterType.EXACT),
     APP_STATE("APP_STATE", "app_state", FilterType.EXACT);
@@ -231,23 +263,62 @@ public class ProvElastic {
     }
   }
   
-  public static Pair<ProvElastic.FileStateFilter, Object> extractFileStateParam(String param) throws GenericException {
+  public static Pair<ProvElastic.FileStateFilter, Object> extractFileStateFilterBy(String param)
+    throws GenericException {
     if (param.contains(":")) {
       int aux = param.indexOf(':');
-      String rawParamName = param.substring(0, aux);
-      String paramVal = param.substring(aux+1);
-      try {
-        ProvElastic.FileStateFilter filter = ProvElastic.FileStateFilter.valueOf(rawParamName.toUpperCase());
-        return Pair.with(filter, paramVal);
-      } catch(NullPointerException | IllegalArgumentException e) {
-        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-          "param " + param.substring(0, aux) + " not supported - supported params:"
-            + EnumSet.allOf(FileStateFilter.class),
-          "exception extracting FilterBy param", e);
-      }
+      String rawFilter = param.substring(0, aux);
+      String filterVal = param.substring(aux+1);
+      FileStateFilter filter = processFilterField(rawFilter);
+      return Pair.with(filter, filterVal);
     } else {
-      ProvElastic.FileStateFilter filter = ProvElastic.FileStateFilter.valueOf(param.toUpperCase());
+      FileStateFilter filter = processFilterField(param);
       return Pair.with(filter, true);
+    }
+  }
+  
+  private static FileStateFilter processFilterField(String val) throws GenericException {
+    try {
+      return ProvElastic.FileStateFilter.valueOf(val.toUpperCase());
+    } catch(NullPointerException | IllegalArgumentException e) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "filter param " + val + " not supported - supported:" + EnumSet.allOf(FileStateFilter.class),
+        "exception extracting FilterBy param", e);
+    }
+  }
+  
+  public static Pair<ProvElastic.FileStateSortBy, SortOrder> extractFileStateSortBy(String param)
+    throws GenericException {
+    if (param.contains(":")) {
+      int aux = param.indexOf(':');
+      String rawSortField = param.substring(0, aux);
+      String rawSortOrder = param.substring(aux+1);
+      FileStateSortBy sortField = processSortField(rawSortField);
+      SortOrder sortOrder = processSortOrder(rawSortOrder);
+      return Pair.with(sortField, sortOrder);
+    } else {
+      ProvElastic.FileStateSortBy sortField = processSortField(param);
+      return Pair.with(sortField, SortOrder.ASC);
+    }
+  }
+  
+  private static FileStateSortBy processSortField(String val) throws GenericException {
+    try {
+      return FileStateSortBy.valueOf(val.toUpperCase());
+    } catch(NullPointerException | IllegalArgumentException e) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "sort param" + val + " not supported - supported:" + EnumSet.allOf(FileStateSortBy.class),
+        "exception extracting SortBy param", e);
+    }
+  }
+  
+  private static SortOrder processSortOrder(String val) throws GenericException {
+    try{
+      return SortOrder.valueOf(val.toUpperCase());
+    } catch(NullPointerException | IllegalArgumentException e) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "sort order " + val + " not supported - supported order:" + EnumSet.allOf(SortOrder.class),
+        "exception extracting FilterBy param", e);
     }
   }
   

@@ -19,8 +19,10 @@ import io.hops.hopsworks.common.provenance.ProvElastic;
 import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
+import org.elasticsearch.search.sort.SortOrder;
 import org.javatuples.Pair;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -35,15 +37,24 @@ import static io.hops.hopsworks.common.provenance.ProvElastic.extractAppStatePar
 
 public class ProvFileStateParamBuilder {
   private Map<String, Pair<ProvElastic.FileStateFilter, Object>> fileStateFilter = new HashMap<>();
+  private List<Pair<ProvElastic.FileStateSortBy, SortOrder>> fileStateSortBy = new ArrayList<>();
   private Map<String, String> exactXAttrFilter = new HashMap<>();
   private Map<String, String> likeXAttrFilter = new HashMap<>();
   private Set<ProvElastic.FileStateExpansions> expansions = new HashSet<>();
   private Map<String, List<Pair<ProvElastic.AppStateFilter, Object>>> appStateFilter = new HashMap<>();
   
-  public ProvFileStateParamBuilder withQueryParamFileState(Set<String> params) throws GenericException {
+  public ProvFileStateParamBuilder withQueryParamFileStateFilterBy(Set<String> params) throws GenericException {
     for(String param : params) {
-      Pair<ProvElastic.FileStateFilter, Object> p = ProvElastic.extractFileStateParam(param);
+      Pair<ProvElastic.FileStateFilter, Object> p = ProvElastic.extractFileStateFilterBy(param);
       fileStateFilter.put(p.getValue0().queryParamName, p);
+    }
+    return this;
+  }
+  
+  public ProvFileStateParamBuilder withQueryParamFileStateSortBy(List<String> params) throws GenericException {
+    for(String param : params) {
+      Pair<ProvElastic.FileStateSortBy, SortOrder> p = ProvElastic.extractFileStateSortBy(param);
+      fileStateSortBy.add(p);
     }
     return this;
   }
@@ -94,6 +105,10 @@ public class ProvFileStateParamBuilder {
   
   public Collection<Pair<ProvElastic.FileStateFilter, Object>> getFileStateFilter() {
     return fileStateFilter.values();
+  }
+  
+  public List<Pair<ProvElastic.FileStateSortBy, SortOrder>> getFileStateSortBy() {
+    return fileStateSortBy;
   }
   
   public Map<String, String> getExactXAttrFilter() {
@@ -157,6 +172,16 @@ public class ProvFileStateParamBuilder {
   public ProvFileStateParamBuilder createdAfter(Long timestamp) {
     fileStateFilter.put(ProvElastic.FileStateFilter.CREATE_TIMESTAMP_GT.queryParamName,
       Pair.with(ProvElastic.FileStateFilter.CREATE_TIMESTAMP_GT, timestamp));
+    return this;
+  }
+  
+  public ProvFileStateParamBuilder sortByCreatedAsc() {
+    fileStateSortBy.add(Pair.with(ProvElastic.FileStateSortBy.CREATE_TIMESTAMP, SortOrder.ASC));
+    return this;
+  }
+  
+  public ProvFileStateParamBuilder sortByCreatedDesc() {
+    fileStateSortBy.add(Pair.with(ProvElastic.FileStateSortBy.CREATE_TIMESTAMP, SortOrder.DESC));
     return this;
   }
   
