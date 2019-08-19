@@ -7,7 +7,7 @@ import javax.ws.rs.QueryParam;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class ExperimentsBeanParam {
+public class ResultsBeanParam {
   @QueryParam("sort_by")
   @ApiParam(value = "ex. sort_by=optimization_key:desc",
       allowableValues = "optimization_key:desc,optimization_key:asc")
@@ -29,7 +29,7 @@ public class ExperimentsBeanParam {
     return sortBys;
   }
 
-  public ExperimentsBeanParam(@QueryParam("sort_by") String sortBy) {
+  public ResultsBeanParam(@QueryParam("sort_by") String sortBy) {
     this.sortBy = sortBy;
     sortBySet = getSortBy(sortBy);
   }
