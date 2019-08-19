@@ -1568,12 +1568,14 @@ public class RESTCodes {
         Response.Status.NOT_FOUND),
     PROVENANCE_NOT_FOUND(1, "No file provenance found for experiment.",
         Response.Status.NOT_FOUND),
-    PROVENANCE_FILE_QUERY_ERROR(1, "Error occurred when retrieving file provenance information for experiment.",
+    PROVENANCE_FILE_QUERY_ERROR(2, "Error occurred when retrieving file provenance information for experiment.",
         Response.Status.INTERNAL_SERVER_ERROR),
-    RESULTS_NOT_FOUND(2, "No results found for provided id.",
+    RESULTS_NOT_FOUND(3, "No results found for provided id.",
         Response.Status.NOT_FOUND),
-    RESULTS_RETRIEVAL_ERROR(3, "Error occurred when retrieving experiment results.",
-        Response.Status.INTERNAL_SERVER_ERROR);
+    RESULTS_RETRIEVAL_ERROR(4, "Error occurred when retrieving experiment results.",
+        Response.Status.INTERNAL_SERVER_ERROR),
+    RESULTS_OPTIMIZATION_KEY_NOT_DEFINED(5, "No optimization_key set for experiment results",
+        Response.Status.BAD_REQUEST);
 
     private int code;
     private String message;

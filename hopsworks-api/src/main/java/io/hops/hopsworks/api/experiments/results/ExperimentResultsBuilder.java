@@ -69,8 +69,7 @@ public class ExperimentResultsBuilder {
               .unmarshalResults(summaryJson).getResults();
           if(results != null) {
             dto.setCount((long) results.length);
-            results = apply(experimentConfigurationConverter.unmarshalResults(summaryJson).getResults(),
-                resourceRequest.getLimit(), resourceRequest.getOffset(), optimizationKey);
+            results = apply(results, resourceRequest, optimizationKey);
             dto.setResults(results);
           }
         }
@@ -86,7 +85,25 @@ public class ExperimentResultsBuilder {
     return dto;
   }
 
-  public ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, int limit, int offset, String optimizationKey) {
+  public ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, ResourceRequest resourceRequest,
+                                      String optimizationKey) throws ExperimentsException {
+
+    Integer limit = resourceRequest.getLimit();
+
+    if(limit == null) {
+      limit = Integer.MAX_VALUE;
+    }
+
+    Integer offset = resourceRequest.getOffset();
+
+    if(offset == null) {
+      offset = 0;
+    }
+
+    if(optimizationKey == null) {
+      throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_OPTIMIZATION_KEY_NOT_DEFINED, Level.FINE,
+          "No optimization key defined for results");
+    }
 
     Arrays.sort(dto, new OptKeyComparator(optimizationKey));
 
