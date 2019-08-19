@@ -62,10 +62,9 @@ public class ExperimentResultsBuilder {
           String summaryJson = dfso.cat(new Path(summaryPath));
           dto.setResults(apply(experimentConfigurationConverter.unmarshalResults(summaryJson).getResults(),
               resourceRequest.getLimit(), resourceRequest.getOffset()));
-
         }
       } catch (Exception e) {
-        throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_RETRIEVAL_ERROR, Level.FINE,
+        throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_RETRIEVAL_ERROR, Level.SEVERE,
             "Unable to get results for experiment", e.getMessage(), e);
       } finally {
         if (dfso != null) {
@@ -80,9 +79,12 @@ public class ExperimentResultsBuilder {
 
     ExperimentResultsDTO[] experimentResultsDTO = new ExperimentResultsDTO[limit];
 
-
-    for(int i = 0; offset + i < offset + limit; i++) {
-      experimentResultsDTO[i] = dto[offset + i];
+    if(dto != null && dto.length > 0) {
+      for (int i = 0; offset + i < offset + limit; i++) {
+        experimentResultsDTO[i] = dto[offset + i];
+      }
+    } else {
+      return dto;
     }
 
     return experimentResultsDTO;

@@ -16,14 +16,13 @@ import io.hops.hopsworks.common.experiments.ExperimentsController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDescription;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
-import io.hops.hopsworks.common.provenance.ProvFileStateHit;
-import io.hops.hopsworks.common.provenance.ProvFileStateListParamBuilder;
 import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
+import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
+import io.hops.hopsworks.common.provenance.v2.xml.FileState;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
-import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
 import io.hops.hopsworks.restutils.RESTCodes;
@@ -45,11 +44,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
-import java.util.List;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -116,17 +116,23 @@ public class ExperimentsResource {
       @PathParam("id") String id,
       @Context UriInfo uriInfo,
       @BeanParam ExperimentsBeanParam experimentsBeanParam)
-      throws ServiceException, ProjectException, GenericException, ExperimentsException {
+      throws ServiceException, GenericException, ExperimentsException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.EXPERIMENTS);
     resourceRequest.setExpansions(experimentsBeanParam.getExpansions().getResources());
-    ProvFileStateListParamBuilder params = new ProvFileStateListParamBuilder();
-    params.withProjectId(project.getId());
-    params.withMlId(id);
-    params.withMlType(Provenance.MLType.EXPERIMENT.name());
-    params.withAppState(true);
-    List<ProvFileStateHit> fileProvenanceHits = provenanceController.provFileState(params);
-    if(!fileProvenanceHits.isEmpty()) {
-      ExperimentDTO dto = experimentsBuilder.build(uriInfo, resourceRequest, project, fileProvenanceHits.get(0));
+
+    ProvFileStateParamBuilder provFilesParamBuilder = new ProvFileStateParamBuilder()
+        .withProjectInodeId(project.getInode().getId())
+        .withMlType(Provenance.MLType.EXPERIMENT.name())
+        .withAppState()
+        .withMlId(id);
+
+    GenericEntity<Collection<FileState>> fileProvenanceHits = new GenericEntity<Collection<FileState>>(
+        provenanceController.provFileStateList(provFilesParamBuilder).values()) {
+    };
+
+    if(!fileProvenanceHits.getEntity().isEmpty()) {
+      ExperimentDTO dto = experimentsBuilder.build(uriInfo, resourceRequest, project,
+          fileProvenanceHits.getEntity().iterator().next());
       return Response.ok().entity(dto).build();
     } else {
       throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.EXPERIMENT_NOT_FOUND, Level.FINE);

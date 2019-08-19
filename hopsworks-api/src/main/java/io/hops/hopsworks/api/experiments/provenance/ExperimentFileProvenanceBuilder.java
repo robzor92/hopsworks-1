@@ -4,9 +4,9 @@ import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.experiments.dto.provenance.ExperimentProvenanceDTO;
 import io.hops.hopsworks.common.provenance.AppFootprintType;
-import io.hops.hopsworks.common.provenance.ProvFileHit;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
+import io.hops.hopsworks.common.provenance.v2.xml.FootprintFileState;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.restutils.RESTCodes;
 
@@ -16,7 +16,7 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.logging.Level;
 
 @Stateless
@@ -56,9 +56,10 @@ public class ExperimentFileProvenanceBuilder {
         builder.withProjectInodeId(project.getInode().getId());
         builder.withAppId(appId);
 
-        List<ProvFileHit> filesReadHits = provenanceController.provAppFootprint(builder, AppFootprintType.INPUT);
+        Collection<FootprintFileState> filesReadHits = provenanceController.provAppFootprintList(builder,
+            AppFootprintType.INPUT).values();
         ArrayList<String> filesRead = new ArrayList<>();
-        for(ProvFileHit file : filesReadHits) {
+        for(FootprintFileState file : filesReadHits) {
           filesRead.add(file.getInodeName());
         }
         dto.setFilesRead(filesRead.toArray(new String[0]));
@@ -67,10 +68,10 @@ public class ExperimentFileProvenanceBuilder {
         builder.withProjectInodeId(project.getInode().getId());
         builder.withAppId(appId);
 
-        List<ProvFileHit> filesOutputHits = provenanceController.provAppFootprint(builder,
-            AppFootprintType.OUTPUT_ADDED);
+        Collection<FootprintFileState> filesOutputHits = provenanceController.provAppFootprintList(builder,
+            AppFootprintType.OUTPUT_ADDED).values();
         ArrayList<String> filesOutput = new ArrayList<>();
-        for(ProvFileHit file : filesOutputHits) {
+        for(FootprintFileState file : filesOutputHits) {
           filesOutput.add(file.getInodeName());
         }
         dto.setFilesOutput(filesOutput.toArray(new String[0]));
@@ -79,9 +80,10 @@ public class ExperimentFileProvenanceBuilder {
         builder.withProjectInodeId(project.getInode().getId());
         builder.withAppId(appId);
 
-        List<ProvFileHit> filesDeletedHits = provenanceController.provAppFootprint(builder, AppFootprintType.REMOVED);
+        Collection<FootprintFileState> filesDeletedHits = provenanceController.provAppFootprintList(builder,
+            AppFootprintType.REMOVED).values();
         ArrayList<String> filesDeleted = new ArrayList<>();
-        for(ProvFileHit file : filesDeletedHits) {
+        for(FootprintFileState file : filesDeletedHits) {
           filesDeleted.add(file.getInodeName());
         }
         dto.setFilesDeleted(filesDeleted.toArray(new String[0]));

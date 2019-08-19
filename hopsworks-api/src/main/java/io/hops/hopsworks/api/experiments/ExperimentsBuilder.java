@@ -16,11 +16,11 @@ import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDescription;
 
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
-import io.hops.hopsworks.common.provenance.ProvFileStateHit;
 import io.hops.hopsworks.common.provenance.Provenance;
 
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
+import io.hops.hopsworks.common.provenance.v2.xml.FileState;
 import io.hops.hopsworks.common.util.DateUtils;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
@@ -73,7 +73,7 @@ public class ExperimentsBuilder {
     return dto;
   }
 
-  public ExperimentDTO uri(ExperimentDTO dto, UriInfo uriInfo, Project project, ProvFileStateHit fileProvenanceHit) {
+  public ExperimentDTO uri(ExperimentDTO dto, UriInfo uriInfo, Project project, FileState fileProvenanceHit) {
     dto.setHref(uriInfo.getBaseUriBuilder().path(ResourceRequest.Name.PROJECT.toString().toLowerCase())
         .path(Integer.toString(project.getId()))
         .path(ResourceRequest.Name.EXPERIMENTS.toString().toLowerCase())
@@ -104,11 +104,11 @@ public class ExperimentsBuilder {
 
       buildFilter(provFilesParamBuilder, resourceRequest.getFilter(), project);
 
-      GenericEntity<Collection<ProvFileStateHit>> searchResults = new GenericEntity<Collection<ProvFileStateHit>>(
-          provenanceController.provFileState(provFilesParamBuilder).values()) {
+      GenericEntity<Collection<FileState>> searchResults = new GenericEntity<Collection<FileState>>(
+          provenanceController.provFileStateList(provFilesParamBuilder).values()) {
       };
 
-      for(ProvFileStateHit fileProvStateHit: searchResults.getEntity()) {
+      for(FileState fileProvStateHit: searchResults.getEntity()) {
         ExperimentDTO experimentDTO = build(uriInfo, resourceRequest, project, fileProvStateHit);
         if(experimentDTO != null) {
           dto.addItem(experimentDTO);
@@ -120,7 +120,7 @@ public class ExperimentsBuilder {
 
   //Build specific
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
-                             ProvFileStateHit fileProvenanceHit) throws ExperimentsException {
+                             FileState fileProvenanceHit) throws ExperimentsException {
 
     ExperimentDTO experimentDTO = new ExperimentDTO();
     uri(experimentDTO, uriInfo, project, fileProvenanceHit);
