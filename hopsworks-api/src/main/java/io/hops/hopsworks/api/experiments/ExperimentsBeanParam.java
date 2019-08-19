@@ -10,11 +10,8 @@ import java.util.Set;
 
 public class ExperimentsBeanParam {
   @QueryParam("sort_by")
-  @ApiParam(value = "ex. sort_by=date_created:desc,name:asc",
-      allowableValues = "id:asc,id:desc,name:asc,name:desc,date_created:asc,date_created:desc,jobtype:asc," +
-          "jobtype:desc,creator:asc,creator:desc,creator_firstname:asc,creator_firstname:desc," +
-          "creator_lastname:asc,creator_lastname:desc,state:asc,state:desc,finalstatus:asc,finalstatus:desc,progress:asc," +
-          "progress:desc,submissiontime:asc,submissiontime:desc,duration:asc,duration:desc")
+  @ApiParam(value = "ex. sort_by=optimization_key:desc",
+      allowableValues = "optimization_key:desc,optimization_key:asc")
   private String sortBy;
   private final Set<SortBy> sortBySet;
   @QueryParam("filter_by")
@@ -43,7 +40,7 @@ public class ExperimentsBeanParam {
 
     this.filter = filter;
     this.sortBy = sortBy;
-    sortBySet = getSortBy()
+    sortBySet = getSortBy(sortBy)
   }
 
   public Set<FilterBy> getFilter() {
