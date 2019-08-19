@@ -191,14 +191,14 @@ public class ExperimentsResource {
     return this.tensorBoardResource.setProject(project, id);
   }
 
-  @ApiOperation(value = "Results sub-resource", tags = {"ResultsResource"})
+  @ApiOperation(value = "Results sub-resource", tags = {"ExperimentResultsResource"})
   @Path("{id}/results")
   @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
   public ExperimentResultsResource results(@PathParam("id") String id) {
     return this.resultsResource.setProject(project, id);
   }
 
-  @ApiOperation(value = "Provenance sub-resource", tags = {"ProvenanceResource"})
+  @ApiOperation(value = "Provenance sub-resource", tags = {"ExperimentFileProvenanceResource"})
   @Path("{id}/provenance")
   @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
   public ExperimentFileProvenanceResource provenance(@PathParam("id") String id) {

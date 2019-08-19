@@ -67,10 +67,12 @@ public class ExperimentResultsBuilder {
           String summaryJson = dfso.cat(new Path(summaryPath));
           ExperimentResultsDTO[] results = experimentConfigurationConverter
               .unmarshalResults(summaryJson).getResults();
-          dto.setCount((long)results.length);
-          results = apply(experimentConfigurationConverter.unmarshalResults(summaryJson).getResults(),
-              resourceRequest.getLimit(), resourceRequest.getOffset(), optimizationKey);
-          dto.setResults(results);
+          if(results != null) {
+            dto.setCount((long) results.length);
+            results = apply(experimentConfigurationConverter.unmarshalResults(summaryJson).getResults(),
+                resourceRequest.getLimit(), resourceRequest.getOffset(), optimizationKey);
+            dto.setResults(results);
+          }
         }
       } catch (Exception e) {
         throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_RETRIEVAL_ERROR, Level.SEVERE,

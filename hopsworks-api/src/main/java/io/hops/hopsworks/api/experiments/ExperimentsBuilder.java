@@ -74,7 +74,8 @@ public class ExperimentsBuilder {
   }
 
   public ExperimentDTO uri(ExperimentDTO dto, UriInfo uriInfo, Project project, FileState fileProvenanceHit) {
-    dto.setHref(uriInfo.getBaseUriBuilder().path(ResourceRequest.Name.PROJECT.toString().toLowerCase())
+    dto.setHref(uriInfo.getBaseUriBuilder()
+        .path(ResourceRequest.Name.PROJECT.toString().toLowerCase())
         .path(Integer.toString(project.getId()))
         .path(ResourceRequest.Name.EXPERIMENTS.toString().toLowerCase())
         .path(fileProvenanceHit.getMlId())
