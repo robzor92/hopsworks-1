@@ -57,7 +57,7 @@ public class ExperimentResultsBuilder {
   }
 
   public ExperimentResultSummaryDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
-                                          String mlId, String optimizationKey)
+                                          String mlId)
       throws ExperimentsException {
     ExperimentResultSummaryDTO dto = new ExperimentResultSummaryDTO();
     uri(dto, uriInfo, project, mlId);
@@ -75,7 +75,7 @@ public class ExperimentResultsBuilder {
               .unmarshalResults(summaryJson).getResults();
           if (results != null) {
             dto.setCount((long) results.length);
-            results = apply(results, resourceRequest, optimizationKey);
+            results = apply(results, resourceRequest);
             dto.setResults(results);
           }
         }
@@ -91,8 +91,8 @@ public class ExperimentResultsBuilder {
     return dto;
   }
 
-  private ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, ResourceRequest resourceRequest,
-                                       String optimizationKey) throws ExperimentsException {
+  private ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, ResourceRequest resourceRequest)
+      throws ExperimentsException {
 
     if (dto == null || dto.length == 1) {
       return dto;
@@ -110,18 +110,15 @@ public class ExperimentResultsBuilder {
       offset = 0;
     }
 
-    if (optimizationKey == null) {
-      throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_OPTIMIZATION_KEY_NOT_DEFINED, Level.FINE,
-          "No optimization key defined for results");
-    }
+    AbstractFacade.SortBy sortByKey = resourceRequest.getSort().iterator().next();
 
-    AbstractFacade.SortBy optimizationKeySort = resourceRequest.getSort().iterator().next();
+    String sortKey = sortByKey.getValue();
 
-    if(optimizationKeySort != null) {
-      if(optimizationKeySort.getParam().getValue().compareToIgnoreCase("ASC") == 0) {
-        Arrays.sort(dto, new OptKeyComparator(optimizationKey));
-      } else if(optimizationKeySort.getParam().getValue().compareToIgnoreCase("DESC") == 0) {
-        Arrays.sort(dto, Collections.reverseOrder(new OptKeyComparator(optimizationKey)));
+    if(sortByKey != null) {
+      if(sortByKey.getParam().getValue().compareToIgnoreCase("ASC") == 0) {
+        Arrays.sort(dto, new OptKeyComparator(sortKey));
+      } else if(sortByKey.getParam().getValue().compareToIgnoreCase("DESC") == 0) {
+        Arrays.sort(dto, Collections.reverseOrder(new OptKeyComparator(sortKey)));
       }
     }
 
@@ -139,21 +136,21 @@ public class ExperimentResultsBuilder {
   }
 
   public static class OptKeyComparator implements Comparator {
-    private String optimizationKey;
+    private String sortKey;
 
-    OptKeyComparator(String optimizationKey) {
-      this.optimizationKey = optimizationKey;
+    OptKeyComparator(String sortKey) {
+      this.sortKey = sortKey;
     }
 
     @Override
     public int compare(Object experimentA, Object experimentB) {
       ExperimentResultsDTO firstExperiment = (ExperimentResultsDTO) experimentA;
       ExperimentResultsDTO secondExperiment = (ExperimentResultsDTO) experimentB;
-      return getOptimizationValue(firstExperiment, optimizationKey)
-          .compareTo(getOptimizationValue(secondExperiment, optimizationKey));
+      return getSortValue(firstExperiment, sortKey)
+          .compareTo(getSortValue(secondExperiment, sortKey));
     }
 
-    private Double getOptimizationValue(ExperimentResultsDTO experiment, String optimizationKey) {
+    private Double getSortValue(ExperimentResultsDTO experiment, String optimizationKey) {
       for (ExperimentResult metric : experiment.getMetrics()) {
         if (metric.getKey().compareTo(optimizationKey) == 0) {
           return Double.parseDouble(metric.getValue());

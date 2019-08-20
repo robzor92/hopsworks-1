@@ -1573,9 +1573,7 @@ public class RESTCodes {
     RESULTS_NOT_FOUND(3, "No results found for provided id.",
         Response.Status.NOT_FOUND),
     RESULTS_RETRIEVAL_ERROR(4, "Error occurred when retrieving experiment results.",
-        Response.Status.INTERNAL_SERVER_ERROR),
-    RESULTS_OPTIMIZATION_KEY_NOT_DEFINED(5, "No optimization_key set for experiment results",
-        Response.Status.BAD_REQUEST);
+        Response.Status.INTERNAL_SERVER_ERROR);
 
     private int code;
     private String message;
