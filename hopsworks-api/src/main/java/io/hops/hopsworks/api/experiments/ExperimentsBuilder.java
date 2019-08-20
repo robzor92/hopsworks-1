@@ -169,8 +169,7 @@ public class ExperimentsBuilder {
         experimentDTO.setProvenance(experimentFileProvenanceBuilder.build(uriInfo,
             resourceRequest.get(ResourceRequest.Name.PROVENANCE), project, fileProvenanceHit.getMlId()));
         experimentDTO.setResults(experimentResultsBuilder.build(uriInfo,
-            resourceRequest.get(ResourceRequest.Name.RESULTS), project, fileProvenanceHit.getMlId(),
-            experimentDescription.getOptimizationKey()));
+            resourceRequest.get(ResourceRequest.Name.RESULTS), project, fileProvenanceHit.getMlId()));
       } else {
         return null;
       }

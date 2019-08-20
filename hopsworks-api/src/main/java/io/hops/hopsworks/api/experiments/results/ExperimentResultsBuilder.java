@@ -91,8 +91,7 @@ public class ExperimentResultsBuilder {
     return dto;
   }
 
-  private ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, ResourceRequest resourceRequest)
-      throws ExperimentsException {
+  private ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, ResourceRequest resourceRequest) {
 
     if (dto == null || dto.length == 1) {
       return dto;
@@ -150,9 +149,14 @@ public class ExperimentResultsBuilder {
           .compareTo(getSortValue(secondExperiment, sortKey));
     }
 
-    private Double getSortValue(ExperimentResultsDTO experiment, String optimizationKey) {
+    private Double getSortValue(ExperimentResultsDTO experiment, String sortKey) {
+      for (ExperimentResult metric : experiment.getHyperparameters()) {
+        if (metric.getKey().compareTo(sortKey) == 0) {
+          return Double.parseDouble(metric.getValue());
+        }
+      }
       for (ExperimentResult metric : experiment.getMetrics()) {
-        if (metric.getKey().compareTo(optimizationKey) == 0) {
+        if (metric.getKey().compareTo(sortKey) == 0) {
           return Double.parseDouble(metric.getValue());
         }
       }

@@ -56,10 +56,10 @@ angular.module('hopsWorksApp')
                 self.query = "";
 
                 if(self.experiment.optimizationKey && self.experiment.direction) {
-                    if(self.direction == 'max') {
-                        sortBy = ';sort_by=' + $scope.sortType + ' :desc)';
+                    if(self.direction === 'max') {
+                        sortBy = ';sort_by=' + $scope.sortType + ':desc)';
                     } else {
-                        sortBy = ';sort_by=' + $scope.sortType + ' :asc)';
+                        sortBy = ';sort_by=' + $scope.sortType + ':asc)';
                     }
                 }
                 if (self.showProvenanceView === true && self.showResultsView === true) {
