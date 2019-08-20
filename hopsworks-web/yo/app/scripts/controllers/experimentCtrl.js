@@ -129,7 +129,7 @@ angular.module('hopsWorksApp')
                 if(self.memberSelected.name !== 'All Members') {
                     self.query = self.query + '&filter_by=user:' + self.memberSelected.uid;
                 }
-                self.query = self.query + '&sort_by=' + self.sortType + ':' + self.orderBy;
+                self.query = self.query + '&sort_by=' + self.sortType + ':' + self.orderBy + '&offset=' + self.offset + '&limit=' + self.pageSize;
             };
 
             self.getAll = function() {
