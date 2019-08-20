@@ -54,11 +54,11 @@ angular.module('hopsWorksApp')
                 var offset = self.pageSize * (self.currentPage - 1);
                 self.query = "";
                 if (self.showProvenanceView === true && self.showResultsView === true) {
-                    self.query = "?expand=provenance&expand=results(offset=" + offset + ";limit=" + self.pageSize + ";sort_by:optimization_key:desc)"
+                    self.query = "?expand=provenance&expand=results(offset=" + offset + ";limit=" + self.pageSize + ";sort_by=optimization_key:desc)"
                 } else if (self.showProvenanceView === true && self.showResultsView === false) {
                     self.query = "?expand=provenance"
                 } else if (self.showProvenanceView === false && self.showResultsView === true) {
-                    self.query = "?expand=results(offset=" + offset + ";limit=" + self.pageSize + ";sort_by:optimization_key:desc)"
+                    self.query = "?expand=results(offset=" + offset + ";limit=" + self.pageSize + ";sort_by=optimization_key:desc)"
                 }
             };
 
