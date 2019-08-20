@@ -36,8 +36,10 @@ angular.module('hopsWorksApp')
             if(self.experiment.optimizationKey) {
                 if(self.experiment.direction === 'max') {
                     self.orderBy = 'desc';
+                    self.reverse = true;
                 } else if(self.experiment.direction === 'min') {
                     self.orderBy = 'asc';
+                    self.reverse = false;
                 }
             }
 
