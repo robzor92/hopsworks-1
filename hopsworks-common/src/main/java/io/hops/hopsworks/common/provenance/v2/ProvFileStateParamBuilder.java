@@ -175,16 +175,6 @@ public class ProvFileStateParamBuilder {
     return this;
   }
   
-  public ProvFileStateParamBuilder sortByCreatedAsc() {
-    fileStateSortBy.add(Pair.with(ProvElastic.FileStateSortBy.CREATE_TIMESTAMP, SortOrder.ASC));
-    return this;
-  }
-  
-  public ProvFileStateParamBuilder sortByCreatedDesc() {
-    fileStateSortBy.add(Pair.with(ProvElastic.FileStateSortBy.CREATE_TIMESTAMP, SortOrder.DESC));
-    return this;
-  }
-  
   public ProvFileStateParamBuilder withAppId(String appId) {
     fileStateFilter.put(ProvElastic.FileStateFilter.APP_ID.queryParamName,
       Pair.with(ProvElastic.FileStateFilter.APP_ID, appId));
@@ -248,6 +238,12 @@ public class ProvFileStateParamBuilder {
       appStateFilter.put(ProvElastic.AppStateFilter.APP_ID.queryParamName, fieldFilters);
     }
     fieldFilters.add(Pair.with(ProvElastic.AppStateFilter.APP_ID, appId));
+    return this;
+  }
+  
+  public ProvFileStateParamBuilder sortBy(String field, SortOrder order) throws GenericException {
+    ProvElastic.FileStateSortBy sortField = ProvElastic.extractFileStateSortField(field);
+    fileStateSortBy.add(Pair.with(sortField, SortOrder.ASC));
     return this;
   }
   

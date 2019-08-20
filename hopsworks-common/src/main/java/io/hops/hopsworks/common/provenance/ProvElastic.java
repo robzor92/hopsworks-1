@@ -203,7 +203,8 @@ public class ProvElastic {
   }
   
   public enum FileStateSortBy implements ElasticSortBy {
-    CREATE_TIMESTAMP("CREATE_TIMESTAMP", State.CREATE_TIMESTAMP_FIELD);
+    CREATE_TIMESTAMP("CREATE_TIMESTAMP", State.CREATE_TIMESTAMP_FIELD),
+    CREATETIME("CREATETIME", State.CREATE_TIMESTAMP_FIELD);
     private final String queryParamName;
     private final String elasticParamName;
   
@@ -293,16 +294,16 @@ public class ProvElastic {
       int aux = param.indexOf(':');
       String rawSortField = param.substring(0, aux);
       String rawSortOrder = param.substring(aux+1);
-      FileStateSortBy sortField = processSortField(rawSortField);
+      FileStateSortBy sortField = extractFileStateSortField(rawSortField);
       SortOrder sortOrder = processSortOrder(rawSortOrder);
       return Pair.with(sortField, sortOrder);
     } else {
-      ProvElastic.FileStateSortBy sortField = processSortField(param);
+      ProvElastic.FileStateSortBy sortField = extractFileStateSortField(param);
       return Pair.with(sortField, SortOrder.ASC);
     }
   }
   
-  private static FileStateSortBy processSortField(String val) throws GenericException {
+  public static FileStateSortBy extractFileStateSortField(String val) throws GenericException {
     try {
       return FileStateSortBy.valueOf(val.toUpperCase());
     } catch(NullPointerException | IllegalArgumentException e) {
