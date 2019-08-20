@@ -30,6 +30,7 @@ angular.module('hopsWorksApp')
             self.totalItems = 0;
 
             self.sortType = 'start';
+            self.orderBy = 'desc';
             self.reverse = true;
 
             self.projectId = $routeParams.projectID;
@@ -128,6 +129,7 @@ angular.module('hopsWorksApp')
                 if(self.memberSelected.name !== 'All Members') {
                     self.query = self.query + '&filter_by=user:' + self.memberSelected.uid;
                 }
+                self.query = self.query + '&sort_by=' + self.sortType + ':' + self.orderBy;
             };
 
             self.getAll = function() {
@@ -137,7 +139,6 @@ angular.module('hopsWorksApp')
                     function(success) {
                         stopLoading();
                         self.experiments = success.data.items;
-                        console.log(self.experiments)
                     },
                     function(error) {
                         stopLoading();
