@@ -1,7 +1,5 @@
 package io.hops.hopsworks.api.experiments.results;
 
-import io.hops.hopsworks.api.jobs.executions.FilterBy;
-import io.hops.hopsworks.api.jobs.executions.SortBy;
 import io.hops.hopsworks.common.api.ResourceRequest;
 
 import java.util.HashSet;

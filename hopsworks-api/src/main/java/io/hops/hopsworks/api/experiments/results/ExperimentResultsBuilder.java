@@ -23,6 +23,7 @@ import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -68,11 +69,11 @@ public class ExperimentResultsBuilder {
         dfso = dfs.getDfsOps();
         String summaryPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/"
             + mlId + "/.summary";
-        if(dfso.exists(summaryPath)) {
+        if (dfso.exists(summaryPath)) {
           String summaryJson = dfso.cat(new Path(summaryPath));
           ExperimentResultsDTO[] results = experimentConfigurationConverter
               .unmarshalResults(summaryJson).getResults();
-          if(results != null) {
+          if (results != null) {
             dto.setCount((long) results.length);
             results = apply(results, resourceRequest, optimizationKey);
             dto.setResults(results);
@@ -91,40 +92,48 @@ public class ExperimentResultsBuilder {
   }
 
   private ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, ResourceRequest resourceRequest,
-                                      String optimizationKey) throws ExperimentsException {
+                                       String optimizationKey) throws ExperimentsException {
 
-    if(dto == null || dto.length == 1) {
+    if (dto == null || dto.length == 1) {
       return dto;
     }
 
     Integer limit = resourceRequest.getLimit();
 
-    if(limit == null) {
+    if (limit == null) {
       limit = Integer.MAX_VALUE;
     }
 
     Integer offset = resourceRequest.getOffset();
 
-    if(offset == null) {
+    if (offset == null) {
       offset = 0;
     }
 
-    if(optimizationKey == null) {
+    if (optimizationKey == null) {
       throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_OPTIMIZATION_KEY_NOT_DEFINED, Level.FINE,
           "No optimization key defined for results");
     }
 
-    LOGGER.log(Level.SEVERE, "PRINTING");
-    for(AbstractFacade.SortBy sortBy: resourceRequest.getSort()) {
-      LOGGER.log(Level.SEVERE, sortBy.getParam() + "       " + sortBy.getValue());
+    AbstractFacade.SortBy optimizationKeySort = null;
+    for (AbstractFacade.SortBy sortBy : resourceRequest.getSort()) {
+      if(sortBy.getValue().equals(SortBy.Sorts.OPTIMIZATION_KEY.name())) {
+        optimizationKeySort = sortBy;
+        break;
+      }
     }
 
-    Arrays.sort(dto, new OptKeyComparator(optimizationKey));
-
+    if(optimizationKeySort != null) {
+      if(optimizationKeySort.getParam().getValue().compareToIgnoreCase("DESC") == 0) {
+        Arrays.sort(dto, new OptKeyComparator(optimizationKey));
+      } else if(optimizationKeySort.getParam().getValue().compareToIgnoreCase("ASC") == 0) {
+        Arrays.sort(dto, Collections.reverseOrder(new OptKeyComparator(optimizationKey)));
+      }
+    }
 
     ArrayList<ExperimentResultsDTO> results = new ArrayList<>();
 
-    if(dto.length > 0) {
+    if (dto.length > 0) {
       for (int i = 0; offset + i < (offset + limit) && (offset + i) < dto.length; i++) {
         results.add(dto[offset + i]);
       }
@@ -151,12 +160,17 @@ public class ExperimentResultsBuilder {
     }
 
     private Double getOptimizationValue(ExperimentResultsDTO experiment, String optimizationKey) {
-      for(ExperimentResult metric: experiment.getMetrics()) {
-        if(metric.getKey().compareTo(optimizationKey) == 0) {
+      for (ExperimentResult metric : experiment.getMetrics()) {
+        if (metric.getKey().compareTo(optimizationKey) == 0) {
           return Double.parseDouble(metric.getValue());
         }
       }
       return 0.0;
     }
+  }
+
+
+  protected enum Filters {
+    METRIC
   }
 }
