@@ -5,7 +5,7 @@ import io.hops.hopsworks.common.dao.AbstractFacade;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
-public class SortBy {
+public class SortBy implements AbstractFacade.SortBy {
 
   private final Sorts sortBy;
   private final AbstractFacade.OrderBy param;
@@ -36,6 +36,11 @@ public class SortBy {
 
   public AbstractFacade.OrderBy getParam() {
     return this.param;
+  }
+
+  @Override
+  public String getSql() {
+    return null;
   }
 
   public enum Sorts {

@@ -69,12 +69,12 @@ public class ExperimentResultsResource {
   @JWTRequired(acceptedTokens={Audience.API}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
   public Response getResults(@Context UriInfo uriInfo,
                              @BeanParam Pagination pagination,
-                             @BeanParam ResultsBeanParam resultsBeanParam)
+                             @BeanParam ExperimentResultsBeanParam experimentResultsBeanParam)
       throws ExperimentsException, GenericException, ServiceException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.RESULTS);
     resourceRequest.setOffset(pagination.getOffset());
     resourceRequest.setLimit(pagination.getLimit());
-    resourceRequest.setSort(resultsBeanParam.getSortBySet());
+    resourceRequest.setSort(experimentResultsBeanParam.getSortBySet());
 
     ProvFileStateParamBuilder provFilesParamBuilder = new ProvFileStateParamBuilder()
         .withProjectInodeId(project.getInode().getId())

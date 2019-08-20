@@ -1,6 +1,8 @@
 package io.hops.hopsworks.api.experiments.results;
 
+import io.hops.hopsworks.api.experiments.ExperimentsBuilder;
 import io.hops.hopsworks.common.api.ResourceRequest;
+import io.hops.hopsworks.common.dao.AbstractFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 
 import io.hops.hopsworks.common.experiments.ExperimentConfigurationConverter;
@@ -13,6 +15,7 @@ import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.restutils.RESTCodes;
+import org.apache.commons.math3.analysis.function.Abs;
 import org.apache.hadoop.fs.Path;
 
 import javax.ejb.EJB;
@@ -22,13 +25,15 @@ import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Stateless
 @TransactionAttribute(TransactionAttributeType.NEVER)
 public class ExperimentResultsBuilder {
+
+  private static final Logger LOGGER = Logger.getLogger(ExperimentResultsBuilder.class.getName());
 
   @EJB
   private DistributedFsService dfs;
@@ -109,6 +114,11 @@ public class ExperimentResultsBuilder {
     if(optimizationKey == null) {
       throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_OPTIMIZATION_KEY_NOT_DEFINED, Level.FINE,
           "No optimization key defined for results");
+    }
+
+    LOGGER.log(Level.SEVERE, "PRINTING");
+    for(AbstractFacade.SortBy sortBy: resourceRequest.getSort()) {
+      LOGGER.log(Level.SEVERE, sortBy.getParam() + "       " + sortBy.getValue());
     }
 
     Arrays.sort(dto, new OptKeyComparator(optimizationKey));

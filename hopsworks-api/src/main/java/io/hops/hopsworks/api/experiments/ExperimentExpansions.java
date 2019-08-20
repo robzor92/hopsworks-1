@@ -1,7 +1,7 @@
 package io.hops.hopsworks.api.experiments;
 
 import io.hops.hopsworks.api.experiments.provenance.ProvenanceResourceRequest;
-import io.hops.hopsworks.api.experiments.results.ResultsResourceRequest;
+import io.hops.hopsworks.api.experiments.results.ExperimentResultsResourceRequest;
 import io.hops.hopsworks.api.experiments.tensorboard.TensorBoardResourceRequest;
 import io.hops.hopsworks.common.api.Expansions;
 import io.hops.hopsworks.common.api.ResourceRequest;
@@ -22,7 +22,7 @@ public class ExperimentExpansions implements Expansions {
         resourceRequest = new ProvenanceResourceRequest(name, queryParam);
         break;
       case RESULTS:
-        resourceRequest = new ResultsResourceRequest(name, queryParam);
+        resourceRequest = new ExperimentResultsResourceRequest(name, queryParam);
         break;
       case TENSORBOARD:
         resourceRequest = new TensorBoardResourceRequest(name, queryParam);

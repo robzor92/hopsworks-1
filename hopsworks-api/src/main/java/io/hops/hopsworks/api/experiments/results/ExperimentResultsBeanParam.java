@@ -1,13 +1,12 @@
 package io.hops.hopsworks.api.experiments.results;
 
-import io.hops.hopsworks.api.jobs.SortBy;
 import io.swagger.annotations.ApiParam;
 
 import javax.ws.rs.QueryParam;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class ResultsBeanParam {
+public class ExperimentResultsBeanParam {
   @QueryParam("sort_by")
   @ApiParam(value = "ex. sort_by=optimization_key:desc",
       allowableValues = "optimization_key:desc,optimization_key:asc")
@@ -29,7 +28,7 @@ public class ResultsBeanParam {
     return sortBys;
   }
 
-  public ResultsBeanParam(@QueryParam("sort_by") String sortBy) {
+  public ExperimentResultsBeanParam(@QueryParam("sort_by") String sortBy) {
     this.sortBy = sortBy;
     sortBySet = getSortBy(sortBy);
   }

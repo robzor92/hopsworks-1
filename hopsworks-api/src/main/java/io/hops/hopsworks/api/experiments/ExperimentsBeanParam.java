@@ -1,6 +1,5 @@
 package io.hops.hopsworks.api.experiments;
 
-import io.hops.hopsworks.api.jobs.SortBy;
 import io.swagger.annotations.ApiParam;
 
 import javax.ws.rs.BeanParam;

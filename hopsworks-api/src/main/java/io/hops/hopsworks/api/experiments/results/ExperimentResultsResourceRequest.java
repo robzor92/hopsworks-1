@@ -8,8 +8,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class ResultsResourceRequest extends ResourceRequest {
-  public ResultsResourceRequest(ResourceRequest.Name name, String queryParam) {
+public class ExperimentResultsResourceRequest extends ResourceRequest {
+  public ExperimentResultsResourceRequest(ResourceRequest.Name name, String queryParam) {
     super(name, queryParam);
     //Set sort_by
     Set<FilterBy> filters = null;
