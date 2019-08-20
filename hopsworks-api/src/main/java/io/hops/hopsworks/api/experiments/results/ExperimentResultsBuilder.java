@@ -124,9 +124,9 @@ public class ExperimentResultsBuilder {
     }
 
     if(optimizationKeySort != null) {
-      if(optimizationKeySort.getParam().getValue().compareToIgnoreCase("DESC") == 0) {
+      if(optimizationKeySort.getParam().getValue().compareToIgnoreCase("ASC") == 0) {
         Arrays.sort(dto, new OptKeyComparator(optimizationKey));
-      } else if(optimizationKeySort.getParam().getValue().compareToIgnoreCase("ASC") == 0) {
+      } else if(optimizationKeySort.getParam().getValue().compareToIgnoreCase("DESC") == 0) {
         Arrays.sort(dto, Collections.reverseOrder(new OptKeyComparator(optimizationKey)));
       }
     }
