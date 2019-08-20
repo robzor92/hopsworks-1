@@ -61,6 +61,7 @@ import io.hops.hopsworks.common.util.Ip;
 import io.hops.hopsworks.common.util.Settings;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.ActionFuture;
+import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -74,6 +75,7 @@ import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
@@ -1008,16 +1010,16 @@ public class ElasticController {
   static final int DEFAULT_PROVENANCE_QUERY_SIZE = 1000;
   static final int DEFAULT_SCROLLING_BATCH_SIZE = 50;
   
-  public Map<Long, FileState> provFileState(
+  public Map<Long, FileState> provScrollingFileState(
     Collection<Pair<ProvElastic.FileStateFilter, Object>> fileStateFilters,
     List<Pair<ProvElastic.FileStateSortBy, SortOrder>> fileStateSortBy,
     Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters)
     throws GenericException, ServiceException {
     return provFileStateQuery(
-      provFileStateQB(fileStateFilters, xAttrsFilters, likeXAttrsFilters),
       fileStateSearchRequest(
         Settings.ELASTIC_INDEX_FILE_PROVENANCE,
         Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE,
+        provFileStateQB(fileStateFilters, xAttrsFilters, likeXAttrsFilters),
         fileStateSortBy));
   }
   
@@ -1032,17 +1034,10 @@ public class ElasticController {
     Map<String, List<Pair<ProvElastic.FileOpsFilter, Object>>> fileOpsFilters)
     throws GenericException, ServiceException {
     return provFileOpsQuery(
-      provFileOpsQB(fileOpsFilters),
-      scrollingSearchRequest(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE));
-  }
-  
-  public List<ProvFileOpHit> provFileOps(
-    Map<String, List<Pair<ProvElastic.FileOpsFilter, Object>>> fileOpsFilters)
-    throws GenericException, ServiceException {
-    return provFileOpsQuery(
-      provFileOpsQB(fileOpsFilters),
-      baseSearchRequest(Settings.ELASTIC_INDEX_FILE_PROVENANCE, Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE));
+      scrollingSearchRequestFirst(
+        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
+        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE,
+        provFileOpsQB(fileOpsFilters)));
   }
   
   public long provFileOpsCount(
@@ -1055,27 +1050,42 @@ public class ElasticController {
     Map<String, List<Pair<ProvElastic.AppStateFilter, Object>>> appStateFilters)
     throws GenericException, ServiceException {
     return provAppStateQuery(
-      provAppStateQB(appStateFilters),
-      baseSearchRequest(Settings.ELASTIC_INDEX_APP_PROVENANCE, Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE));
+      baseSearchRequest(
+        Settings.ELASTIC_INDEX_APP_PROVENANCE,
+        Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE,
+        provAppStateQB(appStateFilters)));
   }
   
-  private Function<Client, SearchRequestBuilder> scrollingSearchRequest(String index, String docType) {
+  private Function<Client, ActionRequestBuilder> scrollingSearchRequestFirst(String index, String docType,
+    QueryBuilder qb) {
     return (Client client) -> {
-      SearchRequestBuilder srb = client.prepareSearch(index)
+      SearchRequestBuilder srb = client
+        .prepareSearch(index)
         .setTypes(docType)
         .setSize(DEFAULT_SCROLLING_BATCH_SIZE)
         .addSort("_doc", SortOrder.ASC)
+        .setScroll(TimeValue.timeValueMinutes(1))
+        .setQuery(qb);
+      return srb;
+    };
+  }
+  
+  private Function<Client, ActionRequestBuilder> scrollingSearchRequestNext(String scrollId) {
+    return (Client client) -> {
+      SearchScrollRequestBuilder srb = client
+        .prepareSearchScroll(scrollId)
         .setScroll(TimeValue.timeValueMinutes(1));
       return srb;
     };
   }
   
-  private Function<Client, SearchRequestBuilder> fileStateSearchRequest(String index, String docType,
-    List<Pair<ProvElastic.FileStateSortBy, SortOrder>> fileStateSortBy) {
+  private Function<Client, ActionRequestBuilder> fileStateSearchRequest(String index, String docType,
+    QueryBuilder qb, List<Pair<ProvElastic.FileStateSortBy, SortOrder>> fileStateSortBy) {
     return (Client client) -> {
       SearchRequestBuilder srb = client.prepareSearch(index)
         .setTypes(docType)
-        .setSize(DEFAULT_PROVENANCE_QUERY_SIZE);
+        .setSize(DEFAULT_PROVENANCE_QUERY_SIZE)
+        .setQuery(qb);
       if(fileStateSortBy.isEmpty()) {
         srb = srb.addSort("_doc", SortOrder.ASC);
       } else {
@@ -1087,55 +1097,55 @@ public class ElasticController {
     };
   }
   
-  private Function<Client, SearchRequestBuilder> baseSearchRequest(String index, String docType) {
+  private Function<Client, ActionRequestBuilder> baseSearchRequest(String index, String docType, QueryBuilder qb) {
     return (Client client) -> {
       SearchRequestBuilder srb = client.prepareSearch(index)
         .setTypes(docType)
-        .setSize(DEFAULT_PROVENANCE_QUERY_SIZE);
+        .setSize(DEFAULT_PROVENANCE_QUERY_SIZE)
+        .setQuery(qb);
       return srb;
     };
   }
   
-  private Function<Client, SearchRequestBuilder> countSearchRequest(String index, String docType) {
+  private Function<Client, ActionRequestBuilder> countSearchRequest(String index, String docType, QueryBuilder qb) {
     return (Client client) -> {
       SearchRequestBuilder srb = client.prepareSearch(index)
         .setTypes(docType)
-        .setSize(0);
+        .setSize(0)
+        .setQuery(qb);
       return srb;
     };
   }
   
-  private SearchResponse rawQuery(String index, QueryBuilder query, Function<Client, SearchRequestBuilder> srbF)
+  private SearchResponse rawQuery(String index, Function<Client, ActionRequestBuilder> srbF)
     throws ServiceException {
     //some necessary client settings
     Client client = getClient();
-
+    
     //check if the index are up and running
     if (!this.indexExists(client, index)) {
-      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_NOT_FOUND, Level.SEVERE, 
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_NOT_FOUND, Level.SEVERE,
         "index: " + index);
     }
-  
-    SearchRequestBuilder srb = srbF.apply(client)
-      .setQuery(query);
     
-    LOG.log(Level.INFO, "index:{0} Elastic query: {1}", new Object[]{index, srb});
-    ActionFuture<SearchResponse> futureResponse = srb.execute();
+    ActionRequestBuilder arb = srbF.apply(client);
+    LOG.log(Level.INFO, "index:{0} Elastic query: {1}", new Object[]{index, arb});
+    ActionFuture<SearchResponse> futureResponse = arb.execute();
     SearchResponse response = futureResponse.actionGet();
-
+    
     if (response.status().getStatus() == 200) {
       return response;
     } else {
       //something went wrong so throw an exception
       shutdownClient();
-      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING, 
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING,
         "Elasticsearch error code: " + response.status().getStatus());
     }
   }
   
-  private SearchResponse provFileIndexQuery(QueryBuilder query, Function<Client, SearchRequestBuilder> srbF)
+  private SearchResponse provFileIndexQuery(Function<Client, ActionRequestBuilder> arbF)
     throws ServiceException {
-    SearchResponse searchResult = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, query, srbF);
+    SearchResponse searchResult = rawQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, arbF);
     SearchHit[] rawHits = searchResult.getHits().getHits();
     LOG.log(Level.WARNING, "query hits: {0} total:{1}",
       new Object[]{rawHits.length, searchResult.getHits().totalHits});
@@ -1143,25 +1153,43 @@ public class ElasticController {
   }
   
   private long provFileIndexCountQuery(QueryBuilder query) throws ServiceException {
-    SearchResponse searchResult = provFileIndexQuery(query,
-      countSearchRequest(Settings.ELASTIC_INDEX_FILE_PROVENANCE, Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE));
+    SearchResponse searchResult
+      = provFileIndexQuery(
+          countSearchRequest(
+            Settings.ELASTIC_INDEX_FILE_PROVENANCE,
+            Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE,
+            query));
     return searchResult.getHits().totalHits;
   }
   
-  private List<ProvFileOpHit> provFileOpsQuery(QueryBuilder query, Function<Client, SearchRequestBuilder> srbF)
+  private List<ProvFileOpHit> provFileOpsQuery(Function<Client, ActionRequestBuilder> first)
     throws ServiceException {
-    SearchResponse searchResult = provFileIndexQuery(query, srbF);
     List<ProvFileOpHit> result = new LinkedList<>();
+    SearchResponse searchResult;
+    long leftover;
+    
+    searchResult = provFileIndexQuery(first);
+    leftover = searchResult.getHits().totalHits - searchResult.getHits().getHits().length;
     for (SearchHit rawHit : searchResult.getHits().getHits()) {
       ProvFileOpHit hit = new ProvFileOpHit(rawHit);
       result.add(hit);
     }
+  
+    Function<Client, ActionRequestBuilder> next = scrollingSearchRequestNext(searchResult.getScrollId());
+    while(leftover > 0) {
+      searchResult = provFileIndexQuery(next);
+      leftover = leftover - searchResult.getHits().getHits().length;
+      for (SearchHit rawHit : searchResult.getHits().getHits()) {
+        ProvFileOpHit hit = new ProvFileOpHit(rawHit);
+        result.add(hit);
+      }
+    }
     return result;
   }
   
-  private Map<Long, FileState> provFileStateQuery(QueryBuilder query, Function<Client, SearchRequestBuilder> srbF)
+  private Map<Long, FileState> provFileStateQuery(Function<Client, ActionRequestBuilder> arbF)
     throws ServiceException {
-    SearchResponse searchResult = provFileIndexQuery(query, srbF);
+    SearchResponse searchResult = provFileIndexQuery(arbF);
     Map<Long, FileState> result = new HashMap<>();
     for (SearchHit rawHit : searchResult.getHits().getHits()) {
       FileState fpHit = new FileState(rawHit);
@@ -1170,11 +1198,11 @@ public class ElasticController {
     return result;
   }
   
-  private Map<String, Map<Provenance.AppState, AppProvenanceHit>> provAppStateQuery(QueryBuilder query,
-    Function<Client, SearchRequestBuilder> srbF)
+  private Map<String, Map<Provenance.AppState, AppProvenanceHit>> provAppStateQuery(
+    Function<Client, ActionRequestBuilder> arbF)
     throws ServiceException {
     Map<String, Map<Provenance.AppState, AppProvenanceHit>> result = new HashMap<>();
-    SearchHit[] rawHits = rawQuery(Settings.ELASTIC_INDEX_APP_PROVENANCE, query, srbF).getHits().getHits();
+    SearchHit[] rawHits = rawQuery(Settings.ELASTIC_INDEX_APP_PROVENANCE, arbF).getHits().getHits();
     LOG.log(Level.WARNING, "query hits: {0}", rawHits.length);
     for(SearchHit h : rawHits) {
       AppProvenanceHit hit = new AppProvenanceHit(h);

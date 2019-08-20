@@ -164,7 +164,7 @@ public class ProvenanceController {
   public Map<Long, FileState> provFileStateList(ProvFileStateParamBuilder params)
     throws GenericException, ServiceException {
     Map<Long, FileState> result = new HashMap<>();
-    Map<Long, FileState> fileStates = elasticCtrl.provFileState(
+    Map<Long, FileState> fileStates = elasticCtrl.provScrollingFileState(
       params.getFileStateFilter(), params.getFileStateSortBy(),
       params.getExactXAttrFilter(), params.getLikeXAttrFilter());
     if (params.hasExpansionWithAppState()) {
@@ -212,7 +212,7 @@ public class ProvenanceController {
   
   public List<ProvFileOpHit> provFileOpsList(ProvFileOpsParamBuilder params)
     throws GenericException, ServiceException {
-    return elasticCtrl.provFileOps(params.getFileOpsFilter());
+    return elasticCtrl.provScrollingFileOps(params.getFileOpsFilter());
   }
   
   public long provFileOpsCount(ProvFileOpsParamBuilder params)
@@ -240,7 +240,7 @@ public class ProvenanceController {
       (Map<Long, FootprintFileStateTree>)(Map)(result.getValue1()));
   }
   
-  public ProvFileOpsParamBuilder elasticPathQueryParams(List<Long> inodeIds) {
+  public ProvFileOpsParamBuilder elasticTreeQueryParams(List<Long> inodeIds) {
     ProvFileOpsParamBuilder params = new ProvFileOpsParamBuilder()
       .withFileOperation(ProvFileOps.CREATE)
       .withFileOperation(ProvFileOps.DELETE);
@@ -363,8 +363,8 @@ public class ProvenanceController {
         }
         while (treeS.findInProvenance()) {
           List<Long> inodeIdBatch = treeS.nextFindInProvenance();
-          ProvFileOpsParamBuilder elasticPathQueryParams = elasticPathQueryParams(inodeIdBatch);
-          List<ProvFileOpHit> inodeBatch = elasticCtrl.provFileOps(elasticPathQueryParams.getFileOpsFilter());
+          ProvFileOpsParamBuilder elasticPathQueryParams = elasticTreeQueryParams(inodeIdBatch);
+          List<ProvFileOpHit> inodeBatch = provFileOpsList(elasticPathQueryParams);
           treeS.processProvenanceBatch(inodeIdBatch, inodeBatch);
         }
       }
