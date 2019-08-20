@@ -91,6 +91,7 @@ public class GlobalProvenanceResource {
       .withQueryParamFileStateSortBy(params.getFileStateSortBy())
       .withQueryParamExactXAttr(params.getExactXAttrParams())
       .withQueryParamLikeXAttr(params.getLikeXAttrParams())
+      .withQueryParamXAttrSortBy(params.getXattrSortBy())
       .withQueryParamExpansions(params.getExpansions())
       .withQueryParamAppState(params.getAppStateParams());
     return ProvenanceResourceHelper.getFileStates(noCacheResponse, provenanceCtrl, paramBuilder,

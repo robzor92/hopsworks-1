@@ -146,6 +146,7 @@ public class ProjectProvenanceResource {
       .withQueryParamFileStateSortBy(params.getFileStateSortBy())
       .withQueryParamExactXAttr(params.getExactXAttrParams())
       .withQueryParamLikeXAttr(params.getLikeXAttrParams())
+      .withQueryParamXAttrSortBy(params.getXattrSortBy())
       .withQueryParamExpansions(params.getExpansions())
       .withQueryParamAppState(params.getAppStateParams());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
@@ -187,6 +188,7 @@ public class ProjectProvenanceResource {
       .withQueryParamFileStateSortBy(params.getFileStateSortBy())
       .withQueryParamExactXAttr(params.getExactXAttrParams())
       .withQueryParamLikeXAttr(params.getLikeXAttrParams())
+      .withQueryParamXAttrSortBy(params.getXattrSortBy())
       .withQueryParamExpansions(params.getExpansions())
       .withQueryParamAppState(params.getAppStateParams());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",

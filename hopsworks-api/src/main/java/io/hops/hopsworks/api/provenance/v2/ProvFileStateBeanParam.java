@@ -50,6 +50,11 @@ public class ProvFileStateBeanParam {
     allowMultiple = true)
   private Set<String> likeXAttrParams;
   
+  @QueryParam("xattr_sort_by")
+  @ApiParam(value = "ex. sort_by=xattr1:asc",
+    allowMultiple = true)
+  private List<String> xattrSortBy;
+  
   @QueryParam("expand")
   @ApiParam(value = "ex. expand=APP_STATE&expand=DIR_TREE", allowableValues = "expand=appState&expand=DIR_TREE")
   private Set<String> expansions;
@@ -69,6 +74,7 @@ public class ProvFileStateBeanParam {
     @QueryParam("sort_by") List<String> fileStateSortBy,
     @QueryParam("xattr_filter_by") Set<String> xAttrParams,
     @QueryParam("xattr_like") Set<String> xAttrLikeParams,
+    @QueryParam("xattr_sort_by") List<String> xattrSortBy,
     @QueryParam("expand") Set<String> expansions,
     @QueryParam("exp_filter_by") Set<String> appStateParams,
     @QueryParam("return_type") @DefaultValue("LIST") ProjectProvenanceResource.FileStructReturnType returnType) {
@@ -76,6 +82,7 @@ public class ProvFileStateBeanParam {
     this.fileStateSortBy = fileStateSortBy;
     this.exactXAttrParams = xAttrParams;
     this.likeXAttrParams = xAttrLikeParams;
+    this.xattrSortBy = xattrSortBy;
     this.expansions = expansions;
     this.appStateParams = appStateParams;
     this.returnType = returnType;
@@ -113,6 +120,14 @@ public class ProvFileStateBeanParam {
     this.likeXAttrParams = likeXAttrParams;
   }
   
+  public List<String> getXattrSortBy() {
+    return xattrSortBy;
+  }
+  
+  public void setXattrSortBy(List<String> xattrSortBy) {
+    this.xattrSortBy = xattrSortBy;
+  }
+  
   public Set<String> getExpansions() {
     return expansions;
   }
@@ -142,8 +157,9 @@ public class ProvFileStateBeanParam {
     return "ProvFileStateBeanParam{"
       + "file state filter by:" + fileStateParams.toString()
       + "file state sort by:" + fileStateSortBy.toString()
-      + "exact xattr:" + exactXAttrParams.toString()
-      + "like xattr:" + likeXAttrParams.toString()
+      + "exact xattr filter:" + exactXAttrParams.toString()
+      + "like xattr filter:" + likeXAttrParams.toString()
+      + "xattr sort by" + xattrSortBy.toString()
       + "expansions:" + expansions
       + "app state:" + appStateParams.toString()
       + "return type:" + returnType

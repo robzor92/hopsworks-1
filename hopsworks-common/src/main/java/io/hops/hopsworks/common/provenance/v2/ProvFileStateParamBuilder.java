@@ -40,6 +40,7 @@ public class ProvFileStateParamBuilder {
   private List<Pair<ProvElastic.FileStateSortBy, SortOrder>> fileStateSortBy = new ArrayList<>();
   private Map<String, String> exactXAttrFilter = new HashMap<>();
   private Map<String, String> likeXAttrFilter = new HashMap<>();
+  private List<Pair<String, SortOrder>> xAttrSortBy = new ArrayList<>();
   private Set<ProvElastic.FileStateExpansions> expansions = new HashSet<>();
   private Map<String, List<Pair<ProvElastic.AppStateFilter, Object>>> appStateFilter = new HashMap<>();
   
@@ -71,6 +72,23 @@ public class ProvFileStateParamBuilder {
     for(String param : params) {
       Pair<String, String> p = ProvElastic.extractXAttrParam(param);
       likeXAttrFilter.put(p.getValue0(), p.getValue1());
+    }
+    return this;
+  }
+  
+  public ProvFileStateParamBuilder withQueryParamXAttrSortBy(List<String> params) throws GenericException {
+    for(String param : params) {
+      Pair<String, String> xattr = ProvElastic.extractXAttrParam(param);
+      SortOrder order;
+      try {
+        order = SortOrder.valueOf(xattr.getValue1());
+      } catch (NullPointerException | IllegalArgumentException e) {
+        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+          "sort order " + xattr.getValue1() + " not supported - supported:"
+            + EnumSet.allOf(SortOrder.class),
+          "exception extracting FilterBy param", e);
+      }
+      xAttrSortBy.add(Pair.with(xattr.getValue0(), order));
     }
     return this;
   }
@@ -117,6 +135,10 @@ public class ProvFileStateParamBuilder {
   
   public Map<String, String> getLikeXAttrFilter() {
     return likeXAttrFilter;
+  }
+  
+  public List<Pair<String, SortOrder>> getXAttrSortBy() {
+    return xAttrSortBy;
   }
   
   public Set<ProvElastic.FileStateExpansions> getExpansions() {
@@ -195,8 +217,8 @@ public class ProvFileStateParamBuilder {
   }
   
   public ProvFileStateParamBuilder withXAttr(String key, String val) {
-    Pair<String, String> x = ProvElastic.processXAttr(key, val);
-    exactXAttrFilter.put(x.getValue0(), x.getValue1());
+    String xattrKey = ProvElastic.processXAttrKey(key);
+    exactXAttrFilter.put(xattrKey, val);
     return this;
   }
   
@@ -208,8 +230,8 @@ public class ProvFileStateParamBuilder {
   }
   
   public ProvFileStateParamBuilder withXAttrLike(String key, String val) {
-    Pair<String, String> x = ProvElastic.processXAttr(key, val);
-    likeXAttrFilter.put(x.getValue0(), x.getValue1());
+    String xattrKey = ProvElastic.processXAttrKey(key);
+    likeXAttrFilter.put(xattrKey, val);
     return this;
   }
   
@@ -241,9 +263,14 @@ public class ProvFileStateParamBuilder {
     return this;
   }
   
-  public ProvFileStateParamBuilder sortBy(String field, SortOrder order) throws GenericException {
-    ProvElastic.FileStateSortBy sortField = ProvElastic.extractFileStateSortField(field);
-    fileStateSortBy.add(Pair.with(sortField, SortOrder.ASC));
+  public ProvFileStateParamBuilder sortBy(String field, SortOrder order) {
+    try {
+      ProvElastic.FileStateSortBy sortField = ProvElastic.extractFileStateSortField(field);
+      fileStateSortBy.add(Pair.with(sortField, order));
+    } catch(GenericException ex) {
+      String xattrKey = ProvElastic.processXAttrKey(field);
+      xAttrSortBy.add(Pair.with(xattrKey, order));
+    }
     return this;
   }
   

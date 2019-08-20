@@ -371,10 +371,10 @@ public class ProvElastic {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.INFO,
         "malformed xattr:" + param);
     }
-    return processXAttr(xattrParts[0], xattrParts[1]);
+    return Pair.with(processXAttrKey(xattrParts[0]), xattrParts[1]);
   }
   
-  public static Pair<String, String> processXAttr(String key, String val) {
+  public static String processXAttrKey(String key) {
     String[] keyParts =key.split("\\.");
     StringJoiner keyj = new StringJoiner(".");
     if(keyParts.length == 1) {
@@ -383,7 +383,7 @@ public class ProvElastic {
       keyj.add(keyParts[0]).add("value");
       for(int i = 1; i < keyParts.length; i++) keyj.add(keyParts[i]);
     }
-    return Pair.with(keyj.toString(), val);
+    return keyj.toString();
   }
   
   public static QueryBuilder getQB(ElasticFilters filter, Object paramVal) throws GenericException {
