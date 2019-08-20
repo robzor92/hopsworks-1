@@ -49,7 +49,7 @@ angular.module('hopsWorksApp')
 
             self.modelLink = null;
 
-            self.pageSize = 3;
+            self.pageSize = 5;
 
             self.currentPage = 1;
             self.totalItems = 0;
