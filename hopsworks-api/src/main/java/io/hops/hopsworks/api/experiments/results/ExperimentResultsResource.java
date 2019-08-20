@@ -68,11 +68,13 @@ public class ExperimentResultsResource {
   @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
   @JWTRequired(acceptedTokens={Audience.API}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
   public Response getResults(@Context UriInfo uriInfo,
-                             @BeanParam Pagination pagination)
+                             @BeanParam Pagination pagination,
+                             @BeanParam ResultsBeanParam resultsBeanParam)
       throws ExperimentsException, GenericException, ServiceException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.RESULTS);
     resourceRequest.setOffset(pagination.getOffset());
     resourceRequest.setLimit(pagination.getLimit());
+    resourceRequest.setSort(resultsBeanParam.getSortBySet());
 
     ProvFileStateParamBuilder provFilesParamBuilder = new ProvFileStateParamBuilder()
         .withProjectInodeId(project.getInode().getId())
@@ -96,7 +98,7 @@ public class ExperimentResultsResource {
         experimentConfigurationConverter.unmarshalDescription(config.toString());
 
     ExperimentResultSummaryDTO dto = experimentResultsBuilder.build(uriInfo, resourceRequest, project, experimentId,
-        experimentDescription.getOptimizationKey(), experimentDescription.getDirection());
+        experimentDescription.getOptimizationKey());
     if(dto == null) {
       throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_NOT_FOUND, Level.FINE);
     }

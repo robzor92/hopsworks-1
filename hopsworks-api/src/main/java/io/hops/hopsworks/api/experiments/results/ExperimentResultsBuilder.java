@@ -53,7 +53,7 @@ public class ExperimentResultsBuilder {
   }
 
   public ExperimentResultSummaryDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
-                                          String mlId, String optimizationKey, String direction)
+                                          String mlId, String optimizationKey)
       throws ExperimentsException {
     ExperimentResultSummaryDTO dto = new ExperimentResultSummaryDTO();
     uri(dto, uriInfo, project, mlId);
@@ -71,7 +71,7 @@ public class ExperimentResultsBuilder {
               .unmarshalResults(summaryJson).getResults();
           if(results != null) {
             dto.setCount((long) results.length);
-            results = apply(results, resourceRequest, optimizationKey, direction);
+            results = apply(results, resourceRequest, optimizationKey);
             dto.setResults(results);
           }
         }
@@ -88,7 +88,7 @@ public class ExperimentResultsBuilder {
   }
 
   private ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, ResourceRequest resourceRequest,
-                                      String optimizationKey, String direction) throws ExperimentsException {
+                                      String optimizationKey) throws ExperimentsException {
 
     if(dto == null || dto.length == 1) {
       return dto;
@@ -111,11 +111,8 @@ public class ExperimentResultsBuilder {
           "No optimization key defined for results");
     }
 
-    if(direction.compareToIgnoreCase(OptimizationDirection.MIN.name()) == 0) {
-      Arrays.sort(dto, new OptKeyComparator(optimizationKey));
-    } else if(direction.compareToIgnoreCase(OptimizationDirection.MAX.name()) == 0) {
-      Arrays.sort(dto, Collections.reverseOrder(new OptKeyComparator(optimizationKey)));
-    }
+    Arrays.sort(dto, new OptKeyComparator(optimizationKey));
+
 
     ArrayList<ExperimentResultsDTO> results = new ArrayList<>();
 
@@ -153,10 +150,5 @@ public class ExperimentResultsBuilder {
       }
       return 0.0;
     }
-  }
-
-  public enum OptimizationDirection {
-    MAX,
-    MIN
   }
 }

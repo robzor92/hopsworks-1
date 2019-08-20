@@ -33,4 +33,8 @@ public class ResultsBeanParam {
     this.sortBy = sortBy;
     sortBySet = getSortBy(sortBy);
   }
+
+  public Set<SortBy> getSortBySet() {
+    return sortBySet;
+  }
 }
