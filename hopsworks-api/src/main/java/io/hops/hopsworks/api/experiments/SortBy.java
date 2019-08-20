@@ -44,7 +44,12 @@ public class SortBy implements AbstractFacade.SortBy {
   }
 
   public enum Sorts {
-    OPTIMIZATION_KEY("OPTIMIZATION_KEY", "ASC");
+    NAME("NAME", "DESC"),
+    METRIC("METRIC", "DESC"),
+    USER("USER", "DESC"),
+    START("START", "DESC"),
+    END("END", "DESC"),
+    STATE("STATE", "DESC");
     private final String value;
     private final String defaultParam;
 

@@ -139,6 +139,7 @@ angular.module('hopsWorksApp')
                     function(success) {
                         stopLoading();
                         self.experiments = success.data.items;
+                        self.totalItems = success.data.count;
                     },
                     function(error) {
                         stopLoading();
@@ -214,5 +215,10 @@ angular.module('hopsWorksApp')
             };
 
             self.init();
+
+            self.getNewPage = function() {
+                self.offset = self.pageSize * (self.currentPage - 1);
+                self.getAll();
+            }
         }
     ]);
