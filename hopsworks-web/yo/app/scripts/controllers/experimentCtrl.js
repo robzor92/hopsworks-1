@@ -83,8 +83,6 @@ angular.module('hopsWorksApp')
                 self.getAll();
             };
 
-
-
             self.deleteExperiment = function (id) {
                 startLoading("Deleting Experiment...");
                 ExperimentService.deleteExperiment(self.projectId, id).then(

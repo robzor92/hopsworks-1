@@ -101,6 +101,7 @@ public class ExperimentsResource {
     resourceRequest.setOffset(pagination.getOffset());
     resourceRequest.setLimit(pagination.getLimit());
     resourceRequest.setFilter(experimentsBeanParam.getFilter());
+    resourceRequest.setSort(experimentsBeanParam.getSortBySet());
     resourceRequest.setExpansions(experimentsBeanParam.getExpansions().getResources());
     ExperimentDTO dto = experimentsBuilder.build(uriInfo, resourceRequest, project);
     return Response.ok().entity(dto).build();

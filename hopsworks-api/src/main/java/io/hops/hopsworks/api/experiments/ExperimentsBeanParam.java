@@ -33,7 +33,6 @@ public class ExperimentsBeanParam {
     return sortBys;
   }
 
-
   public ExperimentsBeanParam(@QueryParam("filter_by") Set<FilterBy> filter, @QueryParam("sort_by") String sortBy) {
     this.filter = filter;
     this.sortBy = sortBy;
@@ -46,6 +45,19 @@ public class ExperimentsBeanParam {
 
   public void setFilter(Set<FilterBy> filter) {
     this.filter = filter;
+  }
+
+
+  public String getSortBy() {
+    return sortBy;
+  }
+
+  public void setSortBy(String sortBy) {
+    this.sortBy = sortBy;
+  }
+
+  public Set<SortBy> getSortBySet() {
+    return sortBySet;
   }
 
   public ExpansionBeanParam getExpansions() {
