@@ -81,19 +81,24 @@ angular.module('hopsWorksApp')
 
             self.order = function () {
                 if (self.reverse) {
+                    console.log('trigged 1')
                     self.orderBy = "desc";
                 } else {
+                    console.log('trigged 2')
                     self.orderBy = "asc";
                 }
             };
 
             self.sortBy = function(type) {
                 if(self.sortType !== type) {
+                    console.log('trigged 3')
                     self.reverse = true;
                 } else {
+                    console.log('trigged 4')
                     self.reverse = !self.reverse; //if true make it false and vice versa
                 }
-                self.sortType = sortType;
+                self.sortType = type;
+                self.order();
                 self.getExperiment();
             };
 
@@ -138,11 +143,6 @@ angular.module('hopsWorksApp')
                             self.initResultsTable();
                             if(self.experiment.results.results) {
                                 self.totalItems = self.experiment.results.count;
-                            }
-                            if(self.experiment.optimizationKey) {
-                                self.sortType = self.experiment.optimizationKey;
-                            } else {
-                                self.sortType = 'metric';
                             }
                         },
                         function(error) {
