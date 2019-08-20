@@ -1,6 +1,5 @@
 package io.hops.hopsworks.api.experiments.results;
 
-import io.hops.hopsworks.api.experiments.ExperimentsBuilder;
 import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.AbstractFacade;
 import io.hops.hopsworks.common.dao.project.Project;
@@ -15,7 +14,6 @@ import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.restutils.RESTCodes;
-import org.apache.commons.math3.analysis.function.Abs;
 import org.apache.hadoop.fs.Path;
 
 import javax.ejb.EJB;
