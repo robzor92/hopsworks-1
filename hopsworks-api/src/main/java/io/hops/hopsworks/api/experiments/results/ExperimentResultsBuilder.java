@@ -22,6 +22,7 @@ import javax.ejb.TransactionAttributeType;
 import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.logging.Level;
 
@@ -52,7 +53,7 @@ public class ExperimentResultsBuilder {
   }
 
   public ExperimentResultSummaryDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
-                                          String mlId, String optimizationKey) throws ExperimentsException {
+                                          String mlId, String optimizationKey, String direction) throws ExperimentsException {
     ExperimentResultSummaryDTO dto = new ExperimentResultSummaryDTO();
     uri(dto, uriInfo, project, mlId);
     expand(dto, resourceRequest);
@@ -69,7 +70,7 @@ public class ExperimentResultsBuilder {
               .unmarshalResults(summaryJson).getResults();
           if(results != null) {
             dto.setCount((long) results.length);
-            results = apply(results, resourceRequest, optimizationKey);
+            results = apply(results, resourceRequest, optimizationKey, direction);
             dto.setResults(results);
           }
         }
@@ -86,7 +87,7 @@ public class ExperimentResultsBuilder {
   }
 
   public ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, ResourceRequest resourceRequest,
-                                      String optimizationKey) throws ExperimentsException {
+                                      String optimizationKey, String direction) throws ExperimentsException {
 
     if(dto == null || dto.length == 1) {
       return dto;
@@ -109,7 +110,11 @@ public class ExperimentResultsBuilder {
           "No optimization key defined for results");
     }
 
-    Arrays.sort(dto, new OptKeyComparator(optimizationKey));
+    if(direction.compareToIgnoreCase("min") == 0) {
+      Arrays.sort(dto, new OptKeyComparator(optimizationKey));
+    } else if(direction.compareToIgnoreCase("max") == 0) {
+      Arrays.sort(dto, Collections.reverseOrder(new OptKeyComparator(optimizationKey)));
+    }
 
     ArrayList<ExperimentResultsDTO> results = new ArrayList<>();
 
