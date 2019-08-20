@@ -141,11 +141,9 @@
       </tr>
 
       <tr>
-        <th ng-repeat="header in experimentDetailCtrl.all_headers" style="width: {{100/experimentDetailCtrl.all_headers.length}}%;">
-          <a ng-click="experimentDetailCtrl.sortBy(header)">
-            {{header}}
-            <span ng-class="{'fa fa-caret-down': reverse, 'fa fa-caret-up': !reverse}"></span>
-          </a>
+        <th ng-repeat="header in experimentDetailCtrl.all_headers" style="width: {{100/experimentDetailCtrl.all_headers.length}}%;" ng-click="experimentDetailCtrl.sortBy(header)">
+          {{header}}
+          <span class="glyphicon sort-icon" ng-show="experimentDetailCtrl.sortType == header" ng-class="{'glyphicon-chevron-up':!experimentDetailCtrl.reverse,'glyphicon-chevron-down':experimentDetailCtrl.reverse}"></span>
         </th>
       </tr>
       </thead>
