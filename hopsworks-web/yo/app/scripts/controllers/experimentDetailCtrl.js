@@ -56,7 +56,7 @@ angular.module('hopsWorksApp')
                 self.query = "";
 
                 if(self.experiment.optimizationKey && self.experiment.direction) {
-                    if(self.direction === 'max') {
+                    if(self.experiment.direction === 'max') {
                         sortBy = ';sort_by=' + $scope.sortType + ':desc)';
                     } else {
                         sortBy = ';sort_by=' + $scope.sortType + ':asc)';

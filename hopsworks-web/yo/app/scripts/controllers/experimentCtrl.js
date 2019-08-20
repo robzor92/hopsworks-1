@@ -60,7 +60,6 @@ angular.module('hopsWorksApp')
             };
 
             $scope.sortBy = function(sortType) {
-                console.log(sortType)
                 $scope.reverse = ($scope.sortType === sortType) ? !$scope.reverse : false;
                 $scope.sortType = sortType;
             };
@@ -74,7 +73,6 @@ angular.module('hopsWorksApp')
                           stopLoading();
                           for(var i = 0; self.experiments.length > i; i++) {
                             if(self.experiments[i].id === id) {
-                               console.log('removed exp')
                                self.experiments.splice(i, 1);
                                return;
                             }
