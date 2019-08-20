@@ -170,7 +170,7 @@ public class ExperimentsBuilder {
             resourceRequest.get(ResourceRequest.Name.PROVENANCE), project, fileProvenanceHit.getMlId()));
         experimentDTO.setResults(experimentResultsBuilder.build(uriInfo,
             resourceRequest.get(ResourceRequest.Name.RESULTS), project, fileProvenanceHit.getMlId(),
-            experimentDescription.getOptimizationKey()));
+            experimentDescription.getOptimizationKey(), experimentDescription.getDirection()));
       } else {
         return null;
       }

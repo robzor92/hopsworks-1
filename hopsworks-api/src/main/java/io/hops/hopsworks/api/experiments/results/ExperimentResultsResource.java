@@ -96,7 +96,7 @@ public class ExperimentResultsResource {
         experimentConfigurationConverter.unmarshalDescription(config.toString());
 
     ExperimentResultSummaryDTO dto = experimentResultsBuilder.build(uriInfo, resourceRequest, project, experimentId,
-        experimentDescription.getOptimizationKey());
+        experimentDescription.getOptimizationKey(), experimentDescription.getDirection());
     if(dto == null) {
       throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.RESULTS_NOT_FOUND, Level.FINE);
     }

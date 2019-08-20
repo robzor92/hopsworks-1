@@ -53,7 +53,8 @@ public class ExperimentResultsBuilder {
   }
 
   public ExperimentResultSummaryDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
-                                          String mlId, String optimizationKey, String direction) throws ExperimentsException {
+                                          String mlId, String optimizationKey, String direction)
+      throws ExperimentsException {
     ExperimentResultSummaryDTO dto = new ExperimentResultSummaryDTO();
     uri(dto, uriInfo, project, mlId);
     expand(dto, resourceRequest);
@@ -86,7 +87,7 @@ public class ExperimentResultsBuilder {
     return dto;
   }
 
-  public ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, ResourceRequest resourceRequest,
+  private ExperimentResultsDTO[] apply(ExperimentResultsDTO[] dto, ResourceRequest resourceRequest,
                                       String optimizationKey, String direction) throws ExperimentsException {
 
     if(dto == null || dto.length == 1) {
@@ -144,7 +145,7 @@ public class ExperimentResultsBuilder {
           .compareTo(getOptimizationValue(secondExperiment, optimizationKey));
     }
 
-    public Double getOptimizationValue(ExperimentResultsDTO experiment, String optimizationKey) {
+    private Double getOptimizationValue(ExperimentResultsDTO experiment, String optimizationKey) {
       for(ExperimentResult metric: experiment.getMetrics()) {
         if(metric.getKey().compareTo(optimizationKey) == 0) {
           return Double.parseDouble(metric.getValue());
