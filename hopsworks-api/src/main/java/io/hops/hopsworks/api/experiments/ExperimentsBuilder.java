@@ -220,7 +220,7 @@ public class ExperimentsBuilder {
           provFilesParamBuilder.sortBy("config.name", SortOrder.valueOf(sortBy.getParam().getValue()));
         }
       }
-    }    
+    }
   }
 
   protected enum SortBy {

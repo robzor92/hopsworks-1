@@ -26,8 +26,8 @@ public class FilterBy implements AbstractFacade.FilterBy {
     if(param.contains(":")) {
       String[] paramSplit = param.split(":");
       this.param = paramSplit[0];
-      if(this.param.compareToIgnoreCase(ExperimentsBuilder.Filters.DATE_CREATED_LT.name()) == 0 ||
-          this.param.compareToIgnoreCase(ExperimentsBuilder.Filters.DATE_CREATED_GT.name()) == 0) {
+      if(this.param.compareToIgnoreCase(ExperimentsBuilder.Filters.DATE_START_LT.name()) == 0 ||
+          this.param.compareToIgnoreCase(ExperimentsBuilder.Filters.DATE_START_GT.name()) == 0) {
         int splitIndex = param.indexOf(":");
         this.value = param.substring(splitIndex+1, param.length());
       } else {
