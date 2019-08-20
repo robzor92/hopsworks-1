@@ -240,7 +240,6 @@ angular.module('hopsWorksApp')
             };
 
             self.getNewPage = function() {
-                self.offset = self.pageSize * (self.currentPage - 1);
                 self.getExperiment();
             }
 

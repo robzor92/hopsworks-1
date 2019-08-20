@@ -118,6 +118,7 @@ angular.module('hopsWorksApp')
             };
 
             self.buildQuery = function() {
+                var offset = self.pageSize * (self.currentPage - 1);
                 self.query = "";
                 if(self.experimentsFilter !== "") {
                     self.query = '?filter_by=name:' + self.experimentsFilter + "&filter_by=date_created_lt:" + self.experimentsToDate.toISOString().replace('Z','')
@@ -129,7 +130,7 @@ angular.module('hopsWorksApp')
                 if(self.memberSelected.name !== 'All Members') {
                     self.query = self.query + '&filter_by=user:' + self.memberSelected.uid;
                 }
-                self.query = self.query + '&sort_by=' + self.sortType + ':' + self.orderBy + '&offset=' + self.offset + '&limit=' + self.pageSize;
+                self.query = self.query + '&sort_by=' + self.sortType + ':' + self.orderBy + '&offset=' + offset + '&limit=' + self.pageSize;
             };
 
             self.getAll = function() {
