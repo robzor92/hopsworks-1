@@ -25,9 +25,13 @@ angular.module('hopsWorksApp')
 
             var self = this;
 
-            self.pageSize = 10;
-            $scope.sortKey = 'start';
-            $scope.reverse = true;
+            self.pageSize = 5;
+            self.currentPage = 1;
+            self.totalItems = 0;
+
+            self.sortType = 'start';
+            self.reverse = true;
+
             self.projectId = $routeParams.projectID;
 
             self.memberSelected = {};
@@ -59,12 +63,26 @@ angular.module('hopsWorksApp')
                 self.loadingText = "";
             };
 
-            $scope.sortBy = function(sortType) {
-                $scope.reverse = ($scope.sortType === sortType) ? !$scope.reverse : false;
-                $scope.sortType = sortType;
+            self.order = function () {
+                if (self.reverse) {
+                    self.orderBy = "desc";
+                } else {
+                    self.orderBy = "asc";
+                }
             };
 
-            $scope.sortType = 'Start'
+            self.sortBy = function(type) {
+                if(self.sortType !== type) {
+                    self.reverse = true;
+                } else {
+                    self.reverse = !self.reverse; //if true make it false and vice versa
+                }
+                self.sortType = type;
+                self.order();
+                self.getAll();
+            };
+
+
 
             self.deleteExperiment = function (id) {
                 startLoading("Deleting Experiment...");

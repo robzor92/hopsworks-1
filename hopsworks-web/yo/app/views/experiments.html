@@ -81,7 +81,10 @@
                 <th style="width: 14%">Actions</th>
                 </thead>
                 <tbody>
-                <tr dir-paginate="experiment in experimentCtrl.experiments| orderBy :sortKey:reverse| itemsPerPage:experimentCtrl.pageSize">
+                <tr dir-paginate="experiment in experimentCtrl.experiments | itemsPerPage:experimentCtrl.pageSize"
+                    pagination-id="experiments_pagination"
+                    current-page="experimentCtrl.currentPage"
+                    total-items="experimentCtrl.totalItems">
                     <td> {{experiment.name}} </td>
                     <td> {{experiment.metric}} </td>
                     <td> {{experiment.userFullName}} </td>

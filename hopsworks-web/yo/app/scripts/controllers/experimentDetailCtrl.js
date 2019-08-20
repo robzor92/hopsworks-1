@@ -92,10 +92,8 @@ angular.module('hopsWorksApp')
 
             self.sortBy = function(type) {
                 if(self.sortType !== type) {
-                    console.log('trigged 3')
                     self.reverse = true;
                 } else {
-                    console.log('trigged 4')
                     self.reverse = !self.reverse; //if true make it false and vice versa
                 }
                 self.sortType = type;
