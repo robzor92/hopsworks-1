@@ -31,7 +31,15 @@ angular.module('hopsWorksApp')
 
             self.experiment = experiment;
 
-            $scope.sortType = self.experiment.optimizationKey;
+            self.sortType = self.experiment.optimizationKey;
+
+            if(self.experiment.optimizationKey) {
+                if(self.experiment.direction === 'max') {
+                    self.orderBy = 'desc';
+                } else if(self.experiment.direction === 'min') {
+                    self.orderBy = 'asc';
+                }
+            }
 
             self.showProvenanceView = false;
             self.showResultsView = true;
@@ -56,25 +64,36 @@ angular.module('hopsWorksApp')
                 self.query = "";
 
                 if(self.experiment.optimizationKey && self.experiment.direction) {
-                    if(self.experiment.direction === 'max') {
-                        sortBy = ';sort_by=' + $scope.sortType + ':desc)';
-                    } else if(self.experiment.direction === 'min') {
-                        sortBy = ';sort_by=' + $scope.sortType + ':asc)';
-                    } else {
-                        sortBy = ')';
-                    }
+                    sortBy = ';sort_by=' + self.sortType + ':' + self.orderBy + ')';
+                } else {
+                    sortBy = ')';
                 }
+
+
                 if (self.showProvenanceView === true && self.showResultsView === true) {
                     self.query = "?expand=provenance&expand=results(offset=" + offset + ";limit=" + self.pageSize + sortBy
                 } else if (self.showProvenanceView === true && self.showResultsView === false) {
                     self.query = "?expand=provenance"
                 } else if (self.showProvenanceView === false && self.showResultsView === true) {
                     self.query = "?expand=results(offset=" + offset + ";limit=" + self.pageSize + sortBy
+                };
+            };
+
+            self.order = function () {
+                if (self.reverse) {
+                    self.orderBy = "desc";
+                } else {
+                    self.orderBy = "asc";
                 }
             };
 
-            $scope.sortBy = function(sortType) {
-                $scope.sortType = sortType;
+            self.sortBy = function(type) {
+                if(self.sortType !== type) {
+                    self.reverse = true;
+                } else {
+                    self.reverse = !self.reverse; //if true make it false and vice versa
+                }
+                self.sortType = sortType;
                 self.getExperiment();
             };
 
@@ -121,9 +140,9 @@ angular.module('hopsWorksApp')
                                 self.totalItems = self.experiment.results.count;
                             }
                             if(self.experiment.optimizationKey) {
-                                $scope.sortType = self.experiment.optimizationKey;
+                                self.sortType = self.experiment.optimizationKey;
                             } else {
-                                $scope.sortType = 'metric';
+                                self.sortType = 'metric';
                             }
                         },
                         function(error) {

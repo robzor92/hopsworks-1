@@ -142,14 +142,10 @@
 
       <tr>
         <th ng-repeat="header in experimentDetailCtrl.all_headers" style="width: {{100/experimentDetailCtrl.all_headers.length}}%;">
-          <a ng-if="experimentDetailCtrl.experiment.optimizationKey === header" ng-click="sortBy(experimentDetailCtrl.experiment.optimizationKey)">
+          <a ng-click="experimentDetailCtrl.sortBy(header)">
             {{header}}
-            <span ng-show="sortType === experimentDetailCtrl.experiment.optimizationKey"
-                  ng-class="{'fa fa-caret-down': reverse, 'fa fa-caret-up': !reverse}"></span>
+            <span ng-class="{'fa fa-caret-down': reverse, 'fa fa-caret-up': !reverse}"></span>
           </a>
-          <div ng-if="experimentDetailCtrl.experiment.optimizationKey !== header">
-            {{header}}
-          </div>
         </th>
       </tr>
       </thead>
