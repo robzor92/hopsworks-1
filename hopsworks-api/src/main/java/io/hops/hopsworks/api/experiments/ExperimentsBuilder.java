@@ -26,6 +26,7 @@ import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.InvalidQueryException;
 import io.hops.hopsworks.exceptions.ServiceException;
+import org.elasticsearch.search.sort.SortOrder;
 import org.json.JSONObject;
 
 import javax.ejb.EJB;
@@ -103,6 +104,7 @@ public class ExperimentsBuilder {
           .withMlType(Provenance.MLType.EXPERIMENT.name())
           .withAppState();
 
+      buildSortOrder(provFilesParamBuilder, resourceRequest.getSort());
       buildFilter(provFilesParamBuilder, resourceRequest.getFilter(), project);
 
       GenericEntity<Collection<FileState>> searchResults = new GenericEntity<Collection<FileState>>(
@@ -185,9 +187,9 @@ public class ExperimentsBuilder {
           HashMap<String, String> map = new HashMap<>();
           map.put("config.name", filterBy.getValue());
           provFilesParamBuilder.withXAttrsLike(map);
-        } else if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_CREATED_LT.name()) == 0) {
+        } else if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_START_LT.name()) == 0) {
           provFilesParamBuilder.createdBefore(getDate(filterBy.getField(), filterBy.getValue()).getTime());
-        } else if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_CREATED_GT.name()) == 0) {
+        } else if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_START_GT.name()) == 0) {
           provFilesParamBuilder.createdAfter(getDate(filterBy.getField(), filterBy.getValue()).getTime());
         } else if(filterBy.getParam().compareToIgnoreCase(Filters.USER.name()) == 0) {
           String userId = filterBy.getValue();
@@ -200,7 +202,7 @@ public class ExperimentsBuilder {
     }
   }
 
-  public Date getDate(String field, String value) {
+  private Date getDate(String field, String value) {
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
     try {
       return formatter.parse(value);
@@ -210,10 +212,30 @@ public class ExperimentsBuilder {
     }
   }
 
+  public void buildSortOrder(ProvFileStateParamBuilder provFilesParamBuilder, Set<? extends AbstractFacade.SortBy> sort)
+  {
+    if(sort != null) {
+      for(AbstractFacade.SortBy sortBy: sort) {
+        if(sortBy.getValue().compareToIgnoreCase(SortBy.NAME.name()) == 0) {
+          provFilesParamBuilder.sortBy("config.name", SortOrder.valueOf(sortBy.getParam().getValue()));
+        }
+      }
+    }    
+  }
+
+  protected enum SortBy {
+    NAME,
+    METRIC,
+    USER,
+    START,
+    END,
+    STATE;
+  }
+
   protected enum Filters {
     NAME,
-    DATE_CREATED_LT,
-    DATE_CREATED_GT,
+    DATE_START_LT,
+    DATE_START_GT,
     USER
   }
 }
