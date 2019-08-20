@@ -57,9 +57,9 @@ angular.module('hopsWorksApp')
 
                 if(self.experiment.optimizationKey && self.experiment.direction) {
                     if(self.direction == 'max') {
-                        sortBy = ';sort_by=optimization_key:desc)';
+                        sortBy = ';sort_by=' + $scope.sortType + ' :desc)';
                     } else {
-                        sortBy = ';sort_by=optimization_key:asc)';
+                        sortBy = ';sort_by=' + $scope.sortType + ' :asc)';
                     }
                 }
                 if (self.showProvenanceView === true && self.showResultsView === true) {
@@ -72,14 +72,8 @@ angular.module('hopsWorksApp')
             };
 
             $scope.sortBy = function(sortType) {
-
-                if ($scope.sortType === sortType) {
-
-                    $scope.reverse = !$scope.reverse;
-                } else {
-                    scope.reverse = false;
-                }
                 $scope.sortType = sortType;
+                self.getExperiment();
             };
 
             self.viewImage = function(filePath) {
