@@ -14,7 +14,7 @@ public class SortBy implements AbstractFacade.SortBy {
     String[] sortByParams = param.split(":");
     String sort = "";
     try {
-      sort = sortByParams[0].toUpperCase();
+      sort = sortByParams[0];
       this.sortBy = new Sorts(sort, "DESC");
     } catch (IllegalArgumentException iae) {
       throw new WebApplicationException("Sort by need to set a valid sort parameter, but found: " + sort,
