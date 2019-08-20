@@ -15,7 +15,7 @@ public class SortBy implements AbstractFacade.SortBy {
     String sort = "";
     try {
       sort = sortByParams[0].toUpperCase();
-      this.sortBy = Sorts.valueOf(sort);
+      this.sortBy = new Sorts(sort, "DESC");
     } catch (IllegalArgumentException iae) {
       throw new WebApplicationException("Sort by need to set a valid sort parameter, but found: " + sort,
           Response.Status.NOT_FOUND);
@@ -43,8 +43,8 @@ public class SortBy implements AbstractFacade.SortBy {
     return null;
   }
 
-  public enum Sorts {
-    OPTIMIZATION_KEY("OPTIMIZATION_KEY", "DESC");
+  public class Sorts {
+
     private final String value;
     private final String defaultParam;
 

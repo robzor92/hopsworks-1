@@ -8,8 +8,7 @@ import java.util.Set;
 
 public class ExperimentResultsBeanParam {
   @QueryParam("sort_by")
-  @ApiParam(value = "ex. sort_by=optimization_key:desc",
-      allowableValues = "optimization_key:desc,optimization_key:asc")
+  @ApiParam(value = "ex. sort_by=metric:desc")
   private String sortBy;
   private final Set<SortBy> sortBySet;
 

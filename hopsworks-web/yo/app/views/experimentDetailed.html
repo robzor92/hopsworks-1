@@ -154,7 +154,7 @@
       </tr>
       </thead>
       <tbody>
-      <tr dir-paginate="experiment in experimentDetailCtrl.experiments| itemsPerPage:experimentDetailCtrl.pageSize | orderBy:sortType:reverse"
+      <tr dir-paginate="experiment in experimentDetailCtrl.experiments | itemsPerPage:experimentDetailCtrl.pageSize"
           pagination-id="experiments_pagination"
           current-page="experimentDetailCtrl.currentPage"
           total-items="experimentDetailCtrl.totalItems">

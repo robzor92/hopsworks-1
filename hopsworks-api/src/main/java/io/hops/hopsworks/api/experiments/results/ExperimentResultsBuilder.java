@@ -115,13 +115,7 @@ public class ExperimentResultsBuilder {
           "No optimization key defined for results");
     }
 
-    AbstractFacade.SortBy optimizationKeySort = null;
-    for (AbstractFacade.SortBy sortBy : resourceRequest.getSort()) {
-      if(sortBy.getValue().equals(SortBy.Sorts.OPTIMIZATION_KEY.name())) {
-        optimizationKeySort = sortBy;
-        break;
-      }
-    }
+    AbstractFacade.SortBy optimizationKeySort = resourceRequest.getSort().iterator().next();
 
     if(optimizationKeySort != null) {
       if(optimizationKeySort.getParam().getValue().compareToIgnoreCase("ASC") == 0) {
