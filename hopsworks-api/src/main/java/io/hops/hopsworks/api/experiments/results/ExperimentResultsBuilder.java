@@ -110,9 +110,9 @@ public class ExperimentResultsBuilder {
           "No optimization key defined for results");
     }
 
-    if(direction.compareToIgnoreCase("min") == 0) {
+    if(direction.compareToIgnoreCase(OptimizationDirection.MIN.name()) == 0) {
       Arrays.sort(dto, new OptKeyComparator(optimizationKey));
-    } else if(direction.compareToIgnoreCase("max") == 0) {
+    } else if(direction.compareToIgnoreCase(OptimizationDirection.MAX.name()) == 0) {
       Arrays.sort(dto, Collections.reverseOrder(new OptKeyComparator(optimizationKey)));
     }
 
@@ -152,5 +152,10 @@ public class ExperimentResultsBuilder {
       }
       return 0.0;
     }
+  }
+
+  public enum OptimizationDirection {
+    MAX,
+    MIN
   }
 }
