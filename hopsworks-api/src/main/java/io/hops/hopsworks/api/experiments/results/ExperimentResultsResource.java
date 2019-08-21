@@ -5,7 +5,7 @@ import io.hops.hopsworks.api.filter.Audience;
 import io.hops.hopsworks.api.util.Pagination;
 import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.project.Project;
-import io.hops.hopsworks.common.experiments.ExperimentConfigurationConverter;
+import io.hops.hopsworks.common.experiments.ExperimentSummaryConverter;
 import io.hops.hopsworks.common.experiments.dto.results.ExperimentResultSummaryDTO;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.exceptions.ExperimentsException;
@@ -37,7 +37,7 @@ public class ExperimentResultsResource {
   @EJB
   private ProvenanceController provenanceController;
   @EJB
-  private ExperimentConfigurationConverter experimentConfigurationConverter;
+  private ExperimentSummaryConverter experimentSummaryConverter;
 
   public ExperimentResultsResource() {
   }

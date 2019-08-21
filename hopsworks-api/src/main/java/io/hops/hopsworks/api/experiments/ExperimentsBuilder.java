@@ -11,9 +11,9 @@ import io.hops.hopsworks.common.dao.hdfsUser.HdfsUsersFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.user.UserFacade;
 import io.hops.hopsworks.common.dao.user.Users;
-import io.hops.hopsworks.common.experiments.ExperimentConfigurationConverter;
+import io.hops.hopsworks.common.experiments.ExperimentSummaryConverter;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
-import io.hops.hopsworks.common.experiments.dto.ExperimentDescription;
+import io.hops.hopsworks.common.experiments.dto.ExperimentSummary;
 
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
 import io.hops.hopsworks.common.provenance.Provenance;
@@ -58,7 +58,7 @@ public class ExperimentsBuilder {
   @EJB
   private ExperimentResultsBuilder experimentResultsBuilder;
   @EJB
-  private ExperimentConfigurationConverter experimentConfigurationConverter;
+  private ExperimentSummaryConverter experimentSummaryConverter;
   @EJB
   private UserFacade userFacade;
   @EJB
@@ -132,24 +132,24 @@ public class ExperimentsBuilder {
     expand(experimentDTO, resourceRequest);
 
     if (experimentDTO.isExpand()) {
-      if(fileProvenanceHit.getXattrs().containsKey("config")) {
-        JSONObject config = new JSONObject(fileProvenanceHit.getXattrs().get("config"));
+      if(fileProvenanceHit.getXattrs().containsKey("summary")) {
+        JSONObject summary = new JSONObject(fileProvenanceHit.getXattrs().get("summary"));
 
-        ExperimentDescription experimentDescription =
-            experimentConfigurationConverter.unmarshalDescription(config.toString());
+        ExperimentSummary experimentSummary =
+            experimentSummaryConverter.unmarshalDescription(summary.toString());
 
         Long creationTime = fileProvenanceHit.getCreateTime();
         experimentDTO.setStarted(DateUtils.millis2LocalDateTime(creationTime).toString());
         Long finishTime = null;
-        if (!Strings.isNullOrEmpty(experimentDescription.getDuration())) {
-          finishTime = creationTime + Long.valueOf(experimentDescription.getDuration());
+        if (!Strings.isNullOrEmpty(experimentSummary.getDuration())) {
+          finishTime = creationTime + Long.valueOf(experimentSummary.getDuration());
           experimentDTO.setFinished(DateUtils.millis2LocalDateTime(finishTime).toString());
         }
 
-        if(experimentDescription.getState().equals(Provenance.AppState.RUNNING.name())) {
+        if(experimentSummary.getState().equals(Provenance.AppState.RUNNING.name())) {
           experimentDTO.setState(fileProvenanceHit.getAppState().getCurrentState().name());
         } else {
-          experimentDTO.setState(experimentDescription.getState());
+          experimentDTO.setState(experimentSummary.getState());
         }
 
         if(fileProvenanceHit.getXattrs().containsKey("model")) {
@@ -158,14 +158,14 @@ public class ExperimentsBuilder {
         }
 
         experimentDTO.setId(fileProvenanceHit.getMlId());
-        experimentDTO.setName(experimentDescription.getName());
-        experimentDTO.setUserFullName(experimentDescription.getUserFullName());
-        experimentDTO.setMetric(experimentDescription.getMetric());
-        experimentDTO.setDescription(experimentDescription.getDescription());
-        experimentDTO.setExperimentType(experimentDescription.getExperimentType());
-        experimentDTO.setFunction(experimentDescription.getFunction());
-        experimentDTO.setDirection(experimentDescription.getDirection());
-        experimentDTO.setOptimizationKey(experimentDescription.getOptimizationKey());
+        experimentDTO.setName(experimentSummary.getName());
+        experimentDTO.setUserFullName(experimentSummary.getUserFullName());
+        experimentDTO.setMetric(experimentSummary.getMetric());
+        experimentDTO.setDescription(experimentSummary.getDescription());
+        experimentDTO.setExperimentType(experimentSummary.getExperimentType());
+        experimentDTO.setFunction(experimentSummary.getFunction());
+        experimentDTO.setDirection(experimentSummary.getDirection());
+        experimentDTO.setOptimizationKey(experimentSummary.getOptimizationKey());
         experimentDTO.setTensorboard(tensorBoardBuilder.build(uriInfo,
             resourceRequest.get(ResourceRequest.Name.TENSORBOARD), project, fileProvenanceHit.getMlId()));
         experimentDTO.setProvenance(experimentFileProvenanceBuilder.build(uriInfo,
@@ -185,7 +185,7 @@ public class ExperimentsBuilder {
       for (AbstractFacade.FilterBy filterBy : filters) {
         if(filterBy.getParam().compareToIgnoreCase(Filters.NAME.name()) == 0) {
           HashMap<String, String> map = new HashMap<>();
-          map.put("config.name", filterBy.getValue());
+          map.put("summary.name", filterBy.getValue());
           provFilesParamBuilder.withXAttrsLike(map);
         } else if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_START_LT.name()) == 0) {
           provFilesParamBuilder.createdBefore(getDate(filterBy.getField(), filterBy.getValue()).getTime());
@@ -217,11 +217,11 @@ public class ExperimentsBuilder {
     if(sort != null) {
       for(AbstractFacade.SortBy sortBy: sort) {
         if(sortBy.getValue().compareToIgnoreCase(SortBy.NAME.name()) == 0) {
-          provFilesParamBuilder.sortBy("config.name", SortOrder.valueOf(sortBy.getParam().getValue()));
+          provFilesParamBuilder.sortBy("summary.name", SortOrder.valueOf(sortBy.getParam().getValue()));
         } else if(sortBy.getValue().compareToIgnoreCase(SortBy.METRIC.name()) == 0) {
-          provFilesParamBuilder.sortBy("config.metric", SortOrder.valueOf(sortBy.getParam().getValue()));
+          provFilesParamBuilder.sortBy("summary.metric", SortOrder.valueOf(sortBy.getParam().getValue()));
         } else if(sortBy.getValue().compareToIgnoreCase(SortBy.USER.name()) == 0) {
-          provFilesParamBuilder.sortBy("config.userFullName", SortOrder.valueOf(sortBy.getParam().getValue()));
+          provFilesParamBuilder.sortBy("summary.userFullName", SortOrder.valueOf(sortBy.getParam().getValue()));
         }else if(sortBy.getValue().compareToIgnoreCase(SortBy.START.name()) == 0) {
           provFilesParamBuilder.sortBy("create_timestamp", SortOrder.valueOf(sortBy.getParam().getValue()));
         }

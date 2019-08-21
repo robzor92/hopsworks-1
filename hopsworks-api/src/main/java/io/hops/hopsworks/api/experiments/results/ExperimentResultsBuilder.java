@@ -4,7 +4,7 @@ import io.hops.hopsworks.common.api.ResourceRequest;
 import io.hops.hopsworks.common.dao.AbstractFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 
-import io.hops.hopsworks.common.experiments.ExperimentConfigurationConverter;
+import io.hops.hopsworks.common.experiments.ExperimentSummaryConverter;
 import io.hops.hopsworks.common.experiments.dto.results.ExperimentResult;
 import io.hops.hopsworks.common.experiments.dto.results.ExperimentResultSummaryDTO;
 import io.hops.hopsworks.common.experiments.dto.results.ExperimentResultsDTO;
@@ -37,7 +37,7 @@ public class ExperimentResultsBuilder {
   @EJB
   private DistributedFsService dfs;
   @EJB
-  private ExperimentConfigurationConverter experimentConfigurationConverter;
+  private ExperimentSummaryConverter experimentSummaryConverter;
 
   public ExperimentResultSummaryDTO uri(ExperimentResultSummaryDTO dto, UriInfo uriInfo, Project project, String mlId) {
     dto.setHref(uriInfo.getBaseUriBuilder().path(ResourceRequest.Name.PROJECT.toString().toLowerCase())
@@ -71,7 +71,7 @@ public class ExperimentResultsBuilder {
             + mlId + "/.summary";
         if (dfso.exists(summaryPath)) {
           String summaryJson = dfso.cat(new Path(summaryPath));
-          ExperimentResultsDTO[] results = experimentConfigurationConverter
+          ExperimentResultsDTO[] results = experimentSummaryConverter
               .unmarshalResults(summaryJson).getResults();
           if (results != null) {
             dto.setCount((long) results.length);

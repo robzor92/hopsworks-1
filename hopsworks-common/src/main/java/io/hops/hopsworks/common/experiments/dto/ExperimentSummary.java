@@ -9,7 +9,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-public class ExperimentDescription {
+public class ExperimentSummary {
 
   private String name;
 
@@ -30,8 +30,6 @@ public class ExperimentDescription {
   private String direction;
 
   private String optimizationKey;
-
-  private String model;
 
   public String getName() {
     return name;
@@ -111,13 +109,5 @@ public class ExperimentDescription {
 
   public void setOptimizationKey(String optimizationKey) {
     this.optimizationKey = optimizationKey;
-  }
-
-  public String getModel() {
-    return model;
-  }
-
-  public void setModel(String model) {
-    this.model = model;
   }
 }

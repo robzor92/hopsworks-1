@@ -2,7 +2,7 @@ package io.hops.hopsworks.common.experiments;
 
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.user.Users;
-import io.hops.hopsworks.common.experiments.dto.ExperimentDescription;
+import io.hops.hopsworks.common.experiments.dto.ExperimentSummary;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
@@ -39,24 +39,24 @@ public class ExperimentsController {
   @EJB
   private DistributedFsService dfs;
 
-  public void attachExperiment(String id, Project project, Users user, ExperimentDescription experimentDescription,
+  public void attachExperiment(String id, Project project, Users user, ExperimentSummary experimentSummary,
                       ExperimentDTO.XAttrSetFlag xAttrSetFlag)
       throws DatasetException {
 
     String realName = user.getFname() + " " + user.getLname();
-    experimentDescription.setUserFullName(realName);
+    experimentSummary.setUserFullName(realName);
 
     String experimentPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/" + id;
 
     DistributedFileSystemOps dfso = null;
     try {
-      JAXBContext sparkJAXBContext = JAXBContextFactory.createContext(new Class[] {ExperimentDescription.class},
+      JAXBContext sparkJAXBContext = JAXBContextFactory.createContext(new Class[] {ExperimentSummary.class},
           null);
       Marshaller marshaller = sparkJAXBContext.createMarshaller();
       marshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
       marshaller.setProperty(MarshallerProperties.MEDIA_TYPE, MediaType.APPLICATION_JSON);
       StringWriter sw = new StringWriter();
-      marshaller.marshal(experimentDescription, sw);
+      marshaller.marshal(experimentSummary, sw);
       byte[] experiment = sw.toString().getBytes(StandardCharsets.UTF_8);
       dfso = dfs.getDfsOps();
 

@@ -1,6 +1,6 @@
 package io.hops.hopsworks.common.experiments;
 
-import io.hops.hopsworks.common.experiments.dto.ExperimentDescription;
+import io.hops.hopsworks.common.experiments.dto.ExperimentSummary;
 import io.hops.hopsworks.common.experiments.dto.results.ExperimentResultSummaryDTO;
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.eclipse.persistence.jaxb.MarshallerProperties;
@@ -21,16 +21,16 @@ import java.io.StringReader;
 @Singleton
 @TransactionAttribute(TransactionAttributeType.NEVER)
 @ConcurrencyManagement(ConcurrencyManagementType.BEAN)
-public class ExperimentConfigurationConverter {
+public class ExperimentSummaryConverter {
 
-  private static JAXBContext jaxbExperimentDescriptionContext;
+  private static JAXBContext jaxbExperimentSummaryContext;
   private static JAXBContext jaxbExperimentResultsWrapperContext;
 
   @PostConstruct
   public void init() {
     try {
-      jaxbExperimentDescriptionContext = JAXBContextFactory.
-          createContext(new Class[] {ExperimentDescription.class}, null);
+      jaxbExperimentSummaryContext = JAXBContextFactory.
+          createContext(new Class[] {ExperimentSummary.class}, null);
     } catch (JAXBException e) {
       e.printStackTrace();
     }
@@ -42,13 +42,13 @@ public class ExperimentConfigurationConverter {
     }
   }
 
-  public ExperimentDescription unmarshalDescription(String jsonConfig) {
+  public ExperimentSummary unmarshalDescription(String jsonConfig) {
     try {
-      Unmarshaller unmarshaller = jaxbExperimentDescriptionContext.createUnmarshaller();
+      Unmarshaller unmarshaller = jaxbExperimentSummaryContext.createUnmarshaller();
       StreamSource json = new StreamSource(new StringReader(jsonConfig));
       unmarshaller.setProperty(MarshallerProperties.JSON_INCLUDE_ROOT, false);
       unmarshaller.setProperty(MarshallerProperties.MEDIA_TYPE, MediaType.APPLICATION_JSON);
-      return unmarshaller.unmarshal(json, ExperimentDescription.class).getValue();
+      return unmarshaller.unmarshal(json, ExperimentSummary.class).getValue();
     } catch(Exception e) {
     }
     return null;

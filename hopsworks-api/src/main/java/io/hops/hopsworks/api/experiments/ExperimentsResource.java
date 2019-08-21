@@ -13,7 +13,7 @@ import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.experiments.ExperimentsController;
-import io.hops.hopsworks.common.experiments.dto.ExperimentDescription;
+import io.hops.hopsworks.common.experiments.dto.ExperimentSummary;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
 import io.hops.hopsworks.common.provenance.Provenance;
@@ -149,23 +149,23 @@ public class ExperimentsResource {
   @JWTRequired(acceptedTokens={Audience.API, Audience.JOB}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
   public Response post (
       @PathParam("id") String id,
-      ExperimentDescription experimentDescription,
+      ExperimentSummary experimentSummary,
       @QueryParam("xattr") ExperimentDTO.XAttrSetFlag xAttrSetFlag,
       @QueryParam("model") String model,
       @Context HttpServletRequest req,
       @Context UriInfo uriInfo,
       @Context SecurityContext sc) throws DatasetException {
 
-    if (experimentDescription == null && model == null) {
+    if (experimentSummary == null && model == null) {
       throw new IllegalArgumentException("Experiment configuration or model was not provided");
     }
     Users user = jwtHelper.getUserPrincipal(sc);
-    if(experimentDescription != null) {
-      experimentsController.attachExperiment(id, project, user, experimentDescription, xAttrSetFlag);
+    if(experimentSummary != null) {
+      experimentsController.attachExperiment(id, project, user, experimentSummary, xAttrSetFlag);
     } else {
       experimentsController.attachModel(id, project, model, xAttrSetFlag);
     }
-    return Response.ok().entity(experimentDescription).build();
+    return Response.ok().entity(experimentSummary).build();
   }
 
   @ApiOperation( value = "Delete an experiment")
