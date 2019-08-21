@@ -128,7 +128,7 @@ public class ExperimentsResource {
         .withMlId(id);
 
     GenericEntity<Collection<FileState>> fileProvenanceHits = new GenericEntity<Collection<FileState>>(
-        provenanceController.provFileStateList(provFilesParamBuilder).values()) {
+        provenanceController.provFileStateList(provFilesParamBuilder)) {
     };
 
     if(!fileProvenanceHits.getEntity().isEmpty()) {

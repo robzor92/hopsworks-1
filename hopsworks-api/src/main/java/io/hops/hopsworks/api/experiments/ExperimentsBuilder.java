@@ -108,7 +108,7 @@ public class ExperimentsBuilder {
       buildFilter(provFilesParamBuilder, resourceRequest.getFilter(), project);
 
       GenericEntity<Collection<FileState>> searchResults = new GenericEntity<Collection<FileState>>(
-          provenanceController.provFileStateList(provFilesParamBuilder).values()) {
+          provenanceController.provFileStateList(provFilesParamBuilder)) {
       };
 
       dto.setCount((long)searchResults.getEntity().size());

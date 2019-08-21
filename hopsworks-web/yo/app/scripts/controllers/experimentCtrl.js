@@ -25,7 +25,7 @@ angular.module('hopsWorksApp')
 
             var self = this;
 
-            self.pageSize = 5;
+            self.pageSize = 12;
             self.currentPage = 1;
             self.totalItems = 0;
 

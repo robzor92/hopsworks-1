@@ -57,7 +57,7 @@ public class ExperimentFileProvenanceBuilder {
         builder.withAppId(appId);
 
         Collection<FootprintFileState> filesReadHits = provenanceController.provAppFootprintList(builder,
-            AppFootprintType.INPUT).values();
+            AppFootprintType.INPUT);
         ArrayList<String> filesRead = new ArrayList<>();
         for(FootprintFileState file : filesReadHits) {
           filesRead.add(file.getInodeName());
@@ -69,7 +69,7 @@ public class ExperimentFileProvenanceBuilder {
         builder.withAppId(appId);
 
         Collection<FootprintFileState> filesOutputHits = provenanceController.provAppFootprintList(builder,
-            AppFootprintType.OUTPUT_ADDED).values();
+            AppFootprintType.OUTPUT_ADDED);
         ArrayList<String> filesOutput = new ArrayList<>();
         for(FootprintFileState file : filesOutputHits) {
           filesOutput.add(file.getInodeName());
@@ -81,7 +81,7 @@ public class ExperimentFileProvenanceBuilder {
         builder.withAppId(appId);
 
         Collection<FootprintFileState> filesDeletedHits = provenanceController.provAppFootprintList(builder,
-            AppFootprintType.REMOVED).values();
+            AppFootprintType.REMOVED);
         ArrayList<String> filesDeleted = new ArrayList<>();
         for(FootprintFileState file : filesDeletedHits) {
           filesDeleted.add(file.getInodeName());
