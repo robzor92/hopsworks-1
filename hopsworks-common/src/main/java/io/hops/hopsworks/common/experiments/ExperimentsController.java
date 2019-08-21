@@ -66,7 +66,7 @@ public class ExperimentsController {
 
       flags.add(XAttrSetFlag.valueOf(xAttrSetFlag.name()));
 
-      dfso.setXAttr(experimentPath, "provenance.config", experiment, flags);
+      dfso.setXAttr(experimentPath, "provenance.summary", experiment, flags);
     } catch(IOException | JAXBException ex) {
       throw new DatasetException(RESTCodes.DatasetErrorCode.ATTACH_XATTR_ERROR, Level.SEVERE,
           "path: " + experimentPath, ex.getMessage(), ex);
