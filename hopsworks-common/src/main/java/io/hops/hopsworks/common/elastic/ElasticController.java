@@ -104,6 +104,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1010,7 +1011,7 @@ public class ElasticController {
   static final int DEFAULT_PROVENANCE_QUERY_SIZE = 1000;
   static final int DEFAULT_SCROLLING_BATCH_SIZE = 50;
   
-  public Map<Long, FileState> provScrollingFileState(
+  public List<FileState> provFileState(
     Collection<Pair<ProvElastic.FileStateFilter, Object>> fileStateFilters,
     List<Pair<ProvElastic.FileStateSortBy, SortOrder>> fileStateSortBy,
     Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters)
@@ -1187,15 +1188,15 @@ public class ElasticController {
     return result;
   }
   
-  private Map<Long, FileState> provFileStateQuery(Function<Client, ActionRequestBuilder> arbF)
+  private List<FileState> provFileStateQuery(Function<Client, ActionRequestBuilder> arbF)
     throws ServiceException {
     SearchResponse searchResult = provFileIndexQuery(arbF);
-    Map<Long, FileState> result = new HashMap<>();
+    List<FileState> fileStates = new ArrayList<>();
     for (SearchHit rawHit : searchResult.getHits().getHits()) {
       FileState fpHit = new FileState(rawHit);
-      result.put(fpHit.getInodeId(), fpHit);
+      fileStates.add(fpHit);
     }
-    return result;
+    return fileStates;
   }
   
   private Map<String, Map<Provenance.AppState, AppProvenanceHit>> provAppStateQuery(

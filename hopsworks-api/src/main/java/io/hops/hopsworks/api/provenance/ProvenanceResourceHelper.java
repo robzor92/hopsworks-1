@@ -47,9 +47,8 @@ public class ProvenanceResourceHelper {
     throws GenericException, ServiceException {
     switch(returnType) {
       case LIST:
-        Map<Long,FileState> listAux = provenanceCtrl.provFileStateList(params);
-        FileStateResult.List listResult
-          = new FileStateResult.List(listAux.values());
+        List<FileState> listAux = provenanceCtrl.provFileStateList(params);
+        FileStateResult.List listResult = new FileStateResult.List(listAux);
         return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(listResult).build();
       case MIN_TREE:
         Pair<Map<Long, FileStateTree>, Map<Long, FileStateTree>> minAux
@@ -79,9 +78,8 @@ public class ProvenanceResourceHelper {
     throws GenericException, ServiceException {
     switch(returnType) {
       case LIST:
-        Map<Long, FootprintFileState> listAux = provenanceCtrl.provAppFootprintList(params, footprintType);
-        FootprintFileStateResult.List listResult
-          = new FootprintFileStateResult.List(listAux.values());
+        List<FootprintFileState> listAux = provenanceCtrl.provAppFootprintList(params, footprintType);
+        FootprintFileStateResult.List listResult = new FootprintFileStateResult.List(listAux);
         return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(listResult).build();
       case MIN_TREE:
         Pair<Map<Long, FootprintFileStateTree>, Map<Long, FootprintFileStateTree>> minAux

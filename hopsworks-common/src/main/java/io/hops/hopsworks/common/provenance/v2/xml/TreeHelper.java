@@ -70,8 +70,8 @@ public class TreeHelper {
       return Pair.with(projectNodes, incompleteNodes);
     }
     
-    public void processBasicFileState(Map<Long, S> fileStates) throws GenericException {
-      for (S fileState : fileStates.values()) {
+    public void processBasicFileState(List<S> fileStates) throws GenericException {
+      for (S fileState : fileStates) {
         if (fileState.isProject()) {
           ProvenanceController.BasicTreeBuilder<S> projectNode = getOrBuildProjectNode(fileState);
           projectNode.setFileState(fileState);

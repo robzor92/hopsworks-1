@@ -63,8 +63,8 @@ import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -161,38 +161,38 @@ public class ProvenanceController {
     return result;
   }
   
-  public Map<Long, FileState> provFileStateList(ProvFileStateParamBuilder params)
+  public List<FileState> provFileStateList(ProvFileStateParamBuilder params)
     throws GenericException, ServiceException {
-    Map<Long, FileState> result = new HashMap<>();
-    Map<Long, FileState> fileStates = elasticCtrl.provScrollingFileState(
+    List<FileState> fileStates = elasticCtrl.provFileState(
       params.getFileStateFilter(), params.getFileStateSortBy(),
       params.getExactXAttrFilter(), params.getLikeXAttrFilter());
     if (params.hasExpansionWithAppState()) {
       //If withAppStates, update params based on appIds of result files and do a appState index query.
       //After this filter the fileStates based on the results of the appState query
-      for (FileState fileState : fileStates.values()) {
+      for (FileState fileState : fileStates) {
         params.withAppStateAppId(getAppId(fileState));
       }
       Map<String, Map<Provenance.AppState, AppProvenanceHit>> appStates
         = elasticCtrl.provAppState(params.getAppStateFilter());
-      for(FileState fileState : fileStates.values()) {
+      Iterator<FileState> fileStateIt = fileStates.iterator();
+      while(fileStateIt.hasNext()) {
+        FileState fileState = fileStateIt.next();
         String appId = getAppId(fileState);
         if(appStates.containsKey(appId)) {
           Map<Provenance.AppState, AppProvenanceHit> auxAppStates = appStates.get(appId);
           fileState.setAppState(buildAppState(auxAppStates));
-          result.put(fileState.getInodeId(), fileState);
+        } else {
+          fileStateIt.remove();
         }
       }
-    } else {
-      result.putAll(fileStates);
     }
-    return result;
+    return fileStates;
   }
   
   public Pair<Map<Long, FileStateTree>, Map<Long, FileStateTree>> provFileStateTree(
     ProvFileStateParamBuilder params, boolean fullTree)
     throws GenericException, ServiceException {
-    Map<Long, FileState> fileStates = provFileStateList(params);
+    List<FileState> fileStates = provFileStateList(params);
     Pair<Map<Long, ProvenanceController.BasicTreeBuilder<FileState>>,
       Map<Long, ProvenanceController.BasicTreeBuilder<FileState>>> result
       = processAsTree(fileStates, () -> new FileStateTree(), fullTree);
@@ -220,19 +220,19 @@ public class ProvenanceController {
     return elasticCtrl.provFileOpsCount(params.getFileOpsFilter());
   }
   
-  public Map<Long, FootprintFileState> provAppFootprintList(ProvFileOpsParamBuilder params,
+  public List<FootprintFileState> provAppFootprintList(ProvFileOpsParamBuilder params,
     AppFootprintType footprintType)
     throws GenericException, ServiceException {
     addAppFootprintFileOps(params, footprintType);
     List<ProvFileOpHit> searchResult = provFileOpsList(params);
-    Map<Long, FootprintFileState> appFootprint = processAppFootprintFileOps(searchResult, footprintType);
+    List<FootprintFileState> appFootprint = processAppFootprintFileOps(searchResult, footprintType);
     return appFootprint;
   }
   
   public Pair<Map<Long, FootprintFileStateTree>, Map<Long, FootprintFileStateTree>> provAppFootprintTree(
     ProvFileOpsParamBuilder params, AppFootprintType footprintType, boolean fullTree)
     throws GenericException, ServiceException {
-    Map<Long, FootprintFileState> fileStates = provAppFootprintList(params, footprintType);
+    List<FootprintFileState> fileStates = provAppFootprintList(params, footprintType);
     Pair<Map<Long, ProvenanceController.BasicTreeBuilder<FootprintFileState>>,
       Map<Long, ProvenanceController.BasicTreeBuilder<FootprintFileState>>> result
       = processAsTree(fileStates, () -> new FootprintFileStateTree(), fullTree);
@@ -277,16 +277,16 @@ public class ProvenanceController {
     }
   }
   
-  private Map<Long, FootprintFileState> processAppFootprintFileOps(List<ProvFileOpHit> fileOps,
+  private List<FootprintFileState> processAppFootprintFileOps(List<ProvFileOpHit> fileOps,
     AppFootprintType footprintType) {
-    Map<Long, FootprintFileState> files = new HashMap<>();
+    List<FootprintFileState> files = new ArrayList<>();
     Set<Long> filesAccessed = new HashSet<>();
     Set<Long> filesCreated = new HashSet<>();
     Set<Long> filesModified = new HashSet<>();
     Set<Long> filesDeleted = new HashSet<>();
     for(ProvFileOpHit fileOp : fileOps) {
-      files.put(fileOp.getInodeId(), new FootprintFileState(fileOp.getInodeId(), fileOp.getInodeName(),
-        fileOp.getParentInodeId(), fileOp.getProjectInodeId()));
+      files.add(new FootprintFileState(fileOp.getInodeId(), fileOp.getInodeName(), fileOp.getParentInodeId(),
+        fileOp.getProjectInodeId()));
       switch(fileOp.getInodeOperation()) {
         case "CREATE":
           filesCreated.add(fileOp.getInodeId());
@@ -312,32 +312,32 @@ public class ProvenanceController {
         //files read - that existed before app (not created by app)
         Set<Long> aux = new HashSet<>(filesAccessed);
         aux.removeAll(filesCreated);
-        files.keySet().retainAll(aux);
+        files.removeIf((FootprintFileState fileState) -> aux.contains(fileState.getInodeId()));
       } break;
       case OUTPUT: {
         //files created or modified, but not deleted
         Set<Long> aux = new HashSet<>(filesCreated);
         aux.addAll(filesModified);
         aux.removeAll(filesDeleted);
-        files.keySet().retainAll(aux);
+        files.removeIf((FootprintFileState fileState) -> aux.contains(fileState.getInodeId()));
       } break;
       case OUTPUT_ADDED: {
         //files created but not deleted
         Set<Long> aux = new HashSet<>(filesCreated);
         aux.removeAll(filesDeleted);
-        files.keySet().retainAll(aux);
+        files.removeIf((FootprintFileState fileState) -> aux.contains(fileState.getInodeId()));
       } break;
       case TMP: {
         //files created and deleted
         Set<Long> aux = new HashSet<>(filesCreated);
         aux.retainAll(filesDeleted);
-        files.keySet().retainAll(aux);
+        files.removeIf((FootprintFileState fileState) -> aux.contains(fileState.getInodeId()));
       } break;
       case REMOVED: {
         //files not created and deleted
         Set<Long> aux = new HashSet<>(filesDeleted);
         aux.removeAll(filesCreated);
-        files.keySet().retainAll(aux);
+        files.removeIf((FootprintFileState fileState) -> aux.contains(fileState.getInodeId()));
       } break;
       default:
         //continue;
@@ -347,7 +347,7 @@ public class ProvenanceController {
   
   private <S extends ProvenanceController.BasicFileState>
     Pair<Map<Long, ProvenanceController.BasicTreeBuilder<S>>, Map<Long, ProvenanceController.BasicTreeBuilder<S>>>
-    processAsTree(Map<Long, S> fileStates, Supplier<ProvenanceController.BasicTreeBuilder<S>> instanceBuilder,
+    processAsTree(List<S> fileStates, Supplier<ProvenanceController.BasicTreeBuilder<S>> instanceBuilder,
     boolean fullTree)
     throws GenericException, ServiceException {
     TreeHelper.TreeStruct<S> treeS = new TreeHelper.TreeStruct<>(instanceBuilder);
