@@ -268,7 +268,7 @@ public class ProvFileStateParamBuilder {
       ProvElastic.FileStateSortBy sortField = ProvElastic.extractFileStateSortField(field);
       fileStateSortBy.add(Pair.with(sortField, order));
     } catch(GenericException ex) {
-      String xattrKey = ProvElastic.processXAttrKey(field);
+      String xattrKey = ProvElastic.processXAttrKeyAsKeyword(field);
       xAttrSortBy.add(Pair.with(xattrKey, order));
     }
     return this;

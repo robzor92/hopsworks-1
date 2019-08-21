@@ -386,6 +386,10 @@ public class ProvElastic {
     return keyj.toString();
   }
   
+  public static String processXAttrKeyAsKeyword(String key) {
+   return processXAttrKey(key) + ".keyword";
+  }
+  
   public static QueryBuilder getQB(ElasticFilters filter, Object paramVal) throws GenericException {
     switch(filter.filterType()) {
       case EXACT:
