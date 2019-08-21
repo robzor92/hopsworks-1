@@ -165,7 +165,7 @@ public class ProvenanceController {
     throws GenericException, ServiceException {
     List<FileState> fileStates = elasticCtrl.provFileState(
       params.getFileStateFilter(), params.getFileStateSortBy(),
-      params.getExactXAttrFilter(), params.getLikeXAttrFilter());
+      params.getExactXAttrFilter(), params.getLikeXAttrFilter(), params.getXAttrSortBy());
     if (params.hasExpansionWithAppState()) {
       //If withAppStates, update params based on appIds of result files and do a appState index query.
       //After this filter the fileStates based on the results of the appState query

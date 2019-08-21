@@ -1014,14 +1014,15 @@ public class ElasticController {
   public List<FileState> provFileState(
     Collection<Pair<ProvElastic.FileStateFilter, Object>> fileStateFilters,
     List<Pair<ProvElastic.FileStateSortBy, SortOrder>> fileStateSortBy,
-    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters)
+    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters,
+    List<Pair<String, SortOrder>> xattrSortBy)
     throws GenericException, ServiceException {
     return provFileStateQuery(
       fileStateSearchRequest(
         Settings.ELASTIC_INDEX_FILE_PROVENANCE,
         Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE,
         provFileStateQB(fileStateFilters, xAttrsFilters, likeXAttrsFilters),
-        fileStateSortBy));
+        fileStateSortBy, xattrSortBy));
   }
   
   public long provFileStateCount(
@@ -1081,17 +1082,22 @@ public class ElasticController {
   }
   
   private Function<Client, ActionRequestBuilder> fileStateSearchRequest(String index, String docType,
-    QueryBuilder qb, List<Pair<ProvElastic.FileStateSortBy, SortOrder>> fileStateSortBy) {
+    QueryBuilder qb,
+    List<Pair<ProvElastic.FileStateSortBy, SortOrder>> fileStateSortBy,
+    List<Pair<String, SortOrder>> xattrSortBy) {
     return (Client client) -> {
       SearchRequestBuilder srb = client.prepareSearch(index)
         .setTypes(docType)
         .setSize(DEFAULT_PROVENANCE_QUERY_SIZE)
         .setQuery(qb);
-      if(fileStateSortBy.isEmpty()) {
+      if(fileStateSortBy.isEmpty() && xattrSortBy.isEmpty()) {
         srb = srb.addSort("_doc", SortOrder.ASC);
       } else {
         for (Pair<ProvElastic.FileStateSortBy, SortOrder> sb : fileStateSortBy) {
           srb = srb.addSort(SortBuilders.fieldSort(sb.getValue0().elasticField()).order(sb.getValue1()));
+        }
+        for (Pair<String, SortOrder> sb : xattrSortBy) {
+          srb = srb.addSort(SortBuilders.fieldSort(sb.getValue0()).order(sb.getValue1()));
         }
       }
       return srb;
