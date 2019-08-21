@@ -182,7 +182,7 @@
         This experiment is still running, results are visible once the experiment reached <span style="color: #00A000"> FINISHED </span> state.
       </div>
 
-      <div ng-if="experimentDetailCtrl.experiment.state === 'FINISHED'">
+      <div ng-if="experimentDetailCtrl.experiment.state === 'FINISHED' && !experimentDetailCtrl.loading">
         No results associated with this experiment
       </div>
     </div>

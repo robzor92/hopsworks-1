@@ -49,8 +49,8 @@ angular.module('hopsWorksApp')
             self.provenanceLoading = false;
             self.resultsLoading = false;
 
-            self.loading = true;
-            self.loadingText = "Loading Information";
+            self.loading = false;
+            self.loadingText = "";
 
             self.modelLink = null;
 
@@ -108,7 +108,7 @@ angular.module('hopsWorksApp')
                 }
                 self.sortType = type;
                 self.order();
-                self.getExperiment();
+                self.getExperiment('');
             };
 
             self.viewImage = function(filePath) {
@@ -124,9 +124,7 @@ angular.module('hopsWorksApp')
                     self.provenanceLoading = true;
                     self.showProvenanceView = !self.showProvenanceView;
                     if(self.showProvenanceView) {
-                        startLoading('Fetching Provenance information')
-                        self.getExperiment();
-                        stopLoading();
+                        self.getExperiment('Fetching provenance information');
                     }
                 } catch (error) {
                 } finally {
@@ -139,9 +137,7 @@ angular.module('hopsWorksApp')
                     self.resultsLoading = true;
                     self.showResultsView = !self.showResultsView;
                     if(self.showResultsView) {
-                        startLoading('Fetching results')
-                        self.getExperiment();
-                        stopLoading();
+                        self.getExperiment('Fetching experiment results');
                     }
                 } catch (error) {
                 } finally {
@@ -149,12 +145,14 @@ angular.module('hopsWorksApp')
                 }
             };
 
-            self.getExperiment = function() {
+            self.getExperiment = function(loadingText) {
                 self.buildQuery();
                 self.buildModelLink();
                 if (self.showResultsView || self.showProvenanceView) {
+                    startLoading(loadingText);
                     ExperimentService.get(self.projectId, self.experiment.id, self.query).then(
                         function(success) {
+                            stopLoading();
                             self.experiment = success.data;
                             self.buildModelLink();
                             self.initResultsTable();
@@ -163,6 +161,7 @@ angular.module('hopsWorksApp')
                             }
                         },
                         function(error) {
+                            stopLoading();
                             if (typeof error.data.usrMsg !== 'undefined') {
                                 growl.error(error.data.usrMsg, {
                                     title: error.data.errorMsg,
@@ -258,14 +257,8 @@ angular.module('hopsWorksApp')
             };
 
             self.getNewPage = function() {
-                try {
-                    startLoading('Fetching more results');
-                    self.getExperiment();
-                } finally {
-                    stopLoading();
-
-                }
-            }
+                    self.getExperiment('Fetching more results');
+            };
 
             self.goToModel = function (path) {
                 self.close();
@@ -273,8 +266,7 @@ angular.module('hopsWorksApp')
             };
 
             self.buildQuery();
-            self.getExperiment();
-            stopLoading();
+            self.getExperiment('Loading detailed information');
             /**
              * Closes the modal
              */
