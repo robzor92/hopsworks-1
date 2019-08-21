@@ -49,8 +49,8 @@ angular.module('hopsWorksApp')
             self.provenanceLoading = false;
             self.resultsLoading = false;
 
-            self.loading = false;
-            self.loadingText = "";
+            self.loading = true;
+            self.loadingText = "Loading Information";
 
             self.modelLink = null;
 
@@ -274,6 +274,7 @@ angular.module('hopsWorksApp')
 
             self.buildQuery();
             self.getExperiment();
+            stopLoading();
             /**
              * Closes the modal
              */
