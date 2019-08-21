@@ -17,6 +17,7 @@ package io.hops.hopsworks.common.provenance;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
+import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
 import org.javatuples.Pair;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -70,10 +71,10 @@ public class ProvFileOpsSummaryByApp {
     this.inodeName = inodeName;
   }
   
-  public static List<ProvFileOpsSummaryByApp> summary(List<ProvFileOpHit> fileOps) {
+  public static List<ProvFileOpsSummaryByApp> summary(List<FileOp> fileOps) {
     Map<Long, ProvFileOpsSummaryByApp> byFileMap = new HashMap<>();
     Map<Pair<Long, String>, CompactApp> byFileAndAppMap = new HashMap<>();
-    for(ProvFileOpHit fileOp : fileOps) {
+    for(FileOp fileOp : fileOps) {
       ProvFileOpsSummaryByApp byFile = byFileMap.get(fileOp.getInodeId());
       if(byFile == null) {
         byFile = new ProvFileOpsSummaryByApp(fileOp.getInodeId(), fileOp.getInodeName());
@@ -154,7 +155,7 @@ public class ProvFileOpsSummaryByApp {
       this.ops = ops;
     }
   
-    public void addOp(ProvFileOpHit op) {
+    public void addOp(FileOp op) {
       ops.add(op.getInodeOperation());
       if(firstOpTimestamp < op.getTimestamp()) {
         firstOpTimestamp = op.getTimestamp();

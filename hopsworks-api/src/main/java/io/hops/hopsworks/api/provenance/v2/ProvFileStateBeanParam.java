@@ -26,7 +26,10 @@ import java.util.Set;
 public class ProvFileStateBeanParam {
   @QueryParam("filter_by")
   @ApiParam(value = "ex. filter_by=FILE_NAME:file1",
-    allowableValues = "filter_by=FILE_NAME:file1, filter_by=USER_ID:user1, filter_by=APP_ID:app1, " +
+    allowableValues = "filter_by=PROJECT_I_ID:id1, filter_by=FILE_I_ID:123, " +
+      "filter_by=FILE_NAME:file1, filter_by=FILE_NAME_LIKE:fil, " +
+      "filter_by=USER_ID:user1, filter_by=APP_ID:app1, " +
+      "filter_by=CREATE_TIMESTAMP:10030042, " +
       "filter_by=CREATE_TIMESTAMP_LT:10030042, filter_by=CREATE_TIMESTAMP_GT:10010042, " +
       "filter_by=ML_TYPE:EXPERIMENT, filter_by=ML_ID:id",
     allowMultiple = true)
@@ -34,7 +37,9 @@ public class ProvFileStateBeanParam {
   
   @QueryParam("sort_by")
   @ApiParam(value = "ex. sort_by=CREATE_TIMESTAMP:asc",
-    allowableValues = "sort_by=CREATE_TIMESTAMP:asc, sort_by=CREATE_TIMESTAMP:desc",
+    allowableValues = "sort_by=PROJECT_I_ID:asc, sort_by=FILE_I_ID:asc, sort_by=FILE_NAME:asc, " +
+      "sort_by=USER_ID:asc, sort_by=APP_ID:asc, sort_by=CREATE_TIMESTAMP:asc, " +
+      "sort_by=ML_TYPE:asc, sort_by=ML_ID:asc",
     allowMultiple = true)
   private List<String> fileStateSortBy;
   
@@ -136,7 +141,7 @@ public class ProvFileStateBeanParam {
     this.expansions = expansions;
   }
   
-  public Set<String> getAppStateParams() {
+  public Set<String> getAppExpansionParams() {
     return appStateParams;
   }
   

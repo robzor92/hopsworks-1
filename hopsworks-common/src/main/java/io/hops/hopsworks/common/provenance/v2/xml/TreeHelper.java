@@ -16,7 +16,6 @@
 package io.hops.hopsworks.common.provenance.v2.xml;
 
 import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
-import io.hops.hopsworks.common.provenance.ProvFileOpHit;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.exceptions.GenericException;
 import org.javatuples.Pair;
@@ -169,10 +168,10 @@ public class TreeHelper {
       findInProvenance.addAll(inodesNotFound);
     }
     
-    public void processProvenanceBatch(List<Long> inodeBatch, List<ProvFileOpHit> inodes) throws GenericException {
+    public void processProvenanceBatch(List<Long> inodeBatch, List<FileOp> inodes) throws GenericException {
       pendingInProvenance.removeAll(inodeBatch);
       Set<Long> inodesNotFound = new HashSet<>(inodeBatch);
-      for(ProvFileOpHit inode : inodes) {
+      for(FileOp inode : inodes) {
         inodesNotFound.remove(inode.getInodeId());
         ProvenanceController.BasicTreeBuilder<S> node = incompleteNodes.remove(inode.getId());
         if(node != null) {

@@ -176,7 +176,20 @@ module ProvenanceHelper
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
     query_params = "?filter_by=ML_TYPE:#{ml_type}"
     if withAppState
-      query_params = query_params + "&expand=APP_STATE"
+      query_params = query_params + "&expand=APP"
+    end
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+    parsed_result["result"]
+  end
+
+  def get_ml_asset_in_project_page(project, ml_type, withAppState, offset, limit) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
+    query_params = "?filter_by=ML_TYPE:#{ml_type}&offset=#{offset}&limit=#{limit}"
+    if withAppState
+      query_params = query_params + "&expand=APP"
     end
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
@@ -189,7 +202,7 @@ module ProvenanceHelper
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
     query_params = "?filter_by=ML_TYPE:#{ml_type}&filter_by=ML_ID:#{ml_id}"
     if withAppState
-      query_params = query_params + "&expand=APP_STATE"
+      query_params = query_params + "&expand=APP"
     end
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
@@ -202,7 +215,7 @@ module ProvenanceHelper
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
     query_params = "?filter_by=ML_TYPE:#{ml_type}&filter_by=ML_ID:#{ml_id}"
     if withAppState
-      query_params = query_params + "&expand=APP_STATE"
+      query_params = query_params + "&expand=APP"
     end
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
@@ -273,18 +286,18 @@ module ProvenanceHelper
     parsed_result["result"]
   end
 
-  def get_file_ops(project, inodeId, ops_compaction, return_type) 
+  def get_file_ops(project, inodeId, compaction, return_type) 
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/#{inodeId}/ops"
-    query_params = "?ops_compaction=#{ops_compaction}&return_type=#{return_type}"
+    query_params = "?compaction=#{compaction}&return_type=#{return_type}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
   end
 
-  def get_app_file_ops(project, appId, ops_compaction, return_type) 
+  def get_app_file_ops(project, appId, compaction, return_type) 
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/ops"
-    query_params = "?filter_by=APP_ID:#{appId}&ops_compaction=#{ops_compaction}&return_type=#{return_type}"
+    query_params = "?filter_by=APP_ID:#{appId}&compaction=#{compaction}&return_type=#{return_type}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)

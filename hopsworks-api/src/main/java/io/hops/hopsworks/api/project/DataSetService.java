@@ -1175,7 +1175,7 @@ public class DataSetService {
 //    RESTApiJsonResponse json = new RESTApiJsonResponse();
 //    json.setSuccessMessage(response);
 //    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(
-//            json).build();
+//            json).parse();
 //  }
 
   /**

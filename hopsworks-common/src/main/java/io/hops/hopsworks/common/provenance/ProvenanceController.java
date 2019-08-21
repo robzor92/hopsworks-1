@@ -49,6 +49,7 @@ import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOps;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
+import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
 import io.hops.hopsworks.common.provenance.v2.xml.FileState;
 import io.hops.hopsworks.common.provenance.v2.xml.FileStateTree;
 import io.hops.hopsworks.common.provenance.v2.xml.FootprintFileState;
@@ -163,24 +164,31 @@ public class ProvenanceController {
   
   public List<FileState> provFileStateList(ProvFileStateParamBuilder params)
     throws GenericException, ServiceException {
+    if(params.getPagination() != null && !params.getAppStateFilter().isEmpty()) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "cannot use pagination with app state filtering");
+    }
+    Integer offset = params.getPagination() == null ? 0 : params.getPagination().getValue0();
+    Integer limit = params.getPagination() == null ? ElasticController.DEFAULT_PAGE_SIZE :
+      params.getPagination().getValue1();
     List<FileState> fileStates = elasticCtrl.provFileState(
       params.getFileStateFilter(), params.getFileStateSortBy(),
-      params.getExactXAttrFilter(), params.getLikeXAttrFilter(), params.getXAttrSortBy());
-    if (params.hasExpansionWithAppState()) {
+      params.getExactXAttrFilter(), params.getLikeXAttrFilter(), params.getXAttrSortBy(), offset, limit);
+    if (params.hasAppExpansion()) {
       //If withAppStates, update params based on appIds of result files and do a appState index query.
       //After this filter the fileStates based on the results of the appState query
       for (FileState fileState : fileStates) {
-        params.withAppStateAppId(getAppId(fileState));
+        params.withAppExpansion(getAppId(fileState));
       }
-      Map<String, Map<Provenance.AppState, AppProvenanceHit>> appStates
+      Map<String, Map<Provenance.AppState, AppProvenanceHit>> appExps
         = elasticCtrl.provAppState(params.getAppStateFilter());
       Iterator<FileState> fileStateIt = fileStates.iterator();
       while(fileStateIt.hasNext()) {
         FileState fileState = fileStateIt.next();
         String appId = getAppId(fileState);
-        if(appStates.containsKey(appId)) {
-          Map<Provenance.AppState, AppProvenanceHit> auxAppStates = appStates.get(appId);
-          fileState.setAppState(buildAppState(auxAppStates));
+        if(appExps.containsKey(appId)) {
+          Map<Provenance.AppState, AppProvenanceHit> appExp = appExps.get(appId);
+          fileState.setAppState(buildAppState(appExp));
         } else {
           fileStateIt.remove();
         }
@@ -202,7 +210,7 @@ public class ProvenanceController {
   
   public long provFileStateCount(ProvFileStateParamBuilder params)
     throws GenericException, ServiceException {
-    if(params.hasExpansionWithAppState()) {
+    if(params.hasAppExpansion()) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
         "provenance file state count does not currently work with app state expansion");
     }
@@ -210,9 +218,37 @@ public class ProvenanceController {
       params.getLikeXAttrFilter());
   }
   
-  public List<ProvFileOpHit> provFileOpsList(ProvFileOpsParamBuilder params)
+  public List<FileOp> provFileOpsList(ProvFileOpsParamBuilder params)
     throws GenericException, ServiceException {
-    return elasticCtrl.provScrollingFileOps(params.getFileOpsFilter());
+    List<FileOp> fileOps;
+    if(params.hasPagination()) {
+      fileOps =  elasticCtrl.provFileOps(params.getFileOpsFilter(), params.getFileOpsSortBy(),
+        params.getPagination().getValue0(), params.getPagination().getValue1());
+    } else {
+      fileOps =  elasticCtrl.provFileOps(params.getFileOpsFilter());
+    }
+  
+    if (params.hasAppExpansion()) {
+      //If withAppStates, update params based on appIds of result files and do a appState index query.
+      //After this filter the fileStates based on the results of the appState query
+      for (FileOp fileOp : fileOps) {
+        params.withAppExpansion(getAppId(fileOp));
+      }
+      Map<String, Map<Provenance.AppState, AppProvenanceHit>> appExps
+        = elasticCtrl.provAppState(params.getAppStateFilter());
+      Iterator<FileOp> fileOpIt = fileOps.iterator();
+      while (fileOpIt.hasNext()) {
+        FileOp fileOp = fileOpIt.next();
+        String appId = getAppId(fileOp);
+        if (appExps.containsKey(appId)) {
+          Map<Provenance.AppState, AppProvenanceHit> appExp = appExps.get(appId);
+          fileOp.setAppState(buildAppState(appExp));
+        } else {
+          fileOpIt.remove();
+        }
+      }
+    }
+    return fileOps;
   }
   
   public long provFileOpsCount(ProvFileOpsParamBuilder params)
@@ -224,7 +260,7 @@ public class ProvenanceController {
     AppFootprintType footprintType)
     throws GenericException, ServiceException {
     addAppFootprintFileOps(params, footprintType);
-    List<ProvFileOpHit> searchResult = provFileOpsList(params);
+    List<FileOp> searchResult = provFileOpsList(params);
     List<FootprintFileState> appFootprint = processAppFootprintFileOps(searchResult, footprintType);
     return appFootprint;
   }
@@ -277,16 +313,21 @@ public class ProvenanceController {
     }
   }
   
-  private List<FootprintFileState> processAppFootprintFileOps(List<ProvFileOpHit> fileOps,
+  private List<FootprintFileState> processAppFootprintFileOps(List<FileOp> fileOps,
     AppFootprintType footprintType) {
+    Set<Long> inodeIds = new HashSet<>();
     List<FootprintFileState> files = new ArrayList<>();
     Set<Long> filesAccessed = new HashSet<>();
     Set<Long> filesCreated = new HashSet<>();
     Set<Long> filesModified = new HashSet<>();
     Set<Long> filesDeleted = new HashSet<>();
-    for(ProvFileOpHit fileOp : fileOps) {
-      files.add(new FootprintFileState(fileOp.getInodeId(), fileOp.getInodeName(), fileOp.getParentInodeId(),
-        fileOp.getProjectInodeId()));
+    for(FileOp fileOp : fileOps) {
+      if (!inodeIds.contains(fileOp.getInodeId())) {
+        FootprintFileState ffs = new FootprintFileState(fileOp.getInodeId(), fileOp.getInodeName(),
+          fileOp.getParentInodeId(), fileOp.getProjectInodeId());
+        inodeIds.add(ffs.getInodeId());
+        files.add(ffs);
+      }
       switch(fileOp.getInodeOperation()) {
         case "CREATE":
           filesCreated.add(fileOp.getInodeId());
@@ -312,32 +353,32 @@ public class ProvenanceController {
         //files read - that existed before app (not created by app)
         Set<Long> aux = new HashSet<>(filesAccessed);
         aux.removeAll(filesCreated);
-        files.removeIf((FootprintFileState fileState) -> aux.contains(fileState.getInodeId()));
+        files.removeIf((FootprintFileState fileState) -> !aux.contains(fileState.getInodeId()));
       } break;
       case OUTPUT: {
         //files created or modified, but not deleted
         Set<Long> aux = new HashSet<>(filesCreated);
         aux.addAll(filesModified);
         aux.removeAll(filesDeleted);
-        files.removeIf((FootprintFileState fileState) -> aux.contains(fileState.getInodeId()));
+        files.removeIf((FootprintFileState fileState) -> !aux.contains(fileState.getInodeId()));
       } break;
       case OUTPUT_ADDED: {
         //files created but not deleted
         Set<Long> aux = new HashSet<>(filesCreated);
         aux.removeAll(filesDeleted);
-        files.removeIf((FootprintFileState fileState) -> aux.contains(fileState.getInodeId()));
+        files.removeIf((FootprintFileState fileState) -> !aux.contains(fileState.getInodeId()));
       } break;
       case TMP: {
         //files created and deleted
         Set<Long> aux = new HashSet<>(filesCreated);
         aux.retainAll(filesDeleted);
-        files.removeIf((FootprintFileState fileState) -> aux.contains(fileState.getInodeId()));
+        files.removeIf((FootprintFileState fileState) -> !aux.contains(fileState.getInodeId()));
       } break;
       case REMOVED: {
         //files not created and deleted
         Set<Long> aux = new HashSet<>(filesDeleted);
         aux.removeAll(filesCreated);
-        files.removeIf((FootprintFileState fileState) -> aux.contains(fileState.getInodeId()));
+        files.removeIf((FootprintFileState fileState) -> !aux.contains(fileState.getInodeId()));
       } break;
       default:
         //continue;
@@ -347,7 +388,7 @@ public class ProvenanceController {
   
   private <S extends ProvenanceController.BasicFileState>
     Pair<Map<Long, ProvenanceController.BasicTreeBuilder<S>>, Map<Long, ProvenanceController.BasicTreeBuilder<S>>>
-    processAsTree(List<S> fileStates, Supplier<ProvenanceController.BasicTreeBuilder<S>> instanceBuilder,
+    processAsTree(List<S> fileStates, Supplier<BasicTreeBuilder<S>> instanceBuilder,
     boolean fullTree)
     throws GenericException, ServiceException {
     TreeHelper.TreeStruct<S> treeS = new TreeHelper.TreeStruct<>(instanceBuilder);
@@ -364,7 +405,7 @@ public class ProvenanceController {
         while (treeS.findInProvenance()) {
           List<Long> inodeIdBatch = treeS.nextFindInProvenance();
           ProvFileOpsParamBuilder elasticPathQueryParams = elasticTreeQueryParams(inodeIdBatch);
-          List<ProvFileOpHit> inodeBatch = provFileOpsList(elasticPathQueryParams);
+          List<FileOp> inodeBatch = provFileOpsList(elasticPathQueryParams);
           treeS.processProvenanceBatch(inodeIdBatch, inodeBatch);
         }
       }
@@ -396,6 +437,14 @@ public class ProvenanceController {
       }
     } else {
       return fileState.getAppId();
+    }
+  }
+  
+  private String getAppId(FileOp fileOp) {
+    if(fileOp.getAppId().equals("notls")) {
+      throw new IllegalArgumentException("withAppId enabled for tls clusters or notls cluster with xattr appIds");
+    } else {
+      return fileOp.getAppId();
     }
   }
   

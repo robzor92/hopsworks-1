@@ -13,10 +13,14 @@
  * You should have received a copy of the GNU Affero General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-package io.hops.hopsworks.common.provenance;
+package io.hops.hopsworks.common.provenance.v2.xml;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
+import io.hops.hopsworks.common.provenance.MLAssetAppState;
+import io.hops.hopsworks.common.provenance.v2.ProvElastic;
+import io.hops.hopsworks.exceptions.GenericException;
+import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.search.SearchHit;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -27,8 +31,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @XmlRootElement
-public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
-  private static final Logger LOG = Logger.getLogger(ProvFileOpHit.class.getName());
+public class FileOp implements Comparator<FileOp>  {
+  private static final Logger LOG = Logger.getLogger(FileOp.class.getName());
   public static final TimestampComparator timestampComparator = new TimestampComparator();
   
   private String id;
@@ -48,72 +52,106 @@ public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
   private String xattrName;
   private String inodePath;
   private Long partitionId;
+  private MLAssetAppState appState;
   
-  public ProvFileOpHit() {}
+  public FileOp() {}
 
-  public ProvFileOpHit(SearchHit hit) {
-    this.id = hit.getId();
-    this.score = hit.getScore();
-    //the source of the retrieved record (i.e. all the indexed information)
-    this.map = hit.getSourceAsMap();
+  public static FileOp instance(SearchHit hit) {
+    FileOp result = new FileOp();
+    result.id = hit.getId();
+    result.score = hit.getScore();
+    result.map = hit.getSourceAsMap();
   
-    //export the name of the retrieved record from the list
-    for (Map.Entry<String, Object> entry : map.entrySet()) {
-      //set the name explicitly so that it's easily accessible in the frontend
-      switch (entry.getKey()) {
-        case ProvElastic.Common.INODE_ID_FIELD:
-          this.inodeId = ((Number) entry.getValue()).longValue();
-          break;
-        case ProvElastic.Common.APP_ID_FIELD:
-          this.appId = entry.getValue().toString();
-          break;
-        case ProvElastic.Common.USER_ID_FIELD:
-          this.userId = ((Number) entry.getValue()).intValue();
-          break;
-        case ProvElastic.Common.PARENT_INODE_ID_FIELD:
-          this.parentInodeId = ((Number) entry.getValue()).longValue();
-          break;
-        case ProvElastic.Common.INODE_NAME_FIELD:
-          this.inodeName = entry.getValue().toString();
-          break;
-        case ProvElastic.Common.PARTITION_ID:
-          this.partitionId = ((Number) entry.getValue()).longValue();
-          break;
-        case ProvElastic.Op.INODE_OPERATION_FIELD:
-          this.inodeOperation = entry.getValue().toString();
-          break;
-        case ProvElastic.Op.LOGICAL_TIME_FIELD:
-          this.logicalTime = ((Number) entry.getValue()).intValue();
-          break;
-        case ProvElastic.Op.TIMESTAMP_FIELD:
-          this.timestamp = ((Number) entry.getValue()).longValue();
-          break;
-        case ProvElastic.Op.READABLE_TIMESTAMP_FIELD:
-          this.readableTimestamp = entry.getValue().toString();
-          break;
-        case ProvElastic.OpOptional.XATTR_NAME_FIELD:
-          this.xattrName = entry.getValue().toString();
-          break;
-        case ProvElastic.OpOptional.INODE_PATH:
-          this.inodePath = entry.getValue().toString();
-          break;
-        case ProvElastic.Common.PROJECT_INODE_ID_FIELD:
-          this.projectInodeId = ((Number) entry.getValue()).longValue();
-          break;
-        case ProvElastic.Common.ENTRY_TYPE_FIELD:
-        case ProvElastic.Common.DATASET_INODE_ID_FIELD:
-        case ProvElastic.ML.ML_ID:
-        case ProvElastic.ML.ML_TYPE:
-          break;
-        default:
-          LOG.log(Level.WARNING, "unknown key:{0} value:{1}", new Object[]{entry.getKey(), entry.getValue()});
-          break;
+    for (Map.Entry<String, Object> entry : result.map.entrySet()) {
+      try {
+        ProvElastic.Field field = ProvElastic.extractFileOpsQueryResultFields(entry.getKey());
+        if (field instanceof ProvElastic.FileBase) {
+          ProvElastic.FileBase fileBase = (ProvElastic.FileBase) field;
+          switch (fileBase) {
+            case PROJECT_I_ID:
+              result.projectInodeId = ((Number) entry.getValue()).longValue();
+              break;
+            case INODE_ID:
+              result.inodeId = ((Number) entry.getValue()).longValue();
+              break;
+            case APP_ID:
+              result.appId = entry.getValue().toString();
+              break;
+            case USER_ID:
+              result.userId = ((Number) entry.getValue()).intValue();
+              break;
+            case INODE_NAME:
+              result.inodeName = entry.getValue().toString();
+              break;
+            default:
+              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+                "field:" + field + "not managed in file ops return (1)");
+          }
+        } else if (field instanceof ProvElastic.FileOpsBase) {
+          ProvElastic.FileOpsBase fileOpsBase = (ProvElastic.FileOpsBase) field;
+          switch (fileOpsBase) {
+            case INODE_OPERATION:
+              result.inodeOperation = entry.getValue().toString();
+              break;
+            case TIMESTAMP:
+              result.timestamp = ((Number) entry.getValue()).longValue();
+              break;
+            default:
+              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+                "field:" + field + "not managed in file ops return (2)");
+          }
+        } else if (field instanceof ProvElastic.FileAux) {
+          ProvElastic.FileAux fileReturn = (ProvElastic.FileAux) field;
+          switch (fileReturn) {
+            case PARENT_I_ID:
+              result.parentInodeId = ((Number) entry.getValue()).longValue();
+              break;
+            case PARTITION_ID:
+              result.partitionId = ((Number) entry.getValue()).longValue();
+              break;
+            case ENTRY_TYPE:
+              break;
+            default:
+              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+                "field:" + field + "not managed in file ops return (3)");
+          }
+        } else if (field instanceof ProvElastic.FileOpsAux) {
+          ProvElastic.FileOpsAux fileOpsReturn = (ProvElastic.FileOpsAux) field;
+          switch (fileOpsReturn) {
+            case ML_ID:
+              break;
+            case ML_TYPE:
+              break;
+            case LOGICAL_TIME:
+              result.logicalTime = ((Number) entry.getValue()).intValue();
+              break;
+            case R_TIMESTAMP:
+              result.readableTimestamp = entry.getValue().toString();
+              break;
+            case INODE_PATH:
+              result.inodePath = entry.getValue().toString();
+              break;
+            case XATTR:
+              result.xattrName = entry.getValue().toString();
+              break;
+            default:
+              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+                "field:" + field + "not managed in file ops return (3)");
+          }
+        } else {
+          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+            "field:" + field + "not managed in file ops return (4)");
+        }
+      } catch (GenericException e) {
+        LOG.log(Level.WARNING, "file osp - unknown key:{0} value:{1}",
+          new Object[]{entry.getKey(), entry.getValue()});
       }
     }
+    return result;
   }
   
   @Override
-  public int compare(ProvFileOpHit o1, ProvFileOpHit o2) {
+  public int compare(FileOp o1, FileOp o2) {
     return Float.compare(o2.getScore(), o1.getScore());
   }
   
@@ -258,10 +296,18 @@ public class ProvFileOpHit implements Comparator<ProvFileOpHit>  {
     this.projectInodeId = projectInodeId;
   }
   
-  public static class TimestampComparator implements Comparator<ProvFileOpHit> {
+  public MLAssetAppState getAppState() {
+    return appState;
+  }
+  
+  public void setAppState(MLAssetAppState appState) {
+    this.appState = appState;
+  }
+  
+  public static class TimestampComparator implements Comparator<FileOp> {
   
     @Override
-    public int compare(ProvFileOpHit o1, ProvFileOpHit o2) {
+    public int compare(FileOp o1, FileOp o2) {
       int result = Ints.compare(o1.logicalTime, o2.logicalTime);
       if(result == 0) {
         result = Longs.compare(o1.timestamp, o2.timestamp);

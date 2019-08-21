@@ -17,7 +17,7 @@ package io.hops.hopsworks.api.provenance;
 
 import io.hops.hopsworks.api.filter.NoCacheResponse;
 import io.hops.hopsworks.common.provenance.AppFootprintType;
-import io.hops.hopsworks.common.provenance.ProvFileOpHit;
+import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
 import io.hops.hopsworks.common.provenance.ProvFileOpsCompactByApp;
 import io.hops.hopsworks.common.provenance.ProvFileOpsSummaryByApp;
 import io.hops.hopsworks.common.provenance.v2.xml.FileState;
@@ -110,16 +110,16 @@ public class ProvenanceResourceHelper {
       return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
         .entity(new SimpleResult<>(result)).build();
     } else {
-      List<ProvFileOpHit> result = provenanceCtrl.provFileOpsList(params);
+      List<FileOp> result = provenanceCtrl.provFileOpsList(params);
       switch(opsCompaction) {
         case NONE:
           return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-            .entity(new GenericEntity<List<ProvFileOpHit>>(result) {}).build();
-        case COMPACT:
+            .entity(new GenericEntity<List<FileOp>>(result) {}).build();
+        case FILE_COMPACT:
           List<ProvFileOpsCompactByApp> compactResults = ProvFileOpsCompactByApp.compact(result);
           return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
             .entity(new GenericEntity<List<ProvFileOpsCompactByApp>>(compactResults) {}).build();
-        case SUMMARY:
+        case FILE_SUMMARY:
           List<ProvFileOpsSummaryByApp> summaryResults = ProvFileOpsSummaryByApp.summary(result);
           return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
             .entity(new GenericEntity<List<ProvFileOpsSummaryByApp>>(summaryResults) {}).build();

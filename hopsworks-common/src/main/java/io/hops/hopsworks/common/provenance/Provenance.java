@@ -39,14 +39,14 @@
 package io.hops.hopsworks.common.provenance;
 
 public class Provenance {
-  public static enum MLType {
+  public enum MLType {
     FEATURE,
     TRAINING_DATASET,
     MODEL,
     EXPERIMENT,
     NONE
   }
-  public static enum AppState {
+  public enum AppState {
     SUBMITTED,
     RUNNING,
     FINISHED,

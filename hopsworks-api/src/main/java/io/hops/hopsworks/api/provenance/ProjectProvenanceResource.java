@@ -43,6 +43,7 @@ import io.hops.hopsworks.api.filter.Audience;
 import io.hops.hopsworks.api.filter.NoCacheResponse;
 import io.hops.hopsworks.api.provenance.v2.ProvFileOpsBeanParam;
 import io.hops.hopsworks.api.provenance.v2.ProvFileStateBeanParam;
+import io.hops.hopsworks.api.util.Pagination;
 import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
@@ -139,6 +140,7 @@ public class ProjectProvenanceResource {
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response getFileStates(
     @BeanParam ProvFileStateBeanParam params,
+    @BeanParam Pagination pagination,
     @Context HttpServletRequest req) throws ServiceException, GenericException {
     ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
       .withProjectInodeId(project.getInode().getId())
@@ -148,7 +150,8 @@ public class ProjectProvenanceResource {
       .withQueryParamLikeXAttr(params.getLikeXAttrParams())
       .withQueryParamXAttrSortBy(params.getXattrSortBy())
       .withQueryParamExpansions(params.getExpansions())
-      .withQueryParamAppState(params.getAppStateParams());
+      .withQueryParamAppExpansionFilter(params.getAppExpansionParams())
+      .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     return ProvenanceResourceHelper.getFileStates(noCacheResponse, provenanceCtrl, paramBuilder,
@@ -162,10 +165,15 @@ public class ProjectProvenanceResource {
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response getFileOps(
     @BeanParam ProvFileOpsBeanParam params,
+    @BeanParam Pagination pagination,
     @Context HttpServletRequest req) throws ServiceException, GenericException {
     ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
       .withProjectInodeId(project.getInode().getId())
-      .withQueryParamFileOps(params.getFileOpsFilter());
+      .withQueryParamFilter(params.getFileOpsFilter())
+      .withQueryParamSortBy(params.getFileOpsSortBy())
+      .withQueryParamExpansions(params.getExpansions())
+      .withQueryParamAppExpansionFilter(params.getAppExpansionParams())
+      .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     return ProvenanceResourceHelper.getFileOps(noCacheResponse, provenanceCtrl, paramBuilder,
@@ -180,6 +188,7 @@ public class ProjectProvenanceResource {
   public Response getFileStates(
     @PathParam("inodeId") Long fileInodeId,
     @BeanParam ProvFileStateBeanParam params,
+    @BeanParam Pagination pagination,
     @Context HttpServletRequest req) throws GenericException, ServiceException {
     ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
       .withProjectInodeId(project.getInode().getId())
@@ -190,7 +199,8 @@ public class ProjectProvenanceResource {
       .withQueryParamLikeXAttr(params.getLikeXAttrParams())
       .withQueryParamXAttrSortBy(params.getXattrSortBy())
       .withQueryParamExpansions(params.getExpansions())
-      .withQueryParamAppState(params.getAppStateParams());
+      .withQueryParamAppExpansionFilter(params.getAppExpansionParams())
+      .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     return ProvenanceResourceHelper.getFileStates(noCacheResponse, provenanceCtrl, paramBuilder,
@@ -205,11 +215,16 @@ public class ProjectProvenanceResource {
   public Response getFileOps(
     @PathParam("inodeId") Long fileInodeId,
     @BeanParam ProvFileOpsBeanParam params,
+    @BeanParam Pagination pagination,
     @Context HttpServletRequest req) throws ServiceException, GenericException {
     ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
       .withProjectInodeId(project.getInode().getId())
       .withFileInodeId(fileInodeId)
-      .withQueryParamFileOps(params.getFileOpsFilter());
+      .withQueryParamFilter(params.getFileOpsFilter())
+      .withQueryParamSortBy(params.getFileOpsSortBy())
+      .withQueryParamExpansions(params.getExpansions())
+      .withQueryParamAppExpansionFilter(params.getAppExpansionParams())
+      .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     return ProvenanceResourceHelper.getFileOps(noCacheResponse, provenanceCtrl, paramBuilder, params.getOpsCompaction(),
@@ -225,12 +240,14 @@ public class ProjectProvenanceResource {
     @PathParam("appId") String appId,
     @PathParam("type") @DefaultValue("ALL") AppFootprintType footprintType,
     @BeanParam ProvFileOpsBeanParam params,
+    @BeanParam Pagination pagination,
     @Context HttpServletRequest req) throws ServiceException, GenericException {
-    
     ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
       .withProjectInodeId(project.getInode().getId())
       .withAppId(appId)
-      .withQueryParamFileOps(params.getFileOpsFilter());
+      .withQueryParamFilter(params.getFileOpsFilter())
+      .withQueryParamSortBy(params.getFileOpsSortBy())
+      .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     
@@ -246,7 +263,7 @@ public class ProjectProvenanceResource {
   }
   public enum FileOpsCompactionType {
     NONE,
-    COMPACT,
-    SUMMARY
+    FILE_COMPACT,
+    FILE_SUMMARY
   }
 }

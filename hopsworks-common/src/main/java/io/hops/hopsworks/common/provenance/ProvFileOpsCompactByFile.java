@@ -17,6 +17,7 @@ package io.hops.hopsworks.common.provenance;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
+import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Collections;
@@ -91,9 +92,9 @@ public class ProvFileOpsCompactByFile {
     });
   }
   
-  public static List<ProvFileOpsCompactByFile> compact(List<ProvFileOpHit> fileOps) {
+  public static List<ProvFileOpsCompactByFile> compact(List<FileOp> fileOps) {
     Map<Long, ProvFileOpsCompactByFile> files = new HashMap<>();
-    for(ProvFileOpHit fileOp : fileOps) {
+    for(FileOp fileOp : fileOps) {
       ProvFileOpsCompactByFile file = files.get(fileOp.getInodeId());
       if(file == null) {
         file = new ProvFileOpsCompactByFile(fileOp.getInodeId(), fileOp.getAppId(), fileOp.getInodeName());

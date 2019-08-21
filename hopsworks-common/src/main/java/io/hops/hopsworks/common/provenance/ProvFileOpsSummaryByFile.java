@@ -15,6 +15,8 @@
  */
 package io.hops.hopsworks.common.provenance;
 
+import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
+
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,9 +76,9 @@ public class ProvFileOpsSummaryByFile {
     this.inodeName = inodeName;
   }
   
-  public static List<ProvFileOpsSummaryByFile> summary(List<ProvFileOpHit> fileOps) {
+  public static List<ProvFileOpsSummaryByFile> summary(List<FileOp> fileOps) {
     Map<Long, ProvFileOpsSummaryByFile> files = new HashMap<>();
-    for(ProvFileOpHit fileOp : fileOps) {
+    for(FileOp fileOp : fileOps) {
       ProvFileOpsSummaryByFile file = files.get(fileOp.getInodeId());
       if(file == null) {
         file = new ProvFileOpsSummaryByFile(fileOp.getInodeId(), fileOp.getAppId(), fileOp.getInodeName());

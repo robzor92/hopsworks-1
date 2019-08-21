@@ -1067,7 +1067,7 @@ describe "On #{ENV['OS']}" do
       # pp result
       expect(result.length).to eq 3
 
-      result = get_app_file_ops(@project1, @app_file_ops1, "COMPACT", "LIST")
+      result = get_app_file_ops(@project1, @app_file_ops1, "FILE_COMPACT", "LIST")
       # pp result
       expect(result.length).to eq 2
     end
@@ -1326,34 +1326,89 @@ describe "On #{ENV['OS']}" do
     end
   end 
 
-  describe 'delete Experiments dataset - check cleanup' do
-    it "restart epipe" do
+  # describe 'delete Experiments dataset - check cleanup' do
+  #   it "restart epipe" do
+  #     execute_remotely @hostname, "sudo systemctl restart epipe"
+  #   end
+
+  #   it "create experiments" do
+  #     prov_create_experiment(@project1, @experiment_app1_name1)
+  #     prov_create_experiment(@project1, @experiment_app2_name1)
+  #   end
+
+  #   it "wait for epipe" do
+  #     prov_wait_for_epipe() 
+  #   end
+
+  #   it "check experiments" do 
+  #     get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
+  #     get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
+  #   end
+
+  #   it "delete Experiments dataset" do
+  #     prov_delete_dataset(@project1, "Experiments")
+  #   end
+
+  #   it "wait for epipe" do
+  #     prov_wait_for_epipe() 
+  #   end
+
+  #   it "check experiments" do 
+  #     check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
+  #     check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
+  #   end
+  # end
+
+  describe 'file state pagination' do
+    it "check epipe" do
       execute_remotely @hostname, "sudo systemctl restart epipe"
     end
 
-    it "create experiments" do
-      prov_create_experiment(@project1, @experiment_app1_name1)
-      prov_create_experiment(@project1, @experiment_app2_name1)
+    it "create experiments - pagination" do
+      prov_create_experiment(@project1, "#{@app1_id}_1")
+      prov_create_experiment(@project1, "#{@app1_id}_2")
+      prov_create_experiment(@project1, "#{@app1_id}_3")
+      prov_create_experiment(@project1, "#{@app1_id}_4")
+      prov_create_experiment(@project1, "#{@app1_id}_5")
+      prov_create_experiment(@project1, "#{@app1_id}_6")
+      prov_create_experiment(@project1, "#{@app1_id}_7")
+      prov_create_experiment(@project1, "#{@app1_id}_8")
+      prov_create_experiment(@project1, "#{@app1_id}_9")
+      prov_create_experiment(@project1, "#{@app1_id}_10")
+    end
+
+    it "wait epipe" do
+      prov_wait_for_epipe() 
+    end
+
+    it "check experiments pagination" do 
+      result1 = get_ml_asset_in_project_page(@project1, "EXPERIMENT", false, 0, 7)
+      expect(result1.length).to eq 7
+      #pp result1
+      
+      result2 = get_ml_asset_in_project_page(@project1, "EXPERIMENT", false, 7, 14)
+      expect(result2.length).to eq 3
+      #pp result2
+    end
+
+    it "cleanup" do
+      prov_delete_experiment(@project1, "#{@app1_id}_1")
+      prov_delete_experiment(@project1, "#{@app1_id}_2")
+      prov_delete_experiment(@project1, "#{@app1_id}_3")
+      prov_delete_experiment(@project1, "#{@app1_id}_4")
+      prov_delete_experiment(@project1, "#{@app1_id}_5")
+      prov_delete_experiment(@project1, "#{@app1_id}_6")
+      prov_delete_experiment(@project1, "#{@app1_id}_7")
+      prov_delete_experiment(@project1, "#{@app1_id}_8")
+      prov_delete_experiment(@project1, "#{@app1_id}_9")
+      prov_delete_experiment(@project1, "#{@app1_id}_10")
     end
 
     it "wait for epipe" do
       prov_wait_for_epipe() 
     end
 
-    it "check experiments" do 
-      get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
-      get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
-    end
-
-    it "delete Experiments dataset" do
-      prov_delete_dataset(@project1, "Experiments")
-    end
-
-    it "wait for epipe" do
-      prov_wait_for_epipe() 
-    end
-
-    it "check experiments" do 
+    it "check cleanup" do 
       check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
       check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
     end
