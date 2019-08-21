@@ -218,6 +218,8 @@ public class ExperimentsBuilder {
       for(AbstractFacade.SortBy sortBy: sort) {
         if(sortBy.getValue().compareToIgnoreCase(SortBy.NAME.name()) == 0) {
           provFilesParamBuilder.sortBy("config.name", SortOrder.valueOf(sortBy.getParam().getValue()));
+        } else if(sortBy.getValue().compareToIgnoreCase(SortBy.START.name()) == 0) {
+          provFilesParamBuilder.sortBy("create_timestamp", SortOrder.valueOf(sortBy.getParam().getValue()));
         }
       }
     }
