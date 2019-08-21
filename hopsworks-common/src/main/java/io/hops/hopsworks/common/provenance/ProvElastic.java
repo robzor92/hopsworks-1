@@ -387,7 +387,7 @@ public class ProvElastic {
   }
   
   public static String processXAttrKeyAsKeyword(String key) {
-   return processXAttrKey(key) + ".keyword";
+    return processXAttrKey(key) + ".keyword";
   }
   
   public static QueryBuilder getQB(ElasticFilters filter, Object paramVal) throws GenericException {
