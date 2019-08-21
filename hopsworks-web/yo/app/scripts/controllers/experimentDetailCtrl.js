@@ -63,8 +63,10 @@ angular.module('hopsWorksApp')
             self.experimentsSubset = [];
 
             var startLoading = function(label) {
-                self.loading = true;
-                self.loadingText = label;
+                if(label) {
+                    self.loading = true;
+                    self.loadingText = label;
+                };
             };
             var stopLoading = function() {
                 self.loading = false;
@@ -108,7 +110,7 @@ angular.module('hopsWorksApp')
                 }
                 self.sortType = type;
                 self.order();
-                self.getExperiment('');
+                self.getExperiment(null);
             };
 
             self.viewImage = function(filePath) {
@@ -257,7 +259,7 @@ angular.module('hopsWorksApp')
             };
 
             self.getNewPage = function() {
-                    self.getExperiment('Fetching more results');
+                self.getExperiment(null);
             };
 
             self.goToModel = function (path) {
