@@ -49,6 +49,9 @@ angular.module('hopsWorksApp')
             self.provenanceLoading = false;
             self.resultsLoading = false;
 
+            self.loading = false;
+            self.loadingText = "";
+
             self.modelLink = null;
 
             self.pageSize = 5;
@@ -58,6 +61,15 @@ angular.module('hopsWorksApp')
             self.query = "";
 
             self.experimentsSubset = [];
+
+            var startLoading = function(label) {
+                self.loading = true;
+                self.loadingText = label;
+            };
+            var stopLoading = function() {
+                self.loading = false;
+                self.loadingText = "";
+            };
 
             self.buildQuery = function() {
                 var offset = self.pageSize * (self.currentPage - 1);
@@ -132,6 +144,7 @@ angular.module('hopsWorksApp')
             };
 
             self.getExperiment = function() {
+                startLoading('Fetching Experiment')
                 self.buildQuery();
                 self.buildModelLink();
                 if (self.showResultsView || self.showProvenanceView) {
@@ -157,6 +170,7 @@ angular.module('hopsWorksApp')
                                 });
                             }
                         });
+                        stopLoading();
                 }
             };
 
