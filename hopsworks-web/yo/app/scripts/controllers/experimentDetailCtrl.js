@@ -94,10 +94,8 @@ angular.module('hopsWorksApp')
 
             self.order = function () {
                 if (self.reverse) {
-                    console.log('trigged 1')
                     self.orderBy = "desc";
                 } else {
-                    console.log('trigged 2')
                     self.orderBy = "asc";
                 }
             };
@@ -125,7 +123,11 @@ angular.module('hopsWorksApp')
             try {
                     self.provenanceLoading = true;
                     self.showProvenanceView = !self.showProvenanceView;
-                    self.getExperiment();
+                    if(self.showProvenanceView) {
+                        startLoading('Fetching Provenance information')
+                        self.getExperiment();
+                        stopLoading();
+                    }
                 } catch (error) {
                 } finally {
                     self.provenanceLoading = false;
@@ -136,7 +138,11 @@ angular.module('hopsWorksApp')
             try {
                     self.resultsLoading = true;
                     self.showResultsView = !self.showResultsView;
-                    self.getExperiment();
+                    if(self.showResultsView) {
+                        startLoading('Fetching results')
+                        self.getExperiment();
+                        stopLoading();
+                    }
                 } catch (error) {
                 } finally {
                     self.resultsLoading = false;
@@ -144,7 +150,6 @@ angular.module('hopsWorksApp')
             };
 
             self.getExperiment = function() {
-                startLoading('Fetching Experiment')
                 self.buildQuery();
                 self.buildModelLink();
                 if (self.showResultsView || self.showProvenanceView) {
@@ -170,7 +175,6 @@ angular.module('hopsWorksApp')
                                 });
                             }
                         });
-                        stopLoading();
                 }
             };
 
@@ -254,7 +258,13 @@ angular.module('hopsWorksApp')
             };
 
             self.getNewPage = function() {
-                self.getExperiment();
+                try {
+                    startLoading('Fetching more results');
+                    self.getExperiment();
+                } finally {
+                    stopLoading();
+
+                }
             }
 
             self.goToModel = function (path) {
