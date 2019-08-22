@@ -115,6 +115,10 @@ angular.module('hopsWorksApp')
                 });
             };
 
+            self.viewMonitor = function (experiment) {
+              $location.path('project/' + self.projectId + '/jobMonitor-job/' + experiment.jobName);
+            };
+
             self.buildQuery = function() {
                 var offset = self.pageSize * (self.currentPage - 1);
                 self.query = "";

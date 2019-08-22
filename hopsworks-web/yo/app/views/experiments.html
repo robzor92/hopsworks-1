@@ -120,11 +120,15 @@
                     </td>
                     <td class="fs-table">
                         <div class="btn-group fs-btn" role="group">
-                            <button uib-tooltip="View TensorBoard" tooltip-placement="auto top" ng-click="tensorBoardCtrl.start(experiment.id);
+                            <button uib-tooltip="Show TensorBoard" tooltip-placement="auto top" ng-click="tensorBoardCtrl.start(experiment.id);
                               $event.stopPropagation();" class="btn glyphicon" style="background-color:lightgray;">
                                 <img src="images/tf-2.png" height="20" />
                             </button>
-                            <button class="btn btn-primary glyphicon glyphicon-eye-open" style="background-color: rgb(51, 122, 183)"
+                            <button class="btn btn-primary glyphicon glyphicon-eye-open" style="background-color: gray"
+                                    uib-tooltip="Show Experiment Monitoring"
+                                    ng-click="experimentCtrl.viewMonitor(experiment); $event.stopPropagation();">
+                            </button>
+                            <button class="btn btn-primary glyphicon glyphicon-list-alt" style="background-color: rgb(51, 122, 183)"
                                     uib-tooltip="Show Detailed Information"
                                     ng-click="experimentCtrl.viewExperiment(experiment); $event.stopPropagation();">
                             </button>
