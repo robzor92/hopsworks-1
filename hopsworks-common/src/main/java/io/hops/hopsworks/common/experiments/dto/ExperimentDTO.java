@@ -45,6 +45,8 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   private String model;
 
+  private String jobName;
+
   private ExperimentResultSummaryDTO results;
 
   private TensorBoardDTO tensorboard;
@@ -185,6 +187,14 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   public void setModel(String model) {
     this.model = model;
+  }
+
+  public String getJobName() {
+    return jobName;
+  }
+
+  public void setJobName(String jobName) {
+    this.jobName = jobName;
   }
 
   public enum XAttrSetFlag {

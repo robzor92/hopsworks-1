@@ -31,6 +31,8 @@ public class ExperimentSummary {
 
   private String optimizationKey;
 
+  private String jobName;
+
   public String getName() {
     return name;
   }
@@ -109,5 +111,13 @@ public class ExperimentSummary {
 
   public void setOptimizationKey(String optimizationKey) {
     this.optimizationKey = optimizationKey;
+  }
+
+  public String getJobName() {
+    return jobName;
+  }
+
+  public void setJobName(String jobName) {
+    this.jobName = jobName;
   }
 }
