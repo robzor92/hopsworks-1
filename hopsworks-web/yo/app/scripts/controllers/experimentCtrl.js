@@ -83,7 +83,7 @@ angular.module('hopsWorksApp')
                 }
                 self.sortType = type;
                 self.order();
-                self.getAll("Fetching Experiments");
+                self.getAll();
             };
 
             self.deleteExperiment = function (id) {
@@ -111,9 +111,9 @@ angular.module('hopsWorksApp')
             self.viewExperiment = function (experiment) {
                 ModalService.viewExperimentInfo('lg', self.projectId, experiment).then(
                 function (success) {
-                    self.getAll("Fetching Experiments");
+                    self.getAll();
                 }, function (error) {
-                    self.getAll("Fetching Experiments");
+                    self.getAll();
                 });
             };
 
@@ -144,18 +144,16 @@ angular.module('hopsWorksApp')
             self.getAll = function(loadingText) {
                 self.buildQuery();
                 if(loadingText) {
-                    startLoading(loadingText);
-                } else {
                     self.updating = true;
                 }
                 ExperimentService.getAll(self.projectId, self.query).then(
                     function(success) {
-                        stopLoading();
+                        self.updating = false;
                         self.experiments = success.data.items;
                         self.totalItems = success.data.count;
                     },
                     function(error) {
-                        stopLoading();
+                        self.updating = false;
                         if (typeof error.data.usrMsg !== 'undefined') {
                             growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 8000});
                         } else {
@@ -230,7 +228,7 @@ angular.module('hopsWorksApp')
 
             self.getNewPage = function() {
                 self.offset = self.pageSize * (self.currentPage - 1);
-                self.getAll("Fetching Experiments");
+                self.getAll();
             }
 
             var startPolling = function () {

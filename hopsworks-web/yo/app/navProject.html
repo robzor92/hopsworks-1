@@ -94,14 +94,14 @@
       </li>
 
       <li ng-click="projectCtrl.goToExperiments()" ng-show="projectCtrl.showExperiments()" id="experimentsTab">
-        <a>
+        <a class="left-right">
           Experiments<img class="pull-right" style="margin-right:8px" height="27" src="images/experiments.png"/>
-          <i class=" pull-left fa "
-             uib-tooltip="Experiments service is experiencing issues and is not working properly."
+          <i uib-tooltip="Experiments service is experiencing issues and is not working properly."
              tooltip-placement="auto right"
              ng-class="{'fa-ban text-danger': (clusterUtilCtrl.ElasticBan || clusterUtilCtrl.EpipeBan || clusterUtilCtrl.HdfsBan)}" aria-hidden="true" style="margin-top: 3px"></i>
         </a>
       </li>
+
 
       <li ng-click="projectCtrl.goToTfServing()" ng-show="projectCtrl.showTfServing()" id="servingTab">
         <a class="left-right">
