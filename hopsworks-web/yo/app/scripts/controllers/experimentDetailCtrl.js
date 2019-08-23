@@ -262,7 +262,7 @@ angular.module('hopsWorksApp')
                 self.getExperiment(null);
             };
 
-            self.goToModel = function (path) {
+            self.goToDirectory = function (path) {
                 self.close();
                 $location.path('project/' + self.projectId + '/datasets/' + path);
             };

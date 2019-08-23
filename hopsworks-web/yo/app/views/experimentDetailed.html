@@ -101,13 +101,13 @@
         <td>{{experimentDetailCtrl.experiment.optimizationKey}}</td>
       </tr>
       <tr ng-if="experimentDetailCtrl.experiment.bestDir">
-        <td>Best Output Directory key</td>
-        <td>{{experimentDetailCtrl.experiment.bestDir}}</td>
+        <td>Best Output Directory</td>
+        <td><a ng-click="experimentDetailCtrl.goToDirectory(experimentDetailCtrl.experiment.bestDir)">{{experimentDetailCtrl.experiment.bestDir}}</a></td>
       </tr>
       <tr ng-if="experimentDetailCtrl.modelLink">
         <td>Model</td>
         <td>
-          <a ng-click="experimentDetailCtrl.goToModel(experimentDetailCtrl.modelLink)">{{experimentDetailCtrl.modelLink}}</a>
+          <a ng-click="experimentDetailCtrl.goToDirectory(experimentDetailCtrl.modelLink)">{{experimentDetailCtrl.modelLink}}</a>
         </td>
       </tr>
       <tr>
