@@ -50,6 +50,8 @@ angular.module('hopsWorksApp')
             self.members = [];
             self.userEmail = "";
 
+            self.updating = false;
+
             self.experimentsToDate = new Date();
             self.experimentsToDate.setMinutes(self.experimentsToDate.getMinutes() + 60*24);
             self.experimentsFromDate = new Date();
@@ -62,6 +64,7 @@ angular.module('hopsWorksApp')
             var stopLoading = function() {
                 self.loading = false;
                 self.loadingText = "";
+                self.updating = false;
             };
 
             self.order = function () {
@@ -142,6 +145,8 @@ angular.module('hopsWorksApp')
                 self.buildQuery();
                 if(loadingText) {
                     startLoading(loadingText);
+                } else {
+                    self.updating = true;
                 }
                 ExperimentService.getAll(self.projectId, self.query).then(
                     function(success) {

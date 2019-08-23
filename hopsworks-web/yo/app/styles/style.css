@@ -610,3 +610,8 @@ md-input-container {
 #python-install-progress .progress-bar {
   border-radius: unset !important;
 }
+
+.spin-icon {
+    -webkit-animation: spin 1000ms infinite linear;
+    animation: spin 1000ms infinite linear;
+}
