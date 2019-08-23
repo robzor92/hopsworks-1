@@ -49,6 +49,8 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   private String appId;
 
+  private String bestDir;
+
   private ExperimentResultSummaryDTO results;
 
   private TensorBoardDTO tensorboard;
@@ -205,6 +207,14 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   public void setAppId(String appId) {
     this.appId = appId;
+  }
+
+  public String getBestDir() {
+    return bestDir;
+  }
+
+  public void setBestDir(String bestDir) {
+    this.bestDir = bestDir;
   }
 
   public enum XAttrSetFlag {

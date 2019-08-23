@@ -140,11 +140,9 @@ angular.module('hopsWorksApp')
                 self.query = self.query + '&sort_by=' + self.sortType + ':' + self.orderBy + '&offset=' + offset + '&limit=' + self.pageSize;
             };
 
-            self.getAll = function(loadingText) {
+            self.getAll = function() {
                 self.buildQuery();
-                if(loadingText) {
-                    self.updating = true;
-                }
+                self.updating = true;
                 ExperimentService.getAll(self.projectId, self.query).then(
                     function(success) {
                         self.updating = false;

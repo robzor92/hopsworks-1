@@ -35,6 +35,8 @@ public class ExperimentSummary {
 
   private String appId;
 
+  private String bestDir;
+
   public String getName() {
     return name;
   }
@@ -129,5 +131,13 @@ public class ExperimentSummary {
 
   public void setAppId(String appId) {
     this.appId = appId;
+  }
+
+  public String getBestDir() {
+    return bestDir;
+  }
+
+  public void setBestDir(String bestDir) {
+    this.bestDir = bestDir;
   }
 }
