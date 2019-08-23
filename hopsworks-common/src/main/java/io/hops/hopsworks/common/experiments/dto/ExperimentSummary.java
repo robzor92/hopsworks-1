@@ -33,6 +33,8 @@ public class ExperimentSummary {
 
   private String jobName;
 
+  private String appId;
+
   public String getName() {
     return name;
   }
@@ -119,5 +121,13 @@ public class ExperimentSummary {
 
   public void setJobName(String jobName) {
     this.jobName = jobName;
+  }
+
+  public String getAppId() {
+    return appId;
+  }
+
+  public void setAppId(String appId) {
+    this.appId = appId;
   }
 }

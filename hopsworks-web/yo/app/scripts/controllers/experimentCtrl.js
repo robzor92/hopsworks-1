@@ -103,7 +103,6 @@ angular.module('hopsWorksApp')
                             growl.error("", {title: error.data.errorMsg, ttl: 8000});
                         }
                     });
-
             };
 
             self.viewExperiment = function (experiment) {
@@ -116,7 +115,11 @@ angular.module('hopsWorksApp')
             };
 
             self.viewMonitor = function (experiment) {
-              $location.path('project/' + self.projectId + '/jobMonitor-job/' + experiment.jobName);
+              if(experiment.jobName) {
+                $location.path('project/' + self.projectId + '/jobMonitor-job/' + experiment.jobName);
+              } else {
+                $location.path('project/' + self.projectId + '/jobMonitor-job/' + experiment.appId + '/true/jupyter');
+              }
             };
 
             self.buildQuery = function() {

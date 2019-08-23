@@ -167,6 +167,7 @@ public class ExperimentsBuilder {
         experimentDTO.setDirection(experimentSummary.getDirection());
         experimentDTO.setOptimizationKey(experimentSummary.getOptimizationKey());
         experimentDTO.setJobName(experimentSummary.getJobName());
+        experimentDTO.setAppId(experimentSummary.getAppId());
         experimentDTO.setTensorboard(tensorBoardBuilder.build(uriInfo,
             resourceRequest.get(ResourceRequest.Name.TENSORBOARD), project, fileProvenanceHit.getMlId()));
         experimentDTO.setProvenance(experimentFileProvenanceBuilder.build(uriInfo,
