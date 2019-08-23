@@ -93,13 +93,6 @@
         </a>
       </li>
 
-      <li ng-click="projectCtrl.goToTfServing()" ng-show="projectCtrl.showTfServing()" id="servingTab">
-        <a class="left-right">
-          Model Serving
-          <img class="pull-right" style="margin-right:10px" height="25" src="images/tf-175x200_bw.png"/>
-        </a>
-      </li>
-
       <li ng-click="projectCtrl.goToExperiments()" ng-show="projectCtrl.showExperiments()" id="experimentsTab">
         <a>
           Experiments<img class="pull-right" style="margin-right:8px" height="27" src="images/experiments.png"/>
@@ -107,6 +100,13 @@
              uib-tooltip="Experiments service is experiencing issues and is not working properly."
              tooltip-placement="auto right"
              ng-class="{'fa-ban text-danger': (clusterUtilCtrl.ElasticBan || clusterUtilCtrl.EpipeBan || clusterUtilCtrl.HdfsBan)}" aria-hidden="true" style="margin-top: 3px"></i>
+        </a>
+      </li>
+
+      <li ng-click="projectCtrl.goToTfServing()" ng-show="projectCtrl.showTfServing()" id="servingTab">
+        <a class="left-right">
+          Model Serving
+          <img class="pull-right" style="margin-right:10px" height="25" src="images/tf-175x200_bw.png"/>
         </a>
       </li>
 
