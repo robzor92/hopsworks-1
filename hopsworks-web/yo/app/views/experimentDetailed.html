@@ -100,6 +100,10 @@
         <td>Optimization key</td>
         <td>{{experimentDetailCtrl.experiment.optimizationKey}}</td>
       </tr>
+      <tr ng-if="experimentDetailCtrl.experiment.bestDir">
+        <td>Best Output Directory key</td>
+        <td>{{experimentDetailCtrl.experiment.bestDir}}</td>
+      </tr>
       <tr ng-if="experimentDetailCtrl.modelLink">
         <td>Model</td>
         <td>
