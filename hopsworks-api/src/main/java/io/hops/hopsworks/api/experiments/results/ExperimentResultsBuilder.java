@@ -109,15 +109,22 @@ public class ExperimentResultsBuilder {
       offset = 0;
     }
 
-    AbstractFacade.SortBy sortByKey = resourceRequest.getSort().iterator().next();
 
-    String sortKey = sortByKey.getValue();
 
-    if(sortByKey != null) {
-      if(sortByKey.getParam().getValue().compareToIgnoreCase("ASC") == 0) {
-        Arrays.sort(dto, new OptKeyComparator(sortKey));
-      } else if(sortByKey.getParam().getValue().compareToIgnoreCase("DESC") == 0) {
-        Arrays.sort(dto, Collections.reverseOrder(new OptKeyComparator(sortKey)));
+    AbstractFacade.SortBy sortByKey = null;
+    String sortKeyName = null;
+    String sortKeyOrder = null;
+    if(resourceRequest.getSort() != null) {
+      sortByKey = resourceRequest.getSort().iterator().next();
+      sortKeyName = sortByKey.getValue();
+      sortKeyOrder = sortByKey.getParam().getValue();
+    }
+
+    if(sortByKey != null && sortKeyName != null && sortKeyOrder != null) {
+      if(sortKeyOrder.compareToIgnoreCase("ASC") == 0) {
+        Arrays.sort(dto, new OptKeyComparator(sortKeyName));
+      } else if(sortKeyOrder.compareToIgnoreCase("DESC") == 0) {
+        Arrays.sort(dto, Collections.reverseOrder(new OptKeyComparator(sortKeyName)));
       }
     }
 
