@@ -198,9 +198,8 @@ angular.module('hopsWorksApp')
                         }
                     });
 
-                    if(self.membersList.length > 1) {
-                        self.membersList.push({'name': 'All Members'})
-                    }
+
+                    self.membersList.push({'name': 'All Members'})
 
                     for(var i = 0; i < self.membersList.length; i++) {
                         if(self.membersList[i].email === self.userEmail) {
