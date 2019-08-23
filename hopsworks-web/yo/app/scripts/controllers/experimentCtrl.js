@@ -64,7 +64,6 @@ angular.module('hopsWorksApp')
             var stopLoading = function() {
                 self.loading = false;
                 self.loadingText = "";
-                self.updating = false;
             };
 
             self.order = function () {
