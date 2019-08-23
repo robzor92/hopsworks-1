@@ -118,7 +118,7 @@ angular.module('hopsWorksApp')
               if(experiment.jobName) {
                 $location.path('project/' + self.projectId + '/jobMonitor-job/' + experiment.jobName);
               } else {
-                $location.path('project/' + self.projectId + '/jobMonitor-job/' + experiment.appId + '/true/jupyter');
+                $location.path('project/' + self.projectId + '/jobMonitor-app/' + experiment.appId + '/true/jupyter');
               }
             };
 
