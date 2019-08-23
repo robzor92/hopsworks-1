@@ -612,6 +612,6 @@ md-input-container {
 }
 
 .spin-icon {
-    -webkit-animation: spin 1000ms infinite linear;
-    animation: spin 1000ms infinite linear;
+    -webkit-animation: spin 2000ms infinite linear;
+    animation: spin 2000ms infinite linear;
 }
