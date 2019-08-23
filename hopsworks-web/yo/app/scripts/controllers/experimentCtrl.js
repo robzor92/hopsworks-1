@@ -80,7 +80,7 @@ angular.module('hopsWorksApp')
                 }
                 self.sortType = type;
                 self.order();
-                self.getAll();
+                self.getAll("Fetching Experiments");
             };
 
             self.deleteExperiment = function (id) {
@@ -108,9 +108,9 @@ angular.module('hopsWorksApp')
             self.viewExperiment = function (experiment) {
                 ModalService.viewExperimentInfo('lg', self.projectId, experiment).then(
                 function (success) {
-                    self.getAll();
+                    self.getAll("Fetching Experiments");
                 }, function (error) {
-                    self.getAll();
+                    self.getAll("Fetching Experiments");
                 });
             };
 
@@ -138,9 +138,11 @@ angular.module('hopsWorksApp')
                 self.query = self.query + '&sort_by=' + self.sortType + ':' + self.orderBy + '&offset=' + offset + '&limit=' + self.pageSize;
             };
 
-            self.getAll = function() {
+            self.getAll = function(loadingText) {
                 self.buildQuery();
-                startLoading("Fetching Experiments...");
+                if(loadingText) {
+                    startLoading(loadingText);
+                }
                 ExperimentService.getAll(self.projectId, self.query).then(
                     function(success) {
                         stopLoading();
@@ -223,7 +225,14 @@ angular.module('hopsWorksApp')
 
             self.getNewPage = function() {
                 self.offset = self.pageSize * (self.currentPage - 1);
-                self.getAll();
+                self.getAll("Fetching Experiments");
             }
+
+            var startPolling = function () {
+              self.poller = $interval(function () {
+                self.getAll();
+              }, 15000);
+            };
+            startPolling();
         }
     ]);
