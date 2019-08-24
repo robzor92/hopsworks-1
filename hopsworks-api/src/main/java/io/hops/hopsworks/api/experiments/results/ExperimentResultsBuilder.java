@@ -109,8 +109,6 @@ public class ExperimentResultsBuilder {
       offset = 0;
     }
 
-
-
     AbstractFacade.SortBy sortByKey = null;
     String sortKeyName = null;
     String sortKeyOrder = null;

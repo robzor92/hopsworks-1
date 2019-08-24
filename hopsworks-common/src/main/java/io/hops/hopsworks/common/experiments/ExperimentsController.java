@@ -7,8 +7,15 @@ import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
+import io.hops.hopsworks.common.provenance.FileProvenanceHit;
+import io.hops.hopsworks.common.provenance.Provenance;
+import io.hops.hopsworks.common.provenance.ProvenanceController;
+import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
+import io.hops.hopsworks.common.provenance.v2.xml.FileState;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.DatasetException;
+import io.hops.hopsworks.exceptions.GenericException;
+import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.XAttrSetFlag;
@@ -19,6 +26,7 @@ import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -26,6 +34,7 @@ import javax.xml.bind.Marshaller;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,6 +47,8 @@ public class ExperimentsController {
 
   @EJB
   private DistributedFsService dfs;
+  @EJB
+  private ProvenanceController provenanceController;
 
   public void attachExperiment(String id, Project project, Users user, ExperimentSummary experimentSummary,
                       ExperimentDTO.XAttrSetFlag xAttrSetFlag)
@@ -125,6 +136,24 @@ public class ExperimentsController {
     if (!success) {
       throw new DatasetException(RESTCodes.DatasetErrorCode.INODE_DELETION_ERROR, Level.FINE,
           "path: " + experimentPath);
+    }
+  }
+
+  public FileState getExperiment(Project project, String mlId) throws GenericException, ServiceException {
+    ProvFileStateParamBuilder provFilesParamBuilder = new ProvFileStateParamBuilder()
+        .withProjectInodeId(project.getInode().getId())
+        .withMlType(Provenance.MLType.EXPERIMENT.name())
+        .withAppState()
+        .withMlId(mlId);
+
+    GenericEntity<Collection<FileState>> fileProvenanceHits = new GenericEntity<Collection<FileState>>(
+        provenanceController.provFileStateList(provFilesParamBuilder)) {
+    };
+
+    if(!fileProvenanceHits.getEntity().isEmpty()) {
+      return fileProvenanceHits.getEntity().iterator().next();
+    } else {
+      return null;
     }
   }
 }

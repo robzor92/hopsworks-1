@@ -16,9 +16,7 @@ import io.hops.hopsworks.common.experiments.ExperimentsController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentSummary;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.hdfs.HdfsUsersController;
-import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
-import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.xml.FileState;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ExperimentsException;
@@ -44,12 +42,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
-import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -120,20 +116,9 @@ public class ExperimentsResource {
       throws ServiceException, GenericException, ExperimentsException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.EXPERIMENTS);
     resourceRequest.setExpansions(experimentsBeanParam.getExpansions().getResources());
-
-    ProvFileStateParamBuilder provFilesParamBuilder = new ProvFileStateParamBuilder()
-        .withProjectInodeId(project.getInode().getId())
-        .withMlType(Provenance.MLType.EXPERIMENT.name())
-        .withAppState()
-        .withMlId(id);
-
-    GenericEntity<Collection<FileState>> fileProvenanceHits = new GenericEntity<Collection<FileState>>(
-        provenanceController.provFileStateList(provFilesParamBuilder)) {
-    };
-
-    if(!fileProvenanceHits.getEntity().isEmpty()) {
-      ExperimentDTO dto = experimentsBuilder.build(uriInfo, resourceRequest, project,
-          fileProvenanceHits.getEntity().iterator().next());
+    FileState fileState = experimentsController.getExperiment(project, id);
+    if(fileState != null) {
+      ExperimentDTO dto = experimentsBuilder.build(uriInfo, resourceRequest, project, fileState);
       return Response.ok().entity(dto).build();
     } else {
       throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.EXPERIMENT_NOT_FOUND, Level.FINE);
@@ -177,8 +162,7 @@ public class ExperimentsResource {
       @PathParam("id") String id,
       @Context HttpServletRequest req,
       @Context UriInfo uriInfo,
-      @Context SecurityContext sc) {
-
+      @Context SecurityContext sc) throws DatasetException {
     Users hopsworksUser = jwtHelper.getUserPrincipal(sc);
     String hdfsUser = hdfsUsersController.getHdfsUserName(project, hopsworksUser);
     experimentsController.delete(id, project, hdfsUser);
