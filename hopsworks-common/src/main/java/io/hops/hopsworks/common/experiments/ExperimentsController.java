@@ -106,19 +106,21 @@ public class ExperimentsController {
     }
   }
 
-  public void delete(String id, Project project, String hdfsUser) {
+  public void delete(String id, Project project, String hdfsUser) throws DatasetException {
     boolean success = false;
     DistributedFileSystemOps dfso = null;
+    String experimentPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/" + id;
     try {
       dfso = dfs.getDfsOps(hdfsUser);
-      String experimentPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/" + id;
       Path path = new Path(experimentPath);
       success = dfso.rm(path, true);
     } catch (IOException ioe) {
-
+      throw new DatasetException(RESTCodes.DatasetErrorCode.INODE_DELETION_ERROR, Level.SEVERE,
+          "path: " + experimentPath);
     }
-    if(!success) {
-
+    if (!success) {
+      throw new DatasetException(RESTCodes.DatasetErrorCode.INODE_DELETION_ERROR, Level.FINE,
+          "path: " + experimentPath);
     }
   }
 }

@@ -141,16 +141,19 @@ public class ExperimentsBuilder {
         Long creationTime = fileProvenanceHit.getCreateTime();
         experimentDTO.setStarted(DateUtils.millis2LocalDateTime(creationTime).toString());
         Long finishTime = null;
+
         if (!Strings.isNullOrEmpty(experimentSummary.getDuration())) {
           finishTime = creationTime + Long.valueOf(experimentSummary.getDuration());
           experimentDTO.setFinished(DateUtils.millis2LocalDateTime(finishTime).toString());
         }
 
-        if(experimentSummary.getState().equals(Provenance.AppState.RUNNING.name())) {
-          experimentDTO.setState(fileProvenanceHit.getAppState().getCurrentState().name());
-        } else {
-          experimentDTO.setState(experimentSummary.getState());
-        }
+        //if(experimentSummary.getState().equals(Provenance.AppState.RUNNING.name())) {
+        //  experimentDTO.setState(fileProvenanceHit.getAppState().getCurrentState().name());
+        //} else {
+        //  experimentDTO.setState(experimentSummary.getState());
+        //}
+
+        experimentDTO.setState(experimentSummary.getState());
 
         if(fileProvenanceHit.getXattrs().containsKey("model")) {
           String model = fileProvenanceHit.getXattrs().get("model");
@@ -225,8 +228,12 @@ public class ExperimentsBuilder {
           provFilesParamBuilder.sortBy("summary.metric", SortOrder.valueOf(sortBy.getParam().getValue()));
         } else if(sortBy.getValue().compareToIgnoreCase(SortBy.USER.name()) == 0) {
           provFilesParamBuilder.sortBy("summary.userFullName", SortOrder.valueOf(sortBy.getParam().getValue()));
-        }else if(sortBy.getValue().compareToIgnoreCase(SortBy.START.name()) == 0) {
+        } else if(sortBy.getValue().compareToIgnoreCase(SortBy.START.name()) == 0) {
           provFilesParamBuilder.sortBy("create_timestamp", SortOrder.valueOf(sortBy.getParam().getValue()));
+        }  else if(sortBy.getValue().compareToIgnoreCase(SortBy.END.name()) == 0) {
+          provFilesParamBuilder.sortBy("summary.finishedTimeStamp", SortOrder.valueOf(sortBy.getParam().getValue()));
+        }  else if(sortBy.getValue().compareToIgnoreCase(SortBy.STATE.name()) == 0) {
+          provFilesParamBuilder.sortBy("summary.state", SortOrder.valueOf(sortBy.getParam().getValue()));
         }
       }
     }
