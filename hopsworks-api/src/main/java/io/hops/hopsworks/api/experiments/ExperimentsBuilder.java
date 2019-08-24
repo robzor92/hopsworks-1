@@ -232,7 +232,8 @@ public class ExperimentsBuilder {
         } else if(sortBy.getValue().compareToIgnoreCase(SortBy.START.name()) == 0) {
           provFilesParamBuilder.sortBy("create_timestamp", SortOrder.valueOf(sortBy.getParam().getValue()));
         }  else if(sortBy.getValue().compareToIgnoreCase(SortBy.END.name()) == 0) {
-          provFilesParamBuilder.sortBy("summary.finishedTimeStamp", SortOrder.valueOf(sortBy.getParam().getValue()));
+          provFilesParamBuilder.sortBy("summary.endTimestamp",
+              SortOrder.valueOf(sortBy.getParam().getValue()));
         }  else if(sortBy.getValue().compareToIgnoreCase(SortBy.STATE.name()) == 0) {
           provFilesParamBuilder.sortBy("summary.state", SortOrder.valueOf(sortBy.getParam().getValue()));
         }
