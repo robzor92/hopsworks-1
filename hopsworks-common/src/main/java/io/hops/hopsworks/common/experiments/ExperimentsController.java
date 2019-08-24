@@ -117,7 +117,11 @@ public class ExperimentsController {
     } catch (IOException ioe) {
       throw new DatasetException(RESTCodes.DatasetErrorCode.INODE_DELETION_ERROR, Level.SEVERE,
           "path: " + experimentPath);
+  } finally {
+    if (dfso != null) {
+      dfs.closeDfsClient(dfso);
     }
+  }
     if (!success) {
       throw new DatasetException(RESTCodes.DatasetErrorCode.INODE_DELETION_ERROR, Level.FINE,
           "path: " + experimentPath);
