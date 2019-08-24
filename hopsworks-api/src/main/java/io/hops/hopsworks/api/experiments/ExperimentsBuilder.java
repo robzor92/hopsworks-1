@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @Stateless
@@ -156,9 +157,12 @@ public class ExperimentsBuilder {
         experimentDTO.setStarted(DateUtils.millis2LocalDateTime(fileProvenanceHit.getCreateTime()).toString());
 
         if(!Strings.isNullOrEmpty(experimentSummary.getEndTimestamp())) {
+          LOGGER.log(Level.SEVERE, "IN TIME " + experimentSummary.getEndTimestamp());
           experimentDTO.setFinished(DateUtils.millis2LocalDateTime(
               Long.parseLong(experimentSummary.getEndTimestamp())).toString());
+          LOGGER.log(Level.SEVERE, "OUT TIME " + experimentDTO.getFinished());
         }
+
         experimentDTO.setState(experimentSummary.getState());
 
         if(fileProvenanceHit.getXattrs().containsKey("model")) {

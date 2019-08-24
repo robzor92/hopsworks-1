@@ -62,7 +62,10 @@ public class ExperimentsController {
         xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.REPLACE)) {
       FileState fileState = getExperiment(project, id);
       if(fileState != null && fileState.getCreateTime() != null) {
-        experimentSummary.setEndTimestamp(fileState.getCreateTime() + experimentSummary.getDuration());
+        LOGGER.log(Level.SEVERE.SEVERE, " FILE STATE " + fileState.getCreateTime() + " EXPERIMENT " +
+            experimentSummary.getDuration());
+        Long finishedTime = fileState.getCreateTime() + Long.valueOf(experimentSummary.getDuration());
+        experimentSummary.setEndTimestamp(finishedTime.toString());
       }
     }
 
