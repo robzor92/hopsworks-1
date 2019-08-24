@@ -1,6 +1,5 @@
 package io.hops.hopsworks.api.experiments;
 
-import com.google.common.base.Strings;
 import io.hops.hopsworks.api.experiments.provenance.ExperimentFileProvenanceBuilder;
 import io.hops.hopsworks.api.experiments.results.ExperimentResultsBuilder;
 import io.hops.hopsworks.api.experiments.tensorboard.TensorBoardBuilder;
@@ -22,7 +21,6 @@ import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.xml.FileState;
-import io.hops.hopsworks.common.util.DateUtils;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
@@ -129,7 +127,8 @@ public class ExperimentsBuilder {
 
   //Build specific
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
-                             FileState fileProvenanceHit) throws ExperimentsException, DatasetException, GenericException, ServiceException {
+                             FileState fileProvenanceHit) throws ExperimentsException, DatasetException,
+      GenericException, ServiceException {
 
     ExperimentDTO experimentDTO = new ExperimentDTO();
     uri(experimentDTO, uriInfo, project, fileProvenanceHit);
