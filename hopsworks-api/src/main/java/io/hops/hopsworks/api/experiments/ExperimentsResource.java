@@ -147,7 +147,6 @@ public class ExperimentsResource {
     }
     Users user = jwtHelper.getUserPrincipal(sc);
     if(experimentSummary != null) {
-      experimentSummary.setState("RUNNING");
       String realName = user.getFname() + " " + user.getLname();
       experimentsController.attachExperiment(id, project, realName, experimentSummary, xAttrSetFlag);
     } else {

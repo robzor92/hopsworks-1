@@ -27,6 +27,7 @@ import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.InvalidQueryException;
 import io.hops.hopsworks.exceptions.ServiceException;
+import org.apache.parquet.Strings;
 import org.elasticsearch.search.sort.SortOrder;
 import org.json.JSONObject;
 
@@ -141,7 +142,7 @@ public class ExperimentsBuilder {
 
         ExperimentSummary experimentSummary =
             experimentSummaryConverter.unmarshalDescription(summary.toString());
-        
+
         // if provenance says it's final state, but exp state is running, update exp state accordingly
         // exp state is not guaranteed to have enough time to report terminal state when being killed for example
         if(experimentSummary.getState().equals(Provenance.AppState.RUNNING.name())
@@ -152,10 +153,12 @@ public class ExperimentsBuilder {
               experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);
         }
 
-        experimentDTO.setStarted(DateUtils.millis2LocalDateTime(
-            fileProvenanceHit.getCreateTime()).toString());
-        experimentDTO.setFinished(DateUtils.millis2LocalDateTime(
-            Long.parseLong(experimentSummary.getEndTimestamp())).toString());
+        experimentDTO.setStarted(DateUtils.millis2LocalDateTime(fileProvenanceHit.getCreateTime()).toString());
+
+        if(!Strings.isNullOrEmpty(experimentSummary.getEndTimestamp())) {
+          experimentDTO.setFinished(DateUtils.millis2LocalDateTime(
+              Long.parseLong(experimentSummary.getEndTimestamp())).toString());
+        }
         experimentDTO.setState(experimentSummary.getState());
 
         if(fileProvenanceHit.getXattrs().containsKey("model")) {

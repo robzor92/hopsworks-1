@@ -57,6 +57,15 @@ public class ExperimentsController {
 
     String experimentPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/" + id;
 
+    // attempt to set the final timestamp time
+    if(!Strings.isNullOrEmpty(experimentSummary.getDuration()) &&
+        xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.REPLACE)) {
+      FileState fileState = getExperiment(project, id);
+      if(fileState != null && fileState.getCreateTime() != null) {
+        experimentSummary.setEndTimestamp(fileState.getCreateTime() + experimentSummary.getDuration());
+      }
+    }
+
     DistributedFileSystemOps dfso = null;
     try {
       JAXBContext sparkJAXBContext = JAXBContextFactory.createContext(new Class[] {ExperimentSummary.class},
@@ -70,15 +79,6 @@ public class ExperimentsController {
       dfso = dfs.getDfsOps();
 
       LOGGER.log(Level.SEVERE, "EXPERIMENT: attaching xattr " + xAttrSetFlag.name());
-
-      // attempt to set the final timestamp time
-      if(!Strings.isNullOrEmpty(experimentSummary.getDuration()) &&
-          xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.REPLACE)) {
-        FileState fileState = getExperiment(project, id);
-        if(fileState != null && fileState.getCreateTime() != null) {
-          experimentSummary.setEndTimestamp(fileState.getCreateTime() + experimentSummary.getDuration());
-        }
-      }
 
       EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
       flags.add(XAttrSetFlag.valueOf(xAttrSetFlag.name()));
