@@ -153,6 +153,8 @@ public class ExperimentsBuilder {
               experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);
         }
 
+        experimentDTO.setStarted(fileProvenanceHit.getReadableCreateTime());
+        experimentDTO.setFinished(da);
         experimentDTO.setState(experimentSummary.getState());
 
         if(fileProvenanceHit.getXattrs().containsKey("model")) {
