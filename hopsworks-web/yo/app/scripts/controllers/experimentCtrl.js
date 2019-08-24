@@ -228,6 +228,10 @@ angular.module('hopsWorksApp')
                 self.getAll();
             }
 
+            $scope.$on('$destroy', function () {
+              $interval.cancel(self.poller);
+            });
+
             var startPolling = function () {
               self.poller = $interval(function () {
                 self.getAll();
