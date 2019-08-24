@@ -129,7 +129,7 @@ public class ExperimentsBuilder {
 
   //Build specific
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
-                             FileState fileProvenanceHit) throws ExperimentsException, DatasetException {
+                             FileState fileProvenanceHit) throws ExperimentsException, DatasetException, GenericException, ServiceException {
 
     ExperimentDTO experimentDTO = new ExperimentDTO();
     uri(experimentDTO, uriInfo, project, fileProvenanceHit);
@@ -142,26 +142,15 @@ public class ExperimentsBuilder {
         ExperimentSummary experimentSummary =
             experimentSummaryConverter.unmarshalDescription(summary.toString());
 
-        Long creationTime = fileProvenanceHit.getCreateTime();
-        experimentDTO.setStarted(DateUtils.millis2LocalDateTime(creationTime).toString());
-        Long finishTime = null;
-
-        if (!Strings.isNullOrEmpty(experimentSummary.getDuration())) {
-          finishTime = creationTime + Long.valueOf(experimentSummary.getDuration());
-          experimentDTO.setFinished(DateUtils.millis2LocalDateTime(finishTime).toString());
-        }
-
-        //if(experimentSummary.getState().equals(Provenance.AppState.RUNNING.name())) {
-        //  experimentDTO.setState(fileProvenanceHit.getAppState().getCurrentState().name());
-        //} else {
-        //  experimentDTO.setState(experimentSummary.getState());
-        //}
+        boolean updateExperiment = false;
 
         // if provenance says it's final state, but exp state is running, update exp state accordingly
-        if(Provenance.AppState.valueOf(fileProvenanceHit.getAppState().getCurrentState().name()).isFinalState()
-            && experimentSummary.getState().equals(Provenance.AppState.RUNNING.name())) {
+        // exp state is not guaranteed to have enough time to report terminal state when being killed for example
+        if(experimentSummary.getState().equals(Provenance.AppState.RUNNING.name())
+          && Provenance.AppState.valueOf(fileProvenanceHit.getAppState().getCurrentState().name()).isFinalState()) {
           experimentSummary.setState(fileProvenanceHit.getAppState().getCurrentState().name());
-          experimentsController.attachExperiment(fileProvenanceHit.getId(), project,
+          experimentSummary.setEndTimestamp(fileProvenanceHit.getAppState().getFinishTime().toString());
+          experimentsController.attachExperiment(fileProvenanceHit.getMlId(), project,
               experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);
         }
 

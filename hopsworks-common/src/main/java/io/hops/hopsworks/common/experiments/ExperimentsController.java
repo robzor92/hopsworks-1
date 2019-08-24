@@ -17,6 +17,7 @@ import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.XAttrSetFlag;
+import org.apache.parquet.Strings;
 import org.eclipse.persistence.jaxb.JAXBContextFactory;
 import org.eclipse.persistence.jaxb.MarshallerProperties;
 
@@ -50,7 +51,7 @@ public class ExperimentsController {
 
   public void attachExperiment(String id, Project project, String userFullName, ExperimentSummary experimentSummary,
                       ExperimentDTO.XAttrSetFlag xAttrSetFlag)
-      throws DatasetException {
+      throws DatasetException, GenericException, ServiceException {
 
     experimentSummary.setUserFullName(userFullName);
 
@@ -68,10 +69,18 @@ public class ExperimentsController {
       byte[] experiment = sw.toString().getBytes(StandardCharsets.UTF_8);
       dfso = dfs.getDfsOps();
 
-      EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
-
       LOGGER.log(Level.SEVERE, "EXPERIMENT: attaching xattr " + xAttrSetFlag.name());
 
+      // attempt to set the final timestamp time
+      if(!Strings.isNullOrEmpty(experimentSummary.getDuration()) &&
+          xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.REPLACE)) {
+        FileState fileState = getExperiment(project, id);
+        if(fileState != null && fileState.getCreateTime() != null) {
+          experimentSummary.setEndTimestamp(fileState.getCreateTime() + experimentSummary.getDuration());
+        }
+      }
+
+      EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
       flags.add(XAttrSetFlag.valueOf(xAttrSetFlag.name()));
 
       dfso.setXAttr(experimentPath, "provenance.summary", experiment, flags);

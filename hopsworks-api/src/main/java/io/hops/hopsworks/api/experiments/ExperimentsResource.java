@@ -139,7 +139,8 @@ public class ExperimentsResource {
       @QueryParam("model") String model,
       @Context HttpServletRequest req,
       @Context UriInfo uriInfo,
-      @Context SecurityContext sc) throws DatasetException {
+      @Context SecurityContext sc) throws DatasetException, GenericException, ServiceException {
+
 
     if (experimentSummary == null && model == null) {
       throw new IllegalArgumentException("Experiment configuration or model was not provided");

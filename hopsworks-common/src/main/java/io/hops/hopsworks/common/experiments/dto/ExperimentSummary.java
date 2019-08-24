@@ -5,7 +5,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
- * Contains configuration and other information about an experiment
+ * Summary about an experiment
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -20,6 +20,8 @@ public class ExperimentSummary {
   private String userFullName;
 
   private String duration;
+
+  private String endTimestamp;
 
   private String state;
 
@@ -67,14 +69,6 @@ public class ExperimentSummary {
 
   public void setMetric(String metric) {
     this.metric = metric;
-  }
-
-  public String getDuration() {
-    return duration;
-  }
-
-  public void setDuration(String duration) {
-    this.duration = duration;
   }
 
   public String getState() {
@@ -139,5 +133,21 @@ public class ExperimentSummary {
 
   public void setBestDir(String bestDir) {
     this.bestDir = bestDir;
+  }
+
+  public String getDuration() {
+    return duration;
+  }
+
+  public void setDuration(String duration) {
+    this.duration = duration;
+  }
+
+  public String getEndTimestamp() {
+    return endTimestamp;
+  }
+
+  public void setEndTimestamp(String endTimestamp) {
+    this.endTimestamp = endTimestamp;
   }
 }
