@@ -97,7 +97,7 @@ public class ExperimentsBuilder {
 
   //Build collection
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project)
-      throws ServiceException, GenericException, ExperimentsException {
+      throws ServiceException, GenericException, ExperimentsException, DatasetException {
     ExperimentDTO dto = new ExperimentDTO();
     uri(dto, uriInfo, project);
     expand(dto, resourceRequest);
@@ -159,7 +159,7 @@ public class ExperimentsBuilder {
 
         // if provenance says it's final state, but exp state is running, update exp state accordingly
         if(Provenance.AppState.valueOf(fileProvenanceHit.getAppState().getCurrentState().name()).isFinalState()
-        && experimentSummary.getState().equals(Provenance.AppState.RUNNING.name())) {
+            && experimentSummary.getState().equals(Provenance.AppState.RUNNING.name())) {
           experimentSummary.setState(fileProvenanceHit.getAppState().getCurrentState().name());
           experimentsController.attachExperiment(fileProvenanceHit.getId(), project,
               experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);

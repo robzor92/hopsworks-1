@@ -92,7 +92,7 @@ public class ExperimentsResource {
   public Response getAll(
       @BeanParam Pagination pagination,
       @BeanParam ExperimentsBeanParam experimentsBeanParam,
-      @Context UriInfo uriInfo) throws ServiceException, GenericException, ExperimentsException {
+      @Context UriInfo uriInfo) throws ServiceException, GenericException, ExperimentsException, DatasetException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.EXPERIMENTS);
     resourceRequest.setOffset(pagination.getOffset());
     resourceRequest.setLimit(pagination.getLimit());
@@ -113,7 +113,7 @@ public class ExperimentsResource {
       @PathParam("id") String id,
       @Context UriInfo uriInfo,
       @BeanParam ExperimentsBeanParam experimentsBeanParam)
-      throws ServiceException, GenericException, ExperimentsException {
+      throws ServiceException, GenericException, ExperimentsException, DatasetException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.EXPERIMENTS);
     resourceRequest.setExpansions(experimentsBeanParam.getExpansions().getResources());
     FileState fileState = experimentsController.getExperiment(project, id);

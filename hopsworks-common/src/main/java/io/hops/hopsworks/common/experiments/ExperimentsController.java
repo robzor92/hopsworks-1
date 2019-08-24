@@ -1,7 +1,6 @@
 package io.hops.hopsworks.common.experiments;
 
 import io.hops.hopsworks.common.dao.project.Project;
-import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.experiments.dto.ExperimentSummary;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
