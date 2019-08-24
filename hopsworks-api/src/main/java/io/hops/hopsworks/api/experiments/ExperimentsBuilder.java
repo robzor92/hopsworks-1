@@ -21,6 +21,7 @@ import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.xml.FileState;
+import io.hops.hopsworks.common.util.DateUtils;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
@@ -140,9 +141,7 @@ public class ExperimentsBuilder {
 
         ExperimentSummary experimentSummary =
             experimentSummaryConverter.unmarshalDescription(summary.toString());
-
-        boolean updateExperiment = false;
-
+        
         // if provenance says it's final state, but exp state is running, update exp state accordingly
         // exp state is not guaranteed to have enough time to report terminal state when being killed for example
         if(experimentSummary.getState().equals(Provenance.AppState.RUNNING.name())
@@ -153,8 +152,10 @@ public class ExperimentsBuilder {
               experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);
         }
 
-        experimentDTO.setStarted(fileProvenanceHit.getReadableCreateTime());
-        experimentDTO.setFinished(da);
+        experimentDTO.setStarted(DateUtils.millis2LocalDateTime(
+            fileProvenanceHit.getCreateTime()).toString());
+        experimentDTO.setFinished(DateUtils.millis2LocalDateTime(
+            Long.parseLong(experimentSummary.getEndTimestamp())).toString());
         experimentDTO.setState(experimentSummary.getState());
 
         if(fileProvenanceHit.getXattrs().containsKey("model")) {
