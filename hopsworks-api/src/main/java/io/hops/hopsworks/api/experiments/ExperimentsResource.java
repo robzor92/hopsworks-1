@@ -146,7 +146,8 @@ public class ExperimentsResource {
     }
     Users user = jwtHelper.getUserPrincipal(sc);
     if(experimentSummary != null) {
-      experimentsController.attachExperiment(id, project, user, experimentSummary, xAttrSetFlag);
+      String realName = user.getFname() + " " + user.getLname();
+      experimentsController.attachExperiment(id, project, realName, experimentSummary, xAttrSetFlag);
     } else {
       experimentsController.attachModel(id, project, model, xAttrSetFlag);
     }

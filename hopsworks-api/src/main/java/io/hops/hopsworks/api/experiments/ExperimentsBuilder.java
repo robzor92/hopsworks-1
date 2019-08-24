@@ -12,6 +12,7 @@ import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.user.UserFacade;
 import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.experiments.ExperimentSummaryConverter;
+import io.hops.hopsworks.common.experiments.ExperimentsController;
 import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.experiments.dto.ExperimentSummary;
 
@@ -22,6 +23,7 @@ import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.xml.FileState;
 import io.hops.hopsworks.common.util.DateUtils;
+import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.InvalidQueryException;
@@ -65,6 +67,8 @@ public class ExperimentsBuilder {
   private HdfsUsersFacade hdfsUsersFacade;
   @EJB
   private HdfsUsersController hdfsUsersController;
+  @EJB
+  private ExperimentsController experimentsController;
 
   public ExperimentDTO uri(ExperimentDTO dto, UriInfo uriInfo, Project project) {
     dto.setHref(uriInfo.getBaseUriBuilder().path(ResourceRequest.Name.PROJECT.toString().toLowerCase())
@@ -125,7 +129,7 @@ public class ExperimentsBuilder {
 
   //Build specific
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
-                             FileState fileProvenanceHit) throws ExperimentsException {
+                             FileState fileProvenanceHit) throws ExperimentsException, DatasetException {
 
     ExperimentDTO experimentDTO = new ExperimentDTO();
     uri(experimentDTO, uriInfo, project, fileProvenanceHit);
@@ -152,6 +156,14 @@ public class ExperimentsBuilder {
         //} else {
         //  experimentDTO.setState(experimentSummary.getState());
         //}
+
+        // if provenance says it's final state, but exp state is running, update exp state accordingly
+        if(Provenance.AppState.valueOf(fileProvenanceHit.getAppState().getCurrentState().name()).isFinalState()
+        && experimentSummary.getState().equals(Provenance.AppState.RUNNING.name())) {
+          experimentSummary.setState(fileProvenanceHit.getAppState().getCurrentState().name());
+          experimentsController.attachExperiment(fileProvenanceHit.getId(), project,
+              experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);
+        }
 
         experimentDTO.setState(experimentSummary.getState());
 

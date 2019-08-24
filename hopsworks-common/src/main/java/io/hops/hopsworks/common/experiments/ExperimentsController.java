@@ -7,7 +7,6 @@ import io.hops.hopsworks.common.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
-import io.hops.hopsworks.common.provenance.FileProvenanceHit;
 import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
@@ -50,12 +49,11 @@ public class ExperimentsController {
   @EJB
   private ProvenanceController provenanceController;
 
-  public void attachExperiment(String id, Project project, Users user, ExperimentSummary experimentSummary,
+  public void attachExperiment(String id, Project project, String userFullName, ExperimentSummary experimentSummary,
                       ExperimentDTO.XAttrSetFlag xAttrSetFlag)
       throws DatasetException {
 
-    String realName = user.getFname() + " " + user.getLname();
-    experimentSummary.setUserFullName(realName);
+    experimentSummary.setUserFullName(userFullName);
 
     String experimentPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/" + id;
 
@@ -128,11 +126,11 @@ public class ExperimentsController {
     } catch (IOException ioe) {
       throw new DatasetException(RESTCodes.DatasetErrorCode.INODE_DELETION_ERROR, Level.SEVERE,
           "path: " + experimentPath);
-  } finally {
-    if (dfso != null) {
-      dfs.closeDfsClient(dfso);
+    } finally {
+      if (dfso != null) {
+        dfs.closeDfsClient(dfso);
+      }
     }
-  }
     if (!success) {
       throw new DatasetException(RESTCodes.DatasetErrorCode.INODE_DELETION_ERROR, Level.FINE,
           "path: " + experimentPath);
