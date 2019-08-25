@@ -140,16 +140,25 @@ angular.module('hopsWorksApp')
                 self.query = self.query + '&sort_by=' + self.sortType + ':' + self.orderBy + '&offset=' + offset + '&limit=' + self.pageSize;
             };
 
-            self.getAll = function() {
+            self.getAll = function(loadingText) {
+                if(loadingText) {
+                    startLoading(loadingText)
+                }
                 self.buildQuery();
                 self.updating = true;
                 ExperimentService.getAll(self.projectId, self.query).then(
                     function(success) {
+                        if(loadingText) {
+                            stopLoading();
+                        }
                         self.updating = false;
                         self.experiments = success.data.items;
                         self.totalItems = success.data.count;
                     },
                     function(error) {
+                        if(loadingText) {
+                            stopLoading();
+                        }
                         self.updating = false;
                         if (typeof error.data.usrMsg !== 'undefined') {
                             growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 8000});
@@ -210,7 +219,7 @@ angular.module('hopsWorksApp')
                         }
                     }
                   }
-                  self.getAll();
+                  self.getAll('Loading Experiments');
                 },
                 function (error) {
                     if (typeof error.data.usrMsg !== 'undefined') {
