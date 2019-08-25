@@ -167,6 +167,11 @@ public class ExperimentsBuilder {
           }
         }
 
+        if(!Strings.isNullOrEmpty(experimentSummary.getEndTimestamp())) {
+          experimentDTO.setFinished(DateUtils.millis2LocalDateTime(
+              Long.valueOf(experimentSummary.getEndTimestamp())).toString());
+        }
+
         if(updateNeeded) {
           experimentsController.attachExperiment(fileProvenanceHit.getMlId(), project,
               experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);
