@@ -144,17 +144,33 @@ public class ExperimentsBuilder {
         ExperimentSummary experimentSummary =
             experimentSummaryConverter.unmarshalDescription(summary.toString());
 
+        boolean updateNeeded = false;
+
         // if provenance says it's final state, but exp state is running, update exp state accordingly
         // exp state is not guaranteed to have enough time to report terminal state when being killed for example
         if(experimentSummary.getState().equals(Provenance.AppState.RUNNING.name())
           && Provenance.AppState.valueOf(fileProvenanceHit.getAppState().getCurrentState().name()).isFinalState()) {
+          updateNeeded = true;
           experimentSummary.setState(fileProvenanceHit.getAppState().getCurrentState().name());
-          experimentSummary.setEndTimestamp(fileProvenanceHit.getAppState().getFinishTime().toString());
-          experimentsController.attachExperiment(fileProvenanceHit.getMlId(), project,
-              experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);
         }
 
         experimentDTO.setStarted(DateUtils.millis2LocalDateTime(fileProvenanceHit.getCreateTime()).toString());
+
+        if(!experimentSummary.getState().equals(Provenance.AppState.RUNNING.name()) &&
+          experimentSummary.getEndTimestamp() == null) {
+          updateNeeded = true;
+          if(experimentSummary.getDuration() != null) {
+            Long finishedTime = fileProvenanceHit.getCreateTime() + Long.valueOf(experimentSummary.getDuration());
+            experimentSummary.setEndTimestamp(finishedTime.toString());
+          } else {
+            experimentSummary.setEndTimestamp(fileProvenanceHit.getAppState().getFinishTime().toString());
+          }
+        }
+
+        if(updateNeeded) {
+          experimentsController.attachExperiment(fileProvenanceHit.getMlId(), project,
+              experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);
+        }
 
         if(!Strings.isNullOrEmpty(experimentSummary.getEndTimestamp())) {
           LOGGER.log(Level.SEVERE, "IN TIME " + experimentSummary.getEndTimestamp());
