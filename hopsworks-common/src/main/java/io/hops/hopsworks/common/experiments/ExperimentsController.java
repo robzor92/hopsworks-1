@@ -77,7 +77,7 @@ public class ExperimentsController {
         byte[] appIdBytes = experimentSummary.getAppId().getBytes(StandardCharsets.UTF_8);
         EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
         flags.add(XAttrSetFlag.CREATE);
-        dfso.setXAttr(experimentPath, "provenance.app_id", appIdBytes, flags);
+        dfso.setXAttr(experimentPath, "provenance.app_id_FIXME", appIdBytes, flags);
       }
 
       JAXBContext sparkJAXBContext = JAXBContextFactory.createContext(new Class[] {ExperimentSummary.class},
