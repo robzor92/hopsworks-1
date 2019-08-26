@@ -69,6 +69,9 @@ public class ExperimentsController {
 
     DistributedFileSystemOps dfso = null;
     try {
+
+      dfso = dfs.getDfsOps();
+
       if(!Strings.isNullOrEmpty(experimentSummary.getAppId()) &&
           xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
         byte[] appIdBytes = experimentSummary.getAppId().getBytes(StandardCharsets.UTF_8);
@@ -85,8 +88,6 @@ public class ExperimentsController {
       StringWriter sw = new StringWriter();
       marshaller.marshal(experimentSummary, sw);
       byte[] experiment = sw.toString().getBytes(StandardCharsets.UTF_8);
-      dfso = dfs.getDfsOps();
-
       LOGGER.log(Level.SEVERE, "EXPERIMENT: attaching xattr " + xAttrSetFlag.name());
 
       EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
