@@ -17,24 +17,35 @@ package io.hops.hopsworks.common.provenance.v2.xml;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Collection;
+import java.util.List;
 
-public class FileStateResult {
+public class FileStateDTO {
   @XmlRootElement
-  public static class List {
-    protected Collection<FileState> result;
+  public static class PList {
+    List<FileState> items;
+    Long count;
     
-    public List() {}
+    public PList() {}
     
-    public List(Collection<FileState> result) {
-      this.result = result;
+    public PList(List<FileState> items, Long count) {
+      this.items = items;
+      this.count = count;
     }
     
-    public Collection<FileState> getResult() {
-      return result;
+    public List<FileState> getItems() {
+      return items;
     }
     
-    public void setResult(Collection<FileState> result) {
-      this.result = result;
+    public void setItems(List<FileState> items) {
+      this.items = items;
+    }
+  
+    public Long getCount() {
+      return count;
+    }
+  
+    public void setCount(Long count) {
+      this.count = count;
     }
   }
   

@@ -51,6 +51,7 @@ import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
 import io.hops.hopsworks.common.provenance.v2.xml.FileState;
+import io.hops.hopsworks.common.provenance.v2.xml.FileStateDTO;
 import io.hops.hopsworks.common.provenance.v2.xml.FileStateTree;
 import io.hops.hopsworks.common.provenance.v2.xml.FootprintFileState;
 import io.hops.hopsworks.common.provenance.v2.xml.FootprintFileStateTree;
@@ -162,7 +163,7 @@ public class ProvenanceController {
     return result;
   }
   
-  public List<FileState> provFileStateList(ProvFileStateParamBuilder params)
+  public FileStateDTO.PList provFileStateList(ProvFileStateParamBuilder params)
     throws GenericException, ServiceException {
     if(params.getPagination() != null && !params.getAppStateFilter().isEmpty()) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
@@ -171,18 +172,18 @@ public class ProvenanceController {
     Integer offset = params.getPagination() == null ? 0 : params.getPagination().getValue0();
     Integer limit = params.getPagination() == null ? ElasticController.DEFAULT_PAGE_SIZE :
       params.getPagination().getValue1();
-    List<FileState> fileStates = elasticCtrl.provFileState(
+    FileStateDTO.PList fileStates = elasticCtrl.provFileState(
       params.getFileStateFilter(), params.getFileStateSortBy(),
       params.getExactXAttrFilter(), params.getLikeXAttrFilter(), params.getXAttrSortBy(), offset, limit);
     if (params.hasAppExpansion()) {
-      //If withAppStates, update params based on appIds of result files and do a appState index query.
+      //If withAppStates, update params based on appIds of items files and do a appState index query.
       //After this filter the fileStates based on the results of the appState query
-      for (FileState fileState : fileStates) {
+      for (FileState fileState : fileStates.getItems()) {
         params.withAppExpansion(getAppId(fileState));
       }
       Map<String, Map<Provenance.AppState, AppProvenanceHit>> appExps
         = elasticCtrl.provAppState(params.getAppStateFilter());
-      Iterator<FileState> fileStateIt = fileStates.iterator();
+      Iterator<FileState> fileStateIt = fileStates.getItems().iterator();
       while(fileStateIt.hasNext()) {
         FileState fileState = fileStateIt.next();
         String appId = getAppId(fileState);
@@ -200,7 +201,7 @@ public class ProvenanceController {
   public Pair<Map<Long, FileStateTree>, Map<Long, FileStateTree>> provFileStateTree(
     ProvFileStateParamBuilder params, boolean fullTree)
     throws GenericException, ServiceException {
-    List<FileState> fileStates = provFileStateList(params);
+    List<FileState> fileStates = provFileStateList(params).getItems();
     Pair<Map<Long, ProvenanceController.BasicTreeBuilder<FileState>>,
       Map<Long, ProvenanceController.BasicTreeBuilder<FileState>>> result
       = processAsTree(fileStates, () -> new FileStateTree(), fullTree);
@@ -229,7 +230,7 @@ public class ProvenanceController {
     }
   
     if (params.hasAppExpansion()) {
-      //If withAppStates, update params based on appIds of result files and do a appState index query.
+      //If withAppStates, update params based on appIds of items files and do a appState index query.
       //After this filter the fileStates based on the results of the appState query
       for (FileOp fileOp : fileOps) {
         params.withAppExpansion(getAppId(fileOp));

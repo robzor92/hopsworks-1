@@ -17,64 +17,65 @@ package io.hops.hopsworks.common.provenance.v2.xml;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Collection;
+import java.util.List;
 
 public class FootprintFileStateResult {
   @XmlRootElement
-  public static class List {
-    protected Collection<FootprintFileState> result;
+  public static class PList {
+    List<FootprintFileState> items;
     
-    public List() {}
+    public PList() {}
     
-    public List(Collection<FootprintFileState> result) {
-      this.result = result;
+    public PList(List<FootprintFileState> items) {
+      this.items = items;
     }
     
-    public Collection<FootprintFileState> getResult() {
-      return result;
+    public List<FootprintFileState> getItems() {
+      return items;
     }
     
-    public void setResult(Collection<FootprintFileState> result) {
-      this.result = result;
+    public void setItems(List<FootprintFileState> items) {
+      this.items = items;
     }
   }
   
   @XmlRootElement
   public static class MinTree {
-    protected Collection<FootprintFileStateTree> result;
+    protected Collection<FootprintFileStateTree> items;
     
     public MinTree() {}
     
-    public MinTree(Collection<FootprintFileStateTree> result) {
-      this.result = result;
+    public MinTree(Collection<FootprintFileStateTree> items) {
+      this.items = items;
     }
     
-    public Collection<FootprintFileStateTree> getResult() {
-      return result;
+    public Collection<FootprintFileStateTree> getItems() {
+      return items;
     }
     
-    public void setResult(Collection<FootprintFileStateTree> result) {
-      this.result = result;
+    public void setItems(Collection<FootprintFileStateTree> items) {
+      this.items = items;
     }
   }
   
   @XmlRootElement
   public static class FullTree {
-    protected Collection<FootprintFileStateTree> result;
+    protected Collection<FootprintFileStateTree> items;
     protected Collection<FootprintFileStateTree> incomplete;
     
     public FullTree() {}
     
-    public FullTree(Collection<FootprintFileStateTree> result, Collection<FootprintFileStateTree> incomplete) {
-      this.result = result;
+    public FullTree(Collection<FootprintFileStateTree> items, Collection<FootprintFileStateTree> incomplete) {
+      this.items = items;
       this.incomplete = incomplete;
     }
     
-    public Collection<FootprintFileStateTree> getResult() {
-      return result;
+    public Collection<FootprintFileStateTree> getItems() {
+      return items;
     }
     
-    public void setResult(Collection<FootprintFileStateTree> result) {
-      this.result = result;
+    public void setItems(Collection<FootprintFileStateTree> items) {
+      this.items = items;
     }
     
     public Collection<FootprintFileStateTree> getIncomplete() {

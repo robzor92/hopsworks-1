@@ -15,7 +15,7 @@
  */
 package io.hops.hopsworks.common.provenance.v2;
 
-import io.hops.hopsworks.common.elastic.ElasticController;
+import io.hops.hopsworks.common.provenance.util.ElasticPaginationChecker;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.search.sort.SortOrder;
@@ -73,34 +73,9 @@ public class ProvFileOpsParamBuilder {
     return this;
   }
   
-  public ProvFileOpsParamBuilder withPagination(Integer offset, Integer limit) {
-    Integer o;
-    Integer l;
-    if (offset == null && limit == null) {
-      pagination = null;
-      return this;
-    }
-    if(offset == null) {
-      o = 0;
-    } else if(offset < 0) {
-      o = 0;
-    } else {
-      o = offset;
-    }
-    if(o > ElasticController.MAX_PAGE_SIZE) {
-      o = ElasticController.MAX_PAGE_SIZE;
-    }
-    if(limit == null) {
-      l = ElasticController.DEFAULT_PAGE_SIZE;
-    } else if(limit < 0) {
-      l = ElasticController.DEFAULT_PAGE_SIZE;
-    } else {
-      l = limit;
-    }
-    if(o+l > ElasticController.MAX_PAGE_SIZE) {
-      l = ElasticController.MAX_PAGE_SIZE - o;
-    }
-    pagination = Pair.with(o, l);
+  public ProvFileOpsParamBuilder withPagination(Integer offset, Integer limit) throws GenericException {
+    ElasticPaginationChecker.checkPagination(offset, limit);
+    pagination = Pair.with(offset, limit);
     return this;
   }
   

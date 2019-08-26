@@ -54,6 +54,7 @@ import io.hops.hopsworks.common.provenance.util.CheckedFunction;
 import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
 import io.hops.hopsworks.common.provenance.v2.xml.FileState;
 import io.hops.hopsworks.common.provenance.Provenance;
+import io.hops.hopsworks.common.provenance.v2.xml.FileStateDTO;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.restutils.RESTCodes;
@@ -1013,13 +1014,21 @@ public class ElasticController {
   public static final Integer DEFAULT_PAGE_SIZE = 1000;
   public static final Integer MAX_PAGE_SIZE = 10000;
   
-  public List<FileState> provFileState(
+  public FileStateDTO.PList provFileState(
     Map<String, List<Pair<ProvQuery.Field, Object>>> fileStateFilters,
     List<Pair<ProvQuery.Field, SortOrder>> fileStateSortBy,
     Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters,
     List<Pair<String, SortOrder>> xattrSortBy,
     Integer offset, Integer limit)
     throws GenericException, ServiceException {
+    CheckedFunction<Client, ActionRequestBuilder, GenericException> arbFCount =
+      baseSearchRequest(
+        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
+        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE)
+        .andThen(provFileStateQB(fileStateFilters, xAttrsFilters, likeXAttrsFilters))
+        .andThen(withFileStateOrder(fileStateSortBy, xattrSortBy));
+    Long count = countQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, arbFCount);
+    
     CheckedFunction<Client, ActionRequestBuilder, GenericException> arbF =
       baseSearchRequest(
         Settings.ELASTIC_INDEX_FILE_PROVENANCE,
@@ -1028,7 +1037,7 @@ public class ElasticController {
         .andThen(withFileStateOrder(fileStateSortBy, xattrSortBy))
         .andThen(withPagination(offset, limit));
     List<FileState> searchResult = baseQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, arbF, fileStateParser());
-    return searchResult;
+    return new FileStateDTO.PList(searchResult, count);
   }
   
   public Long provFileStateCount(
@@ -1253,7 +1262,7 @@ public class ElasticController {
       resultParser.getValue1().accept(searchResult, resultParser.getValue0());
       if(searchResult.getHits().getTotalHits() > MAX_PAGE_SIZE) {
         throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
-          "Elasticsearch query result size is too big: " + searchResult.getHits().getTotalHits());
+          "Elasticsearch query items size is too big: " + searchResult.getHits().getTotalHits());
       }
       leftover = searchResult.getHits().totalHits - searchResult.getHits().getHits().length;
   

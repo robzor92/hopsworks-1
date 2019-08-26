@@ -103,7 +103,7 @@ public class ProvElastic {
     supported.append(EnumSet.allOf(FileStateBase.class));
     supported.append(EnumSet.allOf(FileStateAux.class));
     throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-      "file state result - param" + val + " not supported - supported:" + supported,
+      "file state items - param" + val + " not supported - supported:" + supported,
       "exception extracting SortBy param");
   }
   
@@ -135,7 +135,7 @@ public class ProvElastic {
     supported.append(EnumSet.allOf(FileOpsBase.class));
     supported.append(EnumSet.allOf(FileOpsAux.class));
     throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-      "file ops result - param" + val + " not supported - supported:" + supported,
+      "file ops items - param" + val + " not supported - supported:" + supported,
       "exception extracting SortBy param");
   }
 }

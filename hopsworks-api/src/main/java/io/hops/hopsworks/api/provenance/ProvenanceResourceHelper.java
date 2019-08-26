@@ -20,8 +20,7 @@ import io.hops.hopsworks.common.provenance.AppFootprintType;
 import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
 import io.hops.hopsworks.common.provenance.ProvFileOpsCompactByApp;
 import io.hops.hopsworks.common.provenance.ProvFileOpsSummaryByApp;
-import io.hops.hopsworks.common.provenance.v2.xml.FileState;
-import io.hops.hopsworks.common.provenance.v2.xml.FileStateResult;
+import io.hops.hopsworks.common.provenance.v2.xml.FileStateDTO;
 import io.hops.hopsworks.common.provenance.v2.xml.FileStateTree;
 import io.hops.hopsworks.common.provenance.v2.xml.FootprintFileState;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
@@ -47,20 +46,19 @@ public class ProvenanceResourceHelper {
     throws GenericException, ServiceException {
     switch(returnType) {
       case LIST:
-        List<FileState> listAux = provenanceCtrl.provFileStateList(params);
-        FileStateResult.List listResult = new FileStateResult.List(listAux);
+        FileStateDTO.PList listResult = provenanceCtrl.provFileStateList(params);
         return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(listResult).build();
       case MIN_TREE:
         Pair<Map<Long, FileStateTree>, Map<Long, FileStateTree>> minAux
           = provenanceCtrl.provFileStateTree(params, false);
-        FileStateResult.MinTree minTreeResult
-          = new FileStateResult.MinTree(minAux.getValue0().values());
+        FileStateDTO.MinTree minTreeResult
+          = new FileStateDTO.MinTree(minAux.getValue0().values());
         return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(minTreeResult).build();
       case FULL_TREE:
         Pair<Map<Long, FileStateTree>, Map<Long, FileStateTree>> fullAux
           = provenanceCtrl.provFileStateTree(params, true);
-        FileStateResult.FullTree fullTreeResult
-          = new FileStateResult.FullTree(fullAux.getValue0().values(), fullAux.getValue1().values());
+        FileStateDTO.FullTree fullTreeResult
+          = new FileStateDTO.FullTree(fullAux.getValue0().values(), fullAux.getValue1().values());
         return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(fullTreeResult).build();
       case COUNT:
         Long countResult = provenanceCtrl.provFileStateCount(params);
@@ -79,7 +77,7 @@ public class ProvenanceResourceHelper {
     switch(returnType) {
       case LIST:
         List<FootprintFileState> listAux = provenanceCtrl.provAppFootprintList(params, footprintType);
-        FootprintFileStateResult.List listResult = new FootprintFileStateResult.List(listAux);
+        FootprintFileStateResult.PList listResult = new FootprintFileStateResult.PList(listAux);
         return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(listResult).build();
       case MIN_TREE:
         Pair<Map<Long, FootprintFileStateTree>, Map<Long, FootprintFileStateTree>> minAux
