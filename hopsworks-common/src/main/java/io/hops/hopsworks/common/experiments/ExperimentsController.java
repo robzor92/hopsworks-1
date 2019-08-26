@@ -76,7 +76,7 @@ public class ExperimentsController {
           xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
         byte[] appIdBytes = experimentSummary.getAppId().getBytes(StandardCharsets.UTF_8);
         EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
-        flags.add(XAttrSetFlag.REPLACE);
+        flags.add(XAttrSetFlag.CREATE);
         dfso.setXAttr(experimentPath, "provenance.app_id", appIdBytes, flags);
       }
 
