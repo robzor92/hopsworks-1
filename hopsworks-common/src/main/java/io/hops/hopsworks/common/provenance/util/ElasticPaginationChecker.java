@@ -15,25 +15,26 @@
  */
 package io.hops.hopsworks.common.provenance.util;
 
-import io.hops.hopsworks.common.elastic.ElasticController;
+import io.hops.hopsworks.common.elastic.HopsworksElasticClient;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import java.util.logging.Level;
 
 public class ElasticPaginationChecker {
   public static void checkPagination(Integer offset, Integer limit) throws GenericException {
-    if(offset == null || offset < 0 || offset > ElasticController.MAX_PAGE_SIZE) {
+    if(offset != null && (offset < 0 || offset > HopsworksElasticClient.MAX_PAGE_SIZE)) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-        "malformed - offset not between 0 and MAX_PAGE_SIZE:" + ElasticController.MAX_PAGE_SIZE);
+        "malformed - offset not between 0 and MAX_PAGE_SIZE:" + HopsworksElasticClient.MAX_PAGE_SIZE);
     }
-    if(limit == null || 0 > limit
-      || limit > ElasticController.DEFAULT_PAGE_SIZE) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-        "malformed - limit not between 0 and DEFAULT_PAGE_SIZE:" + ElasticController.DEFAULT_PAGE_SIZE);
-    }
-    if(limit > ElasticController.MAX_PAGE_SIZE - offset) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-        "malformed - offset + limit exceed MAX_PAGE_SIZE:" + ElasticController.MAX_PAGE_SIZE);
+    if(limit != null) {
+      if(0 > limit || limit > HopsworksElasticClient.DEFAULT_PAGE_SIZE) {
+        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+          "malformed - limit not between 0 and DEFAULT_PAGE_SIZE:" + HopsworksElasticClient.DEFAULT_PAGE_SIZE);
+      }
+      if(limit > HopsworksElasticClient.MAX_PAGE_SIZE - offset) {
+        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+          "malformed - offset + limit exceed MAX_PAGE_SIZE:" + HopsworksElasticClient.MAX_PAGE_SIZE);
+      }
     }
   }
 }

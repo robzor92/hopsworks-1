@@ -172,7 +172,7 @@ module ProvenanceHelper
     end
   end 
 
-  def get_ml_asset_in_project(project, ml_type, withAppState) 
+  def get_ml_asset_in_project(project, ml_type, withAppState, expected) 
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
     query_params = "?filter_by=ML_TYPE:#{ml_type}"
     if withAppState
@@ -182,10 +182,12 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    parsed_result["result"]
+    expect(parsed_result["items"].length).to eq expected
+    expect(parsed_result["count"]).to eq expected
+    parsed_result["items"]
   end
 
-  def get_ml_asset_in_project_page(project, ml_type, withAppState, offset, limit) 
+  def get_ml_asset_in_project_page(project, ml_type, withAppState, offset, limit, expected) 
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
     query_params = "?filter_by=ML_TYPE:#{ml_type}&offset=#{offset}&limit=#{limit}"
     if withAppState
@@ -195,7 +197,9 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    parsed_result["result"]
+    expect(parsed_result["items"].length).to eq expected
+    expect(parsed_result["count"]).to eq expected
+    parsed_result["items"]
   end
 
   def check_no_ml_asset_by_id(project, ml_type, ml_id, withAppState) 
@@ -208,7 +212,8 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    expect(parsed_result["result"].length).to eq 0
+    expect(parsed_result["items"].length).to eq 0
+    expect(parsed_result["count"]).to eq 0
   end
 
   def get_ml_asset_by_id(project, ml_type, ml_id, withAppState) 
@@ -221,8 +226,9 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    expect(parsed_result.length).to eq 1
-    parsed_result["result"][0]
+    expect(parsed_result["items"].length).to eq 1
+    expect(parsed_result["count"]).to eq 1
+    parsed_result["items"][0]
   end
 
   def get_ml_asset_like_name(project, ml_type, term) 
@@ -232,7 +238,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    parsed_result["result"]
+    parsed_result["items"]
   end
 
   def get_ml_asset_by_xattr(project, ml_type, xattr_key, xattr_val)
@@ -242,7 +248,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    parsed_result["result"]
+    parsed_result["items"]
   end
 
   def get_ml_asset_by_xattr_count(project, ml_type, xattr_key, xattr_val, count) 
@@ -263,7 +269,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    parsed_result["result"]
+    parsed_result["items"]
   end
     
   def get_ml_td_count_using_feature_project(project, feature_name) 
@@ -273,7 +279,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    parsed_result["result"]
+    parsed_result["items"]
   end
 
   def get_ml_td_count_using_feature_global(feature_name) 
@@ -283,7 +289,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    parsed_result["result"]
+    parsed_result["items"]
   end
 
   def get_file_ops(project, inodeId, compaction, return_type) 
@@ -311,6 +317,6 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    parsed_result["result"]
+    parsed_result["items"]
   end
 end

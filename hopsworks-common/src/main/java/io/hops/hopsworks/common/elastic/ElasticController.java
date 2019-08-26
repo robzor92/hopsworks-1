@@ -47,15 +47,6 @@ import io.hops.hopsworks.common.dao.dataset.DatasetFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.dataset.DatasetController;
-import io.hops.hopsworks.common.provenance.AppProvenanceHit;
-import io.hops.hopsworks.common.provenance.v2.ProvElastic;
-import io.hops.hopsworks.common.provenance.v2.ProvQuery;
-import io.hops.hopsworks.common.provenance.util.CheckedFunction;
-import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
-import io.hops.hopsworks.common.provenance.v2.xml.FileState;
-import io.hops.hopsworks.common.provenance.Provenance;
-import io.hops.hopsworks.common.provenance.v2.xml.FileStateDTO;
-import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import io.hops.hopsworks.exceptions.ServiceException;
@@ -64,7 +55,6 @@ import io.hops.hopsworks.common.util.Ip;
 import io.hops.hopsworks.common.util.Settings;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -78,23 +68,17 @@ import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.IndicesAdminClient;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
-import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
-import org.javatuples.Pair;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -114,11 +98,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import org.elasticsearch.index.query.BoolQueryBuilder;
 
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
@@ -127,7 +109,6 @@ import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.nestedQuery;
 import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
-import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
 import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
@@ -147,7 +128,9 @@ public class ElasticController {
   private DatasetFacade datasetFacade;
   @EJB
   private DatasetController datasetController;
-
+  @EJB
+  private HopsworksElasticClient heClient;
+  
   private static final Logger LOG = Logger.getLogger(ElasticController.class.getName());
 
   private Client elasticClient = null;
@@ -184,7 +167,7 @@ public class ElasticController {
     srb = srb.setTypes(Settings.META_DEFAULT_TYPE);
     srb = srb.setQuery(this.globalSearchQuery(searchTerm.toLowerCase()));
     srb = srb.highlighter(new HighlightBuilder().field("name"));
-    LOG.log(Level.INFO, "Global search Elastic query is: {0}", srb);
+    LOG.log(Level.INFO, "Global searchBasic Elastic query is: {0}", srb);
     ActionFuture<SearchResponse> futureResponse = srb.execute();
     SearchResponse response = futureResponse.actionGet();
 
@@ -543,7 +526,7 @@ public class ElasticController {
   }
 
   /**
-   * Global search on datasets and projects.
+   * Global searchBasic on datasets and projects.
    * <p/>
    * @param searchTerm
    * @return
@@ -560,7 +543,7 @@ public class ElasticController {
   }
 
   /**
-   * Project specific search.
+   * Project specific searchBasic.
    * <p/>
    * @param searchTerm
    * @return
@@ -580,7 +563,7 @@ public class ElasticController {
   }
 
   /**
-   * Dataset specific search.
+   * Dataset specific searchBasic.
    * <p/>
    * @param searchTerm
    * @return
@@ -671,7 +654,7 @@ public class ElasticController {
     QueryBuilder descriptionPhraseMatch = matchPhraseQuery(
         Settings.META_DESCRIPTION_FIELD, searchTerm);
 
-    //add a fuzzy search on description field
+    //add a fuzzy searchBasic on description field
     QueryBuilder descriptionFuzzyQuery = fuzzyQuery(
         Settings.META_DESCRIPTION_FIELD, searchTerm);
 
@@ -862,7 +845,7 @@ public class ElasticController {
             if (json.getJSONObject("attributes").has("savedSearchId")) {
               //We get the searchId first and then the index
               String searchId = json.getJSONObject("attributes").getString("savedSearchId");
-              //Then get search object and call function again
+              //Then get searchBasic object and call function again
               Map<String, String> params = new HashMap<>();
               params.put("op", "GET");
               JSONObject savedSearch = sendKibanaReq(params, Settings.ELASTIC_SAVED_SEARCH, searchId);
@@ -888,7 +871,7 @@ public class ElasticController {
                 .getJSONObject(0).get("filterType");
             LOG.log(Level.FINE, "dashboard-filterType:{0}", type);
 
-            //Get index from visualization/"saved search"
+            //Get index from visualization/"saved searchBasic"
             //Get and parse all objects
             Map<String, String> params = new HashMap<>();
             params.put("op", "GET");
@@ -930,7 +913,7 @@ public class ElasticController {
           .getString("searchSourceJSON")).getString("index");
     } else if (json.getString("filterType").equals("dashboard")
         && HopsUtils.jsonKeyExists(json, "panelsJSON")) {
-      //We need to get the index name from the visualization or saved search this dashboard is
+      //We need to get the index name from the visualization or saved searchBasic this dashboard is
       //created from
       String id = (String) new JSONArray((String) json.getJSONObject("attributes")
           .get("panelsJSON")).getJSONObject(0).get("id");
@@ -939,7 +922,7 @@ public class ElasticController {
           .get("panelsJSON")).getJSONObject(0).get("filterType");
       LOG.log(Level.FINE, "dashboard-filterType:{0}", type);
 
-      //Get index from visualization/"saved search"
+      //Get index from visualization/"saved searchBasic"
       //Get and parse all objects
       Map<String, String> params = new HashMap<>();
       params.put("op", "GET");
@@ -1009,404 +992,6 @@ public class ElasticController {
     JSONObject source = resp.getJSONObject("_source");
     return (String)source.get("logdir");
   }
-  
-  //PROVENANCE
-  public static final Integer DEFAULT_PAGE_SIZE = 1000;
-  public static final Integer MAX_PAGE_SIZE = 10000;
-  
-  public FileStateDTO.PList provFileState(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileStateFilters,
-    List<Pair<ProvQuery.Field, SortOrder>> fileStateSortBy,
-    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters,
-    List<Pair<String, SortOrder>> xattrSortBy,
-    Integer offset, Integer limit)
-    throws GenericException, ServiceException {
-    CheckedFunction<Client, ActionRequestBuilder, GenericException> arbFCount =
-      baseSearchRequest(
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE)
-        .andThen(provFileStateQB(fileStateFilters, xAttrsFilters, likeXAttrsFilters))
-        .andThen(withFileStateOrder(fileStateSortBy, xattrSortBy));
-    Long count = countQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, arbFCount);
-    
-    CheckedFunction<Client, ActionRequestBuilder, GenericException> arbF =
-      baseSearchRequest(
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE)
-        .andThen(provFileStateQB(fileStateFilters, xAttrsFilters, likeXAttrsFilters))
-        .andThen(withFileStateOrder(fileStateSortBy, xattrSortBy))
-        .andThen(withPagination(offset, limit));
-    List<FileState> searchResult = baseQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, arbF, fileStateParser());
-    return new FileStateDTO.PList(searchResult, count);
-  }
-  
-  public Long provFileStateCount(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileStateFilters,
-    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters)
-    throws GenericException, ServiceException {
-    CheckedFunction<Client, ActionRequestBuilder, GenericException> arbF =
-      countSearchRequest(
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE)
-        .andThen(provFileStateQB(fileStateFilters, xAttrsFilters, likeXAttrsFilters));
-    Long searchResult = countQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, arbF);
-    return searchResult;
-  }
-  
-  public List<FileOp> provFileOps(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileOpsFilters,
-    List<Pair<ProvQuery.Field, SortOrder>> fileOpsSortBy,
-    Integer offset, Integer limit)
-    throws GenericException, ServiceException {
-    CheckedFunction<Client, ActionRequestBuilder, GenericException> arbF =
-      baseSearchRequest(
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE)
-        .andThen(provFileOpsQB(fileOpsFilters))
-        .andThen(withFileOpsOrder(fileOpsSortBy))
-        .andThen(withPagination(offset, limit));
-    List<FileOp> searchResult = scrollingQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, arbF, fileOpsParser());
-    return searchResult;
-  }
-  
-  public List<FileOp> provFileOps(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileOpsFilters)
-    throws GenericException, ServiceException {
-    CheckedFunction<Client, ActionRequestBuilder, GenericException> arbF =
-      scrollingSearchRequestFirst(
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE)
-        .andThen(provFileOpsQB(fileOpsFilters));
-    List<FileOp> searchResult = scrollingQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, arbF, fileOpsParser());
-    return searchResult;
-  }
-  
-  public Long provFileOpsCount(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileOpsFilters)
-    throws ServiceException, GenericException {
-    CheckedFunction<Client, ActionRequestBuilder, GenericException> arbF =
-      countSearchRequest(
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE)
-        .andThen(provFileOpsQB(fileOpsFilters));
-    Long searchResult = countQuery(Settings.ELASTIC_INDEX_FILE_PROVENANCE, arbF);
-    return searchResult;
-  }
-  
-  public Map<String, Map<Provenance.AppState, AppProvenanceHit>> provAppState(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> appStateFilters)
-    throws GenericException, ServiceException {
-    CheckedFunction<Client, ActionRequestBuilder, GenericException> arbF =
-      scrollingSearchRequestFirst(
-        Settings.ELASTIC_INDEX_APP_PROVENANCE,
-        Settings.ELASTIC_INDEX_APP_PROVENANCE_DEFAULT_TYPE)
-      .andThen(provAppStateQB(appStateFilters));
-    Map<String, Map<Provenance.AppState, AppProvenanceHit>> searchResult =
-      scrollingQuery(Settings.ELASTIC_INDEX_APP_PROVENANCE, arbF, appStateParser());
-    return searchResult;
-  }
-  
-  private CheckedFunction<Client, SearchRequestBuilder, GenericException> baseSearchRequest(
-    String index, String docType) {
-    return (Client client) -> {
-      SearchRequestBuilder srb = client
-        .prepareSearch(index)
-        .setTypes(docType);
-      return srb;
-    };
-  }
-  
-  private CheckedFunction<Client, SearchRequestBuilder, GenericException> scrollingSearchRequestFirst(
-    String index, String docType) {
-    return (Client client) -> {
-      SearchRequestBuilder srb = client
-        .prepareSearch(index)
-        .setTypes(docType)
-        .setSize(DEFAULT_PAGE_SIZE)
-        .setScroll(TimeValue.timeValueMinutes(1));
-      return srb;
-    };
-  }
-  
-  private CheckedFunction<Client, ActionRequestBuilder, GenericException> scrollingSearchRequestNext(String scrollId) {
-    return (Client client) -> {
-      SearchScrollRequestBuilder srb = client
-        .prepareSearchScroll(scrollId)
-        .setScroll(TimeValue.timeValueMinutes(1));
-      return srb;
-    };
-  }
-  
-  private CheckedFunction<Client, SearchRequestBuilder, GenericException> countSearchRequest(
-    String index, String docType) {
-    return (Client client) -> {
-      SearchRequestBuilder srb = client.prepareSearch(index)
-        .setTypes(docType)
-        .setSize(0);
-      return srb;
-    };
-  }
-  
-  private CheckedFunction<SearchRequestBuilder, SearchRequestBuilder, GenericException> withPagination(
-    Integer offset, Integer limit) {
-    return (SearchRequestBuilder srb) -> {
-      srb.setFrom(offset)
-        .setSize(limit);
-      return srb;
-    };
-  }
-  
-//  private CheckedFunction<SearchRequestBuilder, SearchRequestBuilder> withDocOrder() {
-//    return (SearchRequestBuilder srb) -> {
-//      srb.addSort(SortBuilders.fieldSort("_doc").order(SortOrder.ASC));
-//      return srb;
-//    };
-//  }
-  
-  private CheckedFunction<SearchRequestBuilder, SearchRequestBuilder, GenericException> withFileStateOrder(
-    List<Pair<ProvQuery.Field, SortOrder>> fileStateSortBy, List<Pair<String, SortOrder>> xattrSortBy) {
-    return (SearchRequestBuilder srb) -> {
-//      if(fileStateSortBy.isEmpty() && xattrSortBy.isEmpty()) {
-//        srb.addSort(SortBuilders.fieldSort("_doc").order(SortOrder.ASC));
-//      } else {
-      for (Pair<ProvQuery.Field, SortOrder> sb : fileStateSortBy) {
-        srb = srb.addSort(SortBuilders.fieldSort(sb.getValue0().elasticFieldName()).order(sb.getValue1()));
-      }
-      for (Pair<String, SortOrder> sb : xattrSortBy) {
-        srb = srb.addSort(SortBuilders.fieldSort(sb.getValue0()).order(sb.getValue1()));
-      }
-//      }
-      return srb;
-    };
-  }
-  
-  private CheckedFunction<SearchRequestBuilder, SearchRequestBuilder, GenericException> withFileOpsOrder(
-    List<Pair<ProvQuery.Field, SortOrder>> fileOpsSortBy) {
-    return (SearchRequestBuilder srb) -> {
-      for (Pair<ProvQuery.Field, SortOrder> sb : fileOpsSortBy) {
-        srb = srb.addSort(SortBuilders.fieldSort(sb.getValue0().elasticFieldName()).order(sb.getValue1()));
-      }
-      return srb;
-    };
-  }
-  
-  private Pair<List<FileState>, CheckedBiConsumer<SearchResponse, List<FileState>, GenericException>>
-    fileStateParser() {
-    return Pair.with(new LinkedList<>(),
-      (SearchResponse searchResult,  List<FileState> acc) -> {
-        for (SearchHit rawHit : searchResult.getHits().getHits()) {
-          FileState hit = FileState.instance(rawHit);
-          acc.add(hit);
-        };
-      });
-  }
-  
-  private Pair<List<FileOp>, CheckedBiConsumer<SearchResponse, List<FileOp>, GenericException>> fileOpsParser() {
-    return Pair.with(new LinkedList<>(),
-      (SearchResponse searchResult,  List<FileOp> acc) -> {
-        for (SearchHit rawHit : searchResult.getHits().getHits()) {
-          FileOp hit = FileOp.instance(rawHit);
-          acc.add(hit);
-        }
-      });
-  }
-  
-  private Pair<Map<String, Map<Provenance.AppState, AppProvenanceHit>>,
-    CheckedBiConsumer<SearchResponse,  Map<String, Map<Provenance.AppState, AppProvenanceHit>>, GenericException>>
-    appStateParser() {
-    return Pair.with(new HashMap<>(),
-      (SearchResponse searchResult,   Map<String, Map<Provenance.AppState, AppProvenanceHit>> acc) -> {
-        for(SearchHit h : searchResult.getHits().getHits()) {
-          AppProvenanceHit hit = new AppProvenanceHit(h);
-          Map<Provenance.AppState, AppProvenanceHit> appStates = acc.get(hit.getAppId());
-          if(appStates == null) {
-            appStates = new TreeMap<>();
-            acc.put(hit.getAppId(), appStates);
-          }
-          appStates.put(hit.getAppState(), hit);
-        }
-      });
-  }
-  
-  private <S> S baseQuery(String index, CheckedFunction<Client, ActionRequestBuilder, GenericException> arbF,
-    Pair<S, CheckedBiConsumer<SearchResponse, S, GenericException>> resultParser)
-    throws ServiceException, GenericException {
-    
-    Client client = getClient();
-    try {
-      if (!indexExists(client, index)) {
-        throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_NOT_FOUND, Level.SEVERE,
-          "index: " + index);
-      }
-      SearchResponse searchResult = elasticCall(client, arbF);
-      resultParser.getValue1().accept(searchResult, resultParser.getValue0());
-      return resultParser.getValue0();
-    } finally {
-      shutdownClient();
-    }
-  }
-  
-  private <S> S scrollingQuery(String index, CheckedFunction<Client, ActionRequestBuilder, GenericException> arbF,
-    Pair<S, CheckedBiConsumer<SearchResponse, S, GenericException>> resultParser)
-    throws ServiceException, GenericException {
-    SearchResponse searchResult;
-    long leftover;
-  
-    Client client = getClient();
-    try {
-      if (!indexExists(client, index)) {
-        throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_NOT_FOUND, Level.SEVERE,
-          "index: " + index + " does not exist");
-      }
-      searchResult = elasticCall(client, arbF);
-      resultParser.getValue1().accept(searchResult, resultParser.getValue0());
-      if(searchResult.getHits().getTotalHits() > MAX_PAGE_SIZE) {
-        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
-          "Elasticsearch query items size is too big: " + searchResult.getHits().getTotalHits());
-      }
-      leftover = searchResult.getHits().totalHits - searchResult.getHits().getHits().length;
-  
-      CheckedFunction<Client, ActionRequestBuilder, GenericException> next
-        = scrollingSearchRequestNext(searchResult.getScrollId());
-      while (leftover > 0) {
-        searchResult = elasticCall(client, next);
-        resultParser.getValue1().accept(searchResult, resultParser.getValue0());
-        leftover = leftover - searchResult.getHits().getHits().length;
-      }
-      return resultParser.getValue0();
-    } finally {
-      shutdownClient();
-    }
-  }
-  
-  private Long countQuery(String index, CheckedFunction<Client, ActionRequestBuilder, GenericException> arbF)
-    throws ServiceException, GenericException {
-  
-    Client client = getClient();
-    try {
-      if (!indexExists(client, index)) {
-        throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_NOT_FOUND, Level.SEVERE,
-          "index: " + index);
-      }
-      SearchResponse searchResult = elasticCall(client, arbF);
-      return searchResult.getHits().totalHits;
-    } finally {
-      shutdownClient();
-    }
-  }
-  
-  private SearchResponse elasticCall(Client client,
-    CheckedFunction<Client, ActionRequestBuilder, GenericException> arbF)
-    throws ServiceException, GenericException {
-    ActionRequestBuilder arb = arbF.apply(client);
-    LOG.log(Level.INFO, "Elastic query: {0}", new Object[]{arb});
-    ActionFuture<SearchResponse> futureResponse = arb.execute();
-    SearchResponse response = futureResponse.actionGet();
-
-    if (response.status().getStatus() == 200) {
-      return response;
-    } else {
-      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING,
-        "Elasticsearch error code: " + response.status().getStatus());
-    }
-  }
-  
-  private CheckedFunction<SearchRequestBuilder, SearchRequestBuilder, GenericException> provFileStateQB(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileStateFilters,
-    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters) {
-    return (SearchRequestBuilder srb) -> {
-      BoolQueryBuilder query = boolQuery()
-        .must(termQuery(ProvElastic.FileAux.ENTRY_TYPE.toString().toLowerCase(),
-          ProvElastic.EntryType.STATE.toString().toLowerCase()));
-      query = provFilterQB(query, fileStateFilters);
-      for (Map.Entry<String, String> filter : xAttrsFilters.entrySet()) {
-        query = query.must(getXAttrQB(filter.getKey(), filter.getValue()));
-      }
-      for (Map.Entry<String, String> filter : likeXAttrsFilters.entrySet()) {
-        query = query.must(getLikeXAttrQB(filter.getKey(), filter.getValue()));
-      }
-      srb.setQuery(query);
-      return srb;
-    };
-  }
-  
-  private CheckedFunction<SearchRequestBuilder, SearchRequestBuilder, GenericException> provFileOpsQB(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileOpsFilters) {
-    return (SearchRequestBuilder srb) -> {
-      BoolQueryBuilder query = boolQuery()
-        .must(termQuery(ProvElastic.FileAux.ENTRY_TYPE.toString().toLowerCase(),
-          ProvElastic.EntryType.OPERATION.toString().toLowerCase()));
-      query = provFilterQB(query,  fileOpsFilters);
-      srb.setQuery(query);
-      return srb;
-    };
-  }
-  
-  private CheckedFunction<SearchRequestBuilder, SearchRequestBuilder, GenericException> provAppStateQB(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> appStateFilters) {
-    return (SearchRequestBuilder srb) -> {
-      BoolQueryBuilder query = boolQuery();
-      query = provFilterQB(query, appStateFilters);
-      srb.setQuery(query);
-      return srb;
-    };
-  }
-  
-  private BoolQueryBuilder provFilterQB(BoolQueryBuilder query,
-    Map<String, List<Pair<ProvQuery.Field, Object>>> filters) throws GenericException {
-    for (Map.Entry<String, List<Pair<ProvQuery.Field, Object>>> fieldFilters : filters.entrySet()) {
-      if (fieldFilters.getValue().size() == 1) {
-        Pair<ProvQuery.Field, Object> fieldFilter = fieldFilters.getValue().get(0);
-        query = query.must(getQB(fieldFilter.getValue0(), fieldFilter.getValue1()));
-      } else if (fieldFilters.getValue().size() > 1) {
-        BoolQueryBuilder fieldQuery = boolQuery();
-        query = query.must(fieldQuery);
-        for (Pair<ProvQuery.Field, Object> fieldFilter : fieldFilters.getValue()) {
-          fieldQuery = fieldQuery.should(getQB(fieldFilter.getValue0(), fieldFilter.getValue1()));
-        }
-      }
-    }
-    return query;
-  }
-  
-  public QueryBuilder getQB(ProvQuery.Field filter, Object paramVal) throws GenericException {
-    switch(filter.filterType()) {
-      case EXACT:
-        return termQuery(filter.elasticFieldName(), paramVal);
-      case LIKE:
-        if (paramVal instanceof String) {
-          String sVal = (String) paramVal;
-          return fullTextSearch(filter.elasticFieldName(), sVal);
-        } else {
-          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-            "like queries only work on string values");
-        }
-      case RANGE_LT:
-        return rangeQuery(filter.elasticFieldName()).to(paramVal);
-      case RANGE_GT:
-        return rangeQuery(filter.elasticFieldName()).from(paramVal);
-      default:
-        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-          "unmanaged filter by filterType: " + filter.filterType());
-    }
-  }
-  
-  public QueryBuilder getXAttrQB(String xattrAdjustedKey, String xattrVal) {
-    return termQuery(xattrAdjustedKey, xattrVal.toLowerCase());
-  }
-  
-  public QueryBuilder getLikeXAttrQB(String xattrAdjustedKey, String xattrVal) {
-    return fullTextSearch(xattrAdjustedKey, xattrVal);
-  }
-  
-  public QueryBuilder fullTextSearch(String key, String term) {
-    return boolQuery()
-      .should(matchPhraseQuery(key, term.toLowerCase()))
-      .should(prefixQuery(key, term.toLowerCase()))
-      .should(fuzzyQuery(key, term.toLowerCase()))
-      .should(wildcardQuery(key, String.format("*%s*", term.toLowerCase())));
-  }
-  //END_PROVENANCE
 }
 
 

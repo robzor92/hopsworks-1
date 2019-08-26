@@ -42,7 +42,8 @@ import io.hops.hopsworks.common.dao.dataset.Dataset;
 import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
 import io.hops.hopsworks.common.dao.hdfs.inode.InodeFacade;
 import io.hops.hopsworks.common.dao.project.Project;
-import io.hops.hopsworks.common.elastic.ElasticController;
+import io.hops.hopsworks.common.elastic.HopsworksElasticClient;
+import io.hops.hopsworks.common.elastic.ProvenanceElasticController;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
@@ -76,7 +77,7 @@ import java.util.logging.Level;
 @Stateless
 public class ProvenanceController {
   @EJB
-  private ElasticController elasticCtrl;
+  private ProvenanceElasticController elasticCtrl;
   @EJB
   private DistributedFsService dfs;
   @EJB
@@ -170,7 +171,7 @@ public class ProvenanceController {
         "cannot use pagination with app state filtering");
     }
     Integer offset = params.getPagination() == null ? 0 : params.getPagination().getValue0();
-    Integer limit = params.getPagination() == null ? ElasticController.DEFAULT_PAGE_SIZE :
+    Integer limit = params.getPagination() == null ? HopsworksElasticClient.DEFAULT_PAGE_SIZE :
       params.getPagination().getValue1();
     FileStateDTO.PList fileStates = elasticCtrl.provFileState(
       params.getFileStateFilter(), params.getFileStateSortBy(),

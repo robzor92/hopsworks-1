@@ -89,13 +89,11 @@ describe "On #{ENV['OS']}" do
 
       it "check experiments" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
-        expect(result1.length).to eq 2
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false, 2)
         prov_check_asset_with_id(result1, prov_experiment_id(@experiment_app1_name1))
         prov_check_asset_with_id(result1, prov_experiment_id(@experiment_app2_name1))
 
-        result2 = get_ml_asset_in_project(@project2, "EXPERIMENT", false)
-        expect(result2.length).to eq 1
+        result2 = get_ml_asset_in_project(@project2, "EXPERIMENT", false, 1)
         prov_check_asset_with_id(result2, prov_experiment_id(@experiment_app3_name1))
         
         result3 = get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
@@ -109,12 +107,8 @@ describe "On #{ENV['OS']}" do
       
       it "check cleanup" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
-        expect(result1.length).to eq 0
-
-        result2 = get_ml_asset_in_project(@project2, "EXPERIMENT", false)
-        expect(result2.length).to eq 0
-        
+        get_ml_asset_in_project(@project1, "EXPERIMENT", false, 0)
+        get_ml_asset_in_project(@project2, "EXPERIMENT", false, 0)     
         result3 = check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
       end
     end
@@ -138,8 +132,7 @@ describe "On #{ENV['OS']}" do
 
       it "check experiment" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
-        expect(result1.length).to eq 1
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false, 1)
         xattrsExact = Hash.new
         xattrsExact["xattr_key_1"] = "xattr_value_1"
         xattrsExact["xattr_key_2"] = "xattr_value_2"
@@ -152,8 +145,7 @@ describe "On #{ENV['OS']}" do
 
       it "check experiments" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
-        expect(result1.length).to eq 0
+        get_ml_asset_in_project(@project1, "EXPERIMENT", false, 0)
       end
     end
 
@@ -179,8 +171,7 @@ describe "On #{ENV['OS']}" do
 
       it "check experiment" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
-        expect(result1.length).to eq 1
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false, 1)
         xattrsExact = Hash.new
         xattrsExact["xattr_key_1"] = "xattr_value_1_updated"
         xattrsExact["xattr_key_3"] = "xattr_value_3"
@@ -193,8 +184,7 @@ describe "On #{ENV['OS']}" do
 
       it "check experiments" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
-        expect(result1.length).to eq 0
+        get_ml_asset_in_project(@project1, "EXPERIMENT", false, 0)
       end
     end
 
@@ -230,8 +220,7 @@ describe "On #{ENV['OS']}" do
 
       it "check experiment" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", true)
-        expect(result1.length).to eq 3
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", true, 3)
         prov_check_experiment3(result1, prov_experiment_id(@experiment_app1_name1), "RUNNING")
         prov_check_experiment3(result1, prov_experiment_id(@experiment_app1_name2), "RUNNING")
         prov_check_experiment3(result1, prov_experiment_id(@experiment_app2_name1), "FINISHED")
@@ -245,8 +234,7 @@ describe "On #{ENV['OS']}" do
 
       it "check cleanup" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", true)
-        expect(result1.length).to eq 0
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", true, 0)
       end
     end
 
@@ -256,8 +244,7 @@ describe "On #{ENV['OS']}" do
       end
       it "check not experiment" do 
         prov_wait_for_epipe() 
-        result = get_ml_asset_in_project(@project1, "EXPERIMENT", false)
-        expect(result.length).to eq 0
+        get_ml_asset_in_project(@project1, "EXPERIMENT", false, 0)
       end
 
       it "delete not experiment" do
@@ -281,14 +268,12 @@ describe "On #{ENV['OS']}" do
 
       it "check models" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "MODEL", false)
-        expect(result1.length).to eq 3
+        result1 = get_ml_asset_in_project(@project1, "MODEL", false, 3)
         prov_check_asset_with_id(result1, prov_model_id(@model1_name, @model_version1))
         prov_check_asset_with_id(result1, prov_model_id(@model1_name, @model_version2))
         prov_check_asset_with_id(result1, prov_model_id(@model2_name, @model_version1))
 
-        result2 = get_ml_asset_in_project(@project2, "MODEL", false)
-        expect(result2.length).to eq 1
+        result2 = get_ml_asset_in_project(@project2, "MODEL", false, 1)
         prov_check_asset_with_id(result2, prov_model_id(@model1_name, @model_version1))
         
         result3 = get_ml_asset_by_id(@project1, "MODEL", prov_model_id(@model1_name, @model_version2), false)
@@ -302,12 +287,8 @@ describe "On #{ENV['OS']}" do
       
       it "check cleanup" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "MODEL", false)
-        expect(result1.length).to eq 0
-
-        result2 = get_ml_asset_in_project(@project2, "MODEL", false)
-        expect(result2.length).to eq 0
-        
+        result1 = get_ml_asset_in_project(@project1, "MODEL", false, 0)
+        result2 = get_ml_asset_in_project(@project2, "MODEL", false, 0)
         result3 = check_no_ml_asset_by_id(@project1, "MODEL", prov_model_id(@model1_name, @model_version2), false)
       end
     end
@@ -331,8 +312,7 @@ describe "On #{ENV['OS']}" do
 
       it "check model" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "MODEL", false)
-        expect(result1.length).to eq 1
+        result1 = get_ml_asset_in_project(@project1, "MODEL", false, 1)
         xattrsExact = Hash.new
         xattrsExact["xattr_key_1"] = "xattr_value_1"
         xattrsExact["xattr_key_2"] = "xattr_value_2"
@@ -345,8 +325,7 @@ describe "On #{ENV['OS']}" do
 
       it "check models" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "MODEL", false)
-        expect(result1.length).to eq 0
+        result1 = get_ml_asset_in_project(@project1, "MODEL", false, 0)
       end
     end
   end
@@ -362,14 +341,12 @@ describe "On #{ENV['OS']}" do
 
       it "check training datasets" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false)
-        expect(result1.length).to eq 3
+        result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 3)
         prov_check_asset_with_id(result1, prov_td_id(@td1_name, @td_version1))
         prov_check_asset_with_id(result1, prov_td_id(@td1_name, @td_version2))
         prov_check_asset_with_id(result1, prov_td_id(@td2_name, @td_version1))
 
-        result2 = get_ml_asset_in_project(@project2, "TRAINING_DATASET", false)
-        expect(result2.length).to eq 1
+        result2 = get_ml_asset_in_project(@project2, "TRAINING_DATASET", false, 1)
         prov_check_asset_with_id(result2, prov_td_id(@td1_name, @td_version1))
         
         result3 = get_ml_asset_by_id(@project1, "TRAINING_DATASET", prov_td_id(@td1_name, @td_version1), false)
@@ -384,12 +361,8 @@ describe "On #{ENV['OS']}" do
       
       it "check training datasets" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false)
-        expect(result1.length).to eq 0
-
-        result2 = get_ml_asset_in_project(@project2, "TRAINING_DATASET", false)
-        expect(result2.length).to eq 0
-        
+        get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 0)
+        get_ml_asset_in_project(@project2, "TRAINING_DATASET", false, 0)
         result3 = check_no_ml_asset_by_id(@project1, "TRAINING_DATASET", prov_td_id(@td1_name, @td_version1), false)
       end
     end
@@ -412,8 +385,7 @@ describe "On #{ENV['OS']}" do
 
       it "check training dataset" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false)
-        expect(result1.length).to eq 1
+        result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 1)
         xattrsExact = Hash.new
         xattrsExact["xattr_key_1"] = "xattr_value_1"
         xattrsExact["xattr_key_2"] = "xattr_value_2"
@@ -426,11 +398,10 @@ describe "On #{ENV['OS']}" do
 
       it "check training dataset" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false)
-        expect(result1.length).to eq 0
+        get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 0)
       end
     end
-    describe "training dataset with simple xattr count" do
+    describe "training dataset with simple xattr count"  do
       it "stop epipe" do
         execute_remotely @hostname, "sudo systemctl stop epipe"
       end
@@ -477,8 +448,7 @@ describe "On #{ENV['OS']}" do
 
       it "check cleanup" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false)
-        expect(result1.length).to eq 0
+        get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 0)
       end
     end
 
@@ -531,8 +501,7 @@ describe "On #{ENV['OS']}" do
 
       it "check training dataset" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false)
-        expect(result1.length).to eq 0
+        get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 0)
       end
     end
   end 
@@ -1382,13 +1351,8 @@ describe "On #{ENV['OS']}" do
     end
 
     it "check experiments pagination" do 
-      result1 = get_ml_asset_in_project_page(@project1, "EXPERIMENT", false, 0, 7)
-      expect(result1.length).to eq 7
-      #pp result1
-      
-      result2 = get_ml_asset_in_project_page(@project1, "EXPERIMENT", false, 7, 14)
-      expect(result2.length).to eq 3
-      #pp result2
+      get_ml_asset_in_project_page(@project1, "EXPERIMENT", false, 0, 7, 7)
+      get_ml_asset_in_project_page(@project1, "EXPERIMENT", false, 7, 14, 3)
     end
 
     it "cleanup" do

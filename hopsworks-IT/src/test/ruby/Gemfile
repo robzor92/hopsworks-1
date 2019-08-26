@@ -13,6 +13,9 @@ gem 'coderay', '1.1.1'
 gem 'rspec_junit_formatter'
 gem 'file-tail'
 gem 'jwt', '2.2.1'
+gem 'typhoeus'
+gem 'concurrent-ruby', require: 'concurrent'
+gem 'descriptive_statistics', '~> 2.4.0', :require => 'descriptive_statistics/safe'
 
 group :development do
   gem 'dotenv'

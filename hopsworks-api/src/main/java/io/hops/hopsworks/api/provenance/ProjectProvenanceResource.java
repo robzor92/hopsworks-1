@@ -40,13 +40,18 @@ package io.hops.hopsworks.api.provenance;
 
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
-import io.hops.hopsworks.api.filter.NoCacheResponse;
 import io.hops.hopsworks.api.provenance.v2.ProvFileOpsBeanParam;
 import io.hops.hopsworks.api.provenance.v2.ProvFileStateBeanParam;
 import io.hops.hopsworks.api.util.Pagination;
+import io.hops.hopsworks.common.dao.dataset.Dataset;
+import io.hops.hopsworks.common.dao.dataset.DatasetFacade;
 import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
+import io.hops.hopsworks.common.dao.hdfs.inode.InodeFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
+import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
+import io.hops.hopsworks.common.hdfs.DistributedFsService;
+import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.provenance.AppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvDatasetState;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
@@ -56,8 +61,12 @@ import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
+import io.hops.hopsworks.restutils.RESTCodes;
 import io.swagger.annotations.Api;
+import org.apache.hadoop.fs.XAttrSetFlag;
 
+import java.io.IOException;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -86,11 +95,15 @@ public class ProjectProvenanceResource {
   private static final Logger logger = Logger.getLogger(ProjectProvenanceResource.class.getName());
 
   @EJB
-  private NoCacheResponse noCacheResponse;
-  @EJB
   private ProvenanceController provenanceCtrl;
   @EJB
   private ProjectFacade projectFacade;
+  @EJB
+  private InodeFacade inodeFacade;
+  @EJB
+  private DatasetFacade datasetFacade;
+  @EJB
+  private DistributedFsService dfs;
   
   private Project project;
 
@@ -106,8 +119,7 @@ public class ProjectProvenanceResource {
   public Response getProvenanceStatus()
     throws GenericException {
     Inode.MetaStatus status = provenanceCtrl.getProjectProvenanceStatus(project);
-    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-      .entity(new SimpleResult(status.name())).build();
+    return Response.ok().entity(new SimpleResult(status.name())).build();
   }
   
   @POST
@@ -119,7 +131,7 @@ public class ProjectProvenanceResource {
     @PathParam("status") Inode.MetaStatus status)
     throws GenericException {
     provenanceCtrl.changeProjectProvenanceStatus(project, status);
-    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).build();
+    return Response.ok().build();
   }
   
   @GET
@@ -130,7 +142,7 @@ public class ProjectProvenanceResource {
   public Response content() {
     GenericEntity<List<ProvDatasetState>> result
       = new GenericEntity<List<ProvDatasetState>>(provenanceCtrl.getDatasetsProvenanceStatus(project)) {};
-    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(result).build();
+    return Response.ok().entity(result).build();
   }
   
   @GET
@@ -154,8 +166,7 @@ public class ProjectProvenanceResource {
       .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
-    return ProvenanceResourceHelper.getFileStates(noCacheResponse, provenanceCtrl, paramBuilder,
-      params.getReturnType());
+    return ProvenanceResourceHelper.getFileStates(provenanceCtrl, paramBuilder, params.getReturnType());
   }
   
   @GET
@@ -176,7 +187,7 @@ public class ProjectProvenanceResource {
       .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
-    return ProvenanceResourceHelper.getFileOps(noCacheResponse, provenanceCtrl, paramBuilder,
+    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder,
       params.getOpsCompaction(), params.getReturnType());
   }
   
@@ -203,8 +214,7 @@ public class ProjectProvenanceResource {
       .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
-    return ProvenanceResourceHelper.getFileStates(noCacheResponse, provenanceCtrl, paramBuilder,
-      params.getReturnType());
+    return ProvenanceResourceHelper.getFileStates(provenanceCtrl, paramBuilder, params.getReturnType());
   }
   
   @GET
@@ -227,7 +237,7 @@ public class ProjectProvenanceResource {
       .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
-    return ProvenanceResourceHelper.getFileOps(noCacheResponse, provenanceCtrl, paramBuilder, params.getOpsCompaction(),
+    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder, params.getOpsCompaction(),
       params.getReturnType());
   }
   
@@ -251,8 +261,70 @@ public class ProjectProvenanceResource {
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     
-    return ProvenanceResourceHelper.getAppFootprint(noCacheResponse, provenanceCtrl, paramBuilder, footprintType,
+    return ProvenanceResourceHelper.getAppFootprint(provenanceCtrl, paramBuilder, footprintType,
       params.getReturnType());
+  }
+  
+  @POST
+  @Path("test/{inodeId}")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response test(
+    @PathParam("inodeId") Long inodeId) throws GenericException {
+    Inode inode = inodeFacade.findById(inodeId);
+    Dataset dataset = datasetFacade.findByProjectAndInode(project, inode);
+    Inode inode2 = inode;
+    if(dataset == null) {
+      inode = inodeFacade.findById(inode.getInodePK().getParentId());
+    }
+    dataset = datasetFacade.findByProjectAndInode(project, inode);
+    if(dataset == null) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "not dataset or child of dataset");
+    }
+    DistributedFileSystemOps dfso = dfs.getDfsOps();
+    String path = Utils.getDatasetPath(project.getName(), dataset.getName());
+    if(!inode2.equals(inode)) {
+      path = path + "/" + inode2.getInodePK().getName();
+    }
+    createTestXAttr(dfso, path);
+    updateTestXAttr(dfso, path);
+    deleteTestXAttr(dfso, path);
+    createTestXAttr(dfso, path);
+    deleteTestXAttr(dfso, path);
+    return Response.ok().build();
+  }
+  
+  private void createTestXAttr(DistributedFileSystemOps dfso, String datasetPath) throws GenericException {
+    EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
+    flags.add(XAttrSetFlag.CREATE);
+    xattrOp(dfso, datasetPath, flags);
+  }
+  
+  private void updateTestXAttr(DistributedFileSystemOps dfso, String datasetPath) throws GenericException {
+    EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
+    flags.add(XAttrSetFlag.REPLACE);
+    xattrOp(dfso, datasetPath, flags);
+  }
+  
+  private void deleteTestXAttr(DistributedFileSystemOps dfso, String datasetPath) throws GenericException {
+    try {
+      dfso.removeXAttr(datasetPath, "provenance.test");
+    } catch (IOException e) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "xattrs persistance exception");
+    }
+  }
+  
+  private void xattrOp(DistributedFileSystemOps dfso, String datasetPath, EnumSet<XAttrSetFlag> flags)
+    throws GenericException {
+    try {
+      dfso.setXAttr(datasetPath, "provenance.test", new byte[]{1}, flags);
+    } catch (IOException e) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "xattrs persistance exception");
+    }
   }
   
   public enum FileStructReturnType {

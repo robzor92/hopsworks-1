@@ -15,7 +15,6 @@
  */
 package io.hops.hopsworks.api.provenance;
 
-import io.hops.hopsworks.api.filter.NoCacheResponse;
 import io.hops.hopsworks.common.provenance.AppFootprintType;
 import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
 import io.hops.hopsworks.common.provenance.ProvFileOpsCompactByApp;
@@ -39,92 +38,111 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ProvenanceResourceHelper {
-  public static Response getFileStates(NoCacheResponse noCacheResponse, ProvenanceController provenanceCtrl,
+  private static final Logger LOG = Logger.getLogger(ProvenanceResourceHelper.class.getName());
+  
+  public static Response getFileStates(ProvenanceController provenanceCtrl,
     ProvFileStateParamBuilder params, ProjectProvenanceResource.FileStructReturnType returnType)
     throws GenericException, ServiceException {
-    switch(returnType) {
-      case LIST:
-        FileStateDTO.PList listResult = provenanceCtrl.provFileStateList(params);
-        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(listResult).build();
-      case MIN_TREE:
-        Pair<Map<Long, FileStateTree>, Map<Long, FileStateTree>> minAux
-          = provenanceCtrl.provFileStateTree(params, false);
-        FileStateDTO.MinTree minTreeResult
-          = new FileStateDTO.MinTree(minAux.getValue0().values());
-        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(minTreeResult).build();
-      case FULL_TREE:
-        Pair<Map<Long, FileStateTree>, Map<Long, FileStateTree>> fullAux
-          = provenanceCtrl.provFileStateTree(params, true);
-        FileStateDTO.FullTree fullTreeResult
-          = new FileStateDTO.FullTree(fullAux.getValue0().values(), fullAux.getValue1().values());
-        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(fullTreeResult).build();
-      case COUNT:
-        Long countResult = provenanceCtrl.provFileStateCount(params);
-        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-          .entity(new SimpleResult<>(countResult)).build();
-      default:
-        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
-          "return type: " + returnType + " is not managed");
+    try {
+      switch (returnType) {
+        case LIST:
+          FileStateDTO.PList listResult = provenanceCtrl.provFileStateList(params);
+          return Response.ok().entity(listResult).build();
+        case MIN_TREE:
+          Pair<Map<Long, FileStateTree>, Map<Long, FileStateTree>> minAux
+            = provenanceCtrl.provFileStateTree(params, false);
+          FileStateDTO.MinTree minTreeResult
+            = new FileStateDTO.MinTree(minAux.getValue0().values());
+          return Response.ok().entity(minTreeResult).build();
+        case FULL_TREE:
+          Pair<Map<Long, FileStateTree>, Map<Long, FileStateTree>> fullAux
+            = provenanceCtrl.provFileStateTree(params, true);
+          FileStateDTO.FullTree fullTreeResult
+            = new FileStateDTO.FullTree(fullAux.getValue0().values(), fullAux.getValue1().values());
+          return Response.ok().entity(fullTreeResult).build();
+        case COUNT:
+          Long countResult = provenanceCtrl.provFileStateCount(params);
+          return Response.ok().entity(new SimpleResult<>(countResult)).build();
+        default:
+          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
+            "return type: " + returnType + " is not managed");
+      }
+    } catch (GenericException | ServiceException e) {
+      throw e;
+    } catch(Exception e) {
+      LOG.log(Level.WARNING, "prov exception: ", e);
+      throw e;
     }
   }
   
-  public static Response getAppFootprint(NoCacheResponse noCacheResponse, ProvenanceController provenanceCtrl,
+  public static Response getAppFootprint(ProvenanceController provenanceCtrl,
     ProvFileOpsParamBuilder params, AppFootprintType footprintType,
     ProjectProvenanceResource.FileStructReturnType returnType)
     throws GenericException, ServiceException {
-    switch(returnType) {
-      case LIST:
-        List<FootprintFileState> listAux = provenanceCtrl.provAppFootprintList(params, footprintType);
-        FootprintFileStateResult.PList listResult = new FootprintFileStateResult.PList(listAux);
-        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(listResult).build();
-      case MIN_TREE:
-        Pair<Map<Long, FootprintFileStateTree>, Map<Long, FootprintFileStateTree>> minAux
-          = provenanceCtrl.provAppFootprintTree(params, footprintType, false);
-        FootprintFileStateResult.MinTree minTreeResult
-          = new FootprintFileStateResult.MinTree(minAux.getValue0().values());
-        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(minTreeResult).build();
-      case FULL_TREE:
-        Pair<Map<Long, FootprintFileStateTree>, Map<Long, FootprintFileStateTree>> fullAux
-          = provenanceCtrl.provAppFootprintTree(params, footprintType,true);
-        FootprintFileStateResult.FullTree fullTreeResult
-          = new FootprintFileStateResult.FullTree(fullAux.getValue0().values(), fullAux.getValue1().values());
-        return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(fullTreeResult).build();
-      case COUNT:
-      default:
-        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
-          "return type: " + returnType + " is not managed");
+    try {
+      switch(returnType) {
+        case LIST:
+          List<FootprintFileState> listAux = provenanceCtrl.provAppFootprintList(params, footprintType);
+          FootprintFileStateResult.PList listResult = new FootprintFileStateResult.PList(listAux);
+          return Response.ok().entity(listResult).build();
+        case MIN_TREE:
+          Pair<Map<Long, FootprintFileStateTree>, Map<Long, FootprintFileStateTree>> minAux
+            = provenanceCtrl.provAppFootprintTree(params, footprintType, false);
+          FootprintFileStateResult.MinTree minTreeResult
+            = new FootprintFileStateResult.MinTree(minAux.getValue0().values());
+          return Response.ok().entity(minTreeResult).build();
+        case FULL_TREE:
+          Pair<Map<Long, FootprintFileStateTree>, Map<Long, FootprintFileStateTree>> fullAux
+            = provenanceCtrl.provAppFootprintTree(params, footprintType,true);
+          FootprintFileStateResult.FullTree fullTreeResult
+            = new FootprintFileStateResult.FullTree(fullAux.getValue0().values(), fullAux.getValue1().values());
+          return Response.ok().entity(fullTreeResult).build();
+        case COUNT:
+        default:
+          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
+            "return type: " + returnType + " is not managed");
+      }
+    } catch (GenericException | ServiceException e) {
+      throw e;
+    } catch(Exception e) {
+      LOG.log(Level.WARNING, "prov exception: ", e);
+      throw e;
     }
   }
   
   
-  public static Response getFileOps(NoCacheResponse noCacheResponse, ProvenanceController provenanceCtrl,
+  public static Response getFileOps(ProvenanceController provenanceCtrl,
     ProvFileOpsParamBuilder params, ProjectProvenanceResource.FileOpsCompactionType opsCompaction,
     ProjectProvenanceResource.FileStructReturnType returnType)
     throws ServiceException, GenericException {
-    if(ProjectProvenanceResource.FileStructReturnType.COUNT.equals(returnType)) {
-      Long result = provenanceCtrl.provFileOpsCount(params);
-      return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-        .entity(new SimpleResult<>(result)).build();
-    } else {
-      List<FileOp> result = provenanceCtrl.provFileOpsList(params);
-      switch(opsCompaction) {
-        case NONE:
-          return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-            .entity(new GenericEntity<List<FileOp>>(result) {}).build();
-        case FILE_COMPACT:
-          List<ProvFileOpsCompactByApp> compactResults = ProvFileOpsCompactByApp.compact(result);
-          return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-            .entity(new GenericEntity<List<ProvFileOpsCompactByApp>>(compactResults) {}).build();
-        case FILE_SUMMARY:
-          List<ProvFileOpsSummaryByApp> summaryResults = ProvFileOpsSummaryByApp.summary(result);
-          return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK)
-            .entity(new GenericEntity<List<ProvFileOpsSummaryByApp>>(summaryResults) {}).build();
-        default:
-          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
-            "footprint filterType: " + returnType);
+    try {
+      if(ProjectProvenanceResource.FileStructReturnType.COUNT.equals(returnType)) {
+        Long result = provenanceCtrl.provFileOpsCount(params);
+        return Response.ok().entity(new SimpleResult<>(result)).build();
+      } else {
+        List<FileOp> result = provenanceCtrl.provFileOpsList(params);
+        switch(opsCompaction) {
+          case NONE:
+            return Response.ok().entity(new GenericEntity<List<FileOp>>(result) {}).build();
+          case FILE_COMPACT:
+            List<ProvFileOpsCompactByApp> compactResults = ProvFileOpsCompactByApp.compact(result);
+            return Response.ok().entity(new GenericEntity<List<ProvFileOpsCompactByApp>>(compactResults) {}).build();
+          case FILE_SUMMARY:
+            List<ProvFileOpsSummaryByApp> summaryResults = ProvFileOpsSummaryByApp.summary(result);
+            return Response.ok().entity(new GenericEntity<List<ProvFileOpsSummaryByApp>>(summaryResults) {}).build();
+          default:
+            throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
+              "footprint filterType: " + returnType);
+        }
       }
+    } catch (GenericException | ServiceException e) {
+      throw e;
+    } catch(Exception e) {
+      LOG.log(Level.WARNING, "prov exception: ", e);
+      throw e;
     }
   }
 }

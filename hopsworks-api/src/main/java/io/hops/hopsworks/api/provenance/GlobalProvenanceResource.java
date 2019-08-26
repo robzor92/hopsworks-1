@@ -40,7 +40,6 @@ package io.hops.hopsworks.api.provenance;
 
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
-import io.hops.hopsworks.api.filter.NoCacheResponse;
 import io.hops.hopsworks.api.provenance.v2.ProvFileStateBeanParam;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
@@ -72,8 +71,6 @@ public class GlobalProvenanceResource {
   private static final Logger logger = Logger.getLogger(ProjectProvenanceResource.class.getName());
   
   @EJB
-  private NoCacheResponse noCacheResponse;
-  @EJB
   private ProvenanceController provenanceCtrl;
   
   @GET
@@ -94,7 +91,6 @@ public class GlobalProvenanceResource {
       .withQueryParamXAttrSortBy(params.getXattrSortBy())
       .withQueryParamExpansions(params.getExpansions())
       .withQueryParamAppExpansionFilter(params.getAppExpansionParams());
-    return ProvenanceResourceHelper.getFileStates(noCacheResponse, provenanceCtrl, paramBuilder,
-      params.getReturnType());
+    return ProvenanceResourceHelper.getFileStates(provenanceCtrl, paramBuilder, params.getReturnType());
   }
 }
