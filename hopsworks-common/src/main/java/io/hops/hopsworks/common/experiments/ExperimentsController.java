@@ -62,8 +62,6 @@ public class ExperimentsController {
         xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.REPLACE)) {
       FileState fileState = getExperiment(project, id);
       if(fileState != null && fileState.getCreateTime() != null) {
-        LOGGER.log(Level.SEVERE.SEVERE, " FILE STATE " + fileState.getCreateTime() + " EXPERIMENT " +
-            experimentSummary.getDuration());
         Long finishedTime = fileState.getCreateTime() + Long.valueOf(experimentSummary.getDuration());
         experimentSummary.setEndTimestamp(finishedTime.toString());
       }
@@ -71,6 +69,14 @@ public class ExperimentsController {
 
     DistributedFileSystemOps dfso = null;
     try {
+      if(!Strings.isNullOrEmpty(experimentSummary.getAppId()) &&
+          xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
+        byte[] appIdBytes = experimentSummary.getAppId().getBytes(StandardCharsets.UTF_8);
+        EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
+        flags.add(XAttrSetFlag.REPLACE);
+        dfso.setXAttr(experimentPath, "provenance.app_id", appIdBytes, flags);
+      }
+
       JAXBContext sparkJAXBContext = JAXBContextFactory.createContext(new Class[] {ExperimentSummary.class},
           null);
       Marshaller marshaller = sparkJAXBContext.createMarshaller();
