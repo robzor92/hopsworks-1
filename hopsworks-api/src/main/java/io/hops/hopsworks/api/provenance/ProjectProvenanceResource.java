@@ -156,7 +156,7 @@ public class ProjectProvenanceResource {
     @Context HttpServletRequest req) throws ServiceException, GenericException {
     ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
       .withProjectInodeId(project.getInode().getId())
-      .withQueryParamFileStateFilterBy(params.getFileStateParams())
+      .withQueryParamFileStateFilterBy(params.getFileStateFilterBy())
       .withQueryParamFileStateSortBy(params.getFileStateSortBy())
       .withQueryParamExactXAttr(params.getExactXAttrParams())
       .withQueryParamLikeXAttr(params.getLikeXAttrParams())
@@ -180,7 +180,7 @@ public class ProjectProvenanceResource {
     @Context HttpServletRequest req) throws ServiceException, GenericException {
     ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
       .withProjectInodeId(project.getInode().getId())
-      .withQueryParamFilter(params.getFileOpsFilter())
+      .withQueryParamFilterBy(params.getFileOpsFilterBy())
       .withQueryParamSortBy(params.getFileOpsSortBy())
       .withQueryParamExpansions(params.getExpansions())
       .withQueryParamAppExpansionFilter(params.getAppExpansionParams())
@@ -204,7 +204,7 @@ public class ProjectProvenanceResource {
     ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
       .withProjectInodeId(project.getInode().getId())
       .withFileInodeId(fileInodeId)
-      .withQueryParamFileStateFilterBy(params.getFileStateParams())
+      .withQueryParamFileStateFilterBy(params.getFileStateFilterBy())
       .withQueryParamFileStateSortBy(params.getFileStateSortBy())
       .withQueryParamExactXAttr(params.getExactXAttrParams())
       .withQueryParamLikeXAttr(params.getLikeXAttrParams())
@@ -230,7 +230,7 @@ public class ProjectProvenanceResource {
     ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
       .withProjectInodeId(project.getInode().getId())
       .withFileInodeId(fileInodeId)
-      .withQueryParamFilter(params.getFileOpsFilter())
+      .withQueryParamFilterBy(params.getFileOpsFilterBy())
       .withQueryParamSortBy(params.getFileOpsSortBy())
       .withQueryParamExpansions(params.getExpansions())
       .withQueryParamAppExpansionFilter(params.getAppExpansionParams())
@@ -255,7 +255,7 @@ public class ProjectProvenanceResource {
     ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
       .withProjectInodeId(project.getInode().getId())
       .withAppId(appId)
-      .withQueryParamFilter(params.getFileOpsFilter())
+      .withQueryParamFilterBy(params.getFileOpsFilterBy())
       .withQueryParamSortBy(params.getFileOpsSortBy())
       .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",

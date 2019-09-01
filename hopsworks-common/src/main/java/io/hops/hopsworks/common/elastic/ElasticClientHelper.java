@@ -23,11 +23,18 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.javatuples.Pair;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
+import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
+import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
+import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
 
 public class ElasticClientHelper {
   private static final Logger LOG = Logger.getLogger(HopsworksElasticClient.class.getName());
@@ -142,5 +149,13 @@ public class ElasticClientHelper {
     public S get() {
       return accumulator;
     }
+  }
+  
+  public static QueryBuilder fullTextSearch(String key, String term) {
+    return boolQuery()
+      .should(matchPhraseQuery(key, term.toLowerCase()))
+      .should(prefixQuery(key, term.toLowerCase()))
+      .should(fuzzyQuery(key, term.toLowerCase()))
+      .should(wildcardQuery(key, String.format("*%s*", term.toLowerCase())));
   }
 }

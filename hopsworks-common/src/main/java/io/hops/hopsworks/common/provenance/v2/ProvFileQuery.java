@@ -18,14 +18,24 @@ package io.hops.hopsworks.common.provenance.v2;
 import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.javatuples.Pair;
 
 import java.util.EnumSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.StringJoiner;
 import java.util.logging.Level;
 
-public class ProvQuery {
+import static io.hops.hopsworks.common.elastic.ElasticClientHelper.fullTextSearch;
+import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
+import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
+import static org.elasticsearch.index.query.QueryBuilders.termQuery;
+
+public class ProvFileQuery {
   
   public interface ValParser {
     Object parse(String o) throws GenericException;
@@ -39,19 +49,19 @@ public class ProvQuery {
   }
   
   public enum FileState implements Field {
-    PROJECT_I_ID(ProvElastic.FileBase.PROJECT_I_ID, new LongValParser()),
-    FILE_I_ID(ProvElastic.FileBase.INODE_ID, new LongValParser()),
-    FILE_NAME(ProvElastic.FileBase.INODE_NAME, new StringValParser()),
-    USER_ID(ProvElastic.FileBase.USER_ID, new IntValParser()),
-    APP_ID(ProvElastic.FileBase.APP_ID, new StringValParser()),
-    CREATE_TIMESTAMP(ProvElastic.FileStateBase.CREATE_TIMESTAMP, new LongValParser()),
-    ML_TYPE(ProvElastic.FileStateBase.ML_TYPE, new MLTypeValParser()),
-    ML_ID(ProvElastic.FileStateBase.ML_ID, new StringValParser());
+    PROJECT_I_ID(ProvFileFields.FileBase.PROJECT_I_ID, new LongValParser()),
+    FILE_I_ID(ProvFileFields.FileBase.INODE_ID, new LongValParser()),
+    FILE_NAME(ProvFileFields.FileBase.INODE_NAME, new StringValParser()),
+    USER_ID(ProvFileFields.FileBase.USER_ID, new IntValParser()),
+    APP_ID(ProvFileFields.FileBase.APP_ID, new StringValParser()),
+    CREATE_TIMESTAMP(ProvFileFields.FileStateBase.CREATE_TIMESTAMP, new LongValParser()),
+    ML_TYPE(ProvFileFields.FileStateBase.ML_TYPE, new MLTypeValParser()),
+    ML_ID(ProvFileFields.FileStateBase.ML_ID, new StringValParser());
   
-    ProvElastic.Field elasticField;
+    ProvFileFields.Field elasticField;
     ValParser filterValParser;
   
-    FileState(ProvElastic.Field elasticField, ValParser filterValParser) {
+    FileState(ProvFileFields.Field elasticField, ValParser filterValParser) {
       this.elasticField = elasticField;
       this.filterValParser = filterValParser;
     }
@@ -113,18 +123,18 @@ public class ProvQuery {
   }
   
   public enum FileOps implements Field {
-    PROJECT_I_ID(ProvElastic.FileBase.PROJECT_I_ID, new LongValParser()),
-    FILE_I_ID(ProvElastic.FileBase.INODE_ID, new LongValParser()),
-    FILE_NAME(ProvElastic.FileBase.INODE_NAME, new StringValParser()),
-    USER_ID(ProvElastic.FileBase.USER_ID, new IntValParser()),
-    APP_ID(ProvElastic.FileBase.APP_ID, new StringValParser()),
-    FILE_OPERATION(ProvElastic.FileOpsBase.INODE_OPERATION, new FileOpValParser()),
-    TIMESTAMP(ProvElastic.FileOpsBase.TIMESTAMP, new LongValParser());
+    PROJECT_I_ID(ProvFileFields.FileBase.PROJECT_I_ID, new LongValParser()),
+    FILE_I_ID(ProvFileFields.FileBase.INODE_ID, new LongValParser()),
+    FILE_NAME(ProvFileFields.FileBase.INODE_NAME, new StringValParser()),
+    USER_ID(ProvFileFields.FileBase.USER_ID, new IntValParser()),
+    APP_ID(ProvFileFields.FileBase.APP_ID, new StringValParser()),
+    FILE_OPERATION(ProvFileFields.FileOpsBase.INODE_OPERATION, new FileOpValParser()),
+    TIMESTAMP(ProvFileFields.FileOpsBase.TIMESTAMP, new LongValParser());
     
-    ProvElastic.Field elasticField;
+    ProvFileFields.Field elasticField;
     ValParser valParser;
   
-    FileOps(ProvElastic.Field elasticField, ValParser valParser) {
+    FileOps(ProvFileFields.Field elasticField, ValParser valParser) {
       this.elasticField = elasticField;
       this.valParser = valParser;
     }
@@ -185,13 +195,13 @@ public class ProvQuery {
   }
   
   public enum ExpansionApp implements Field {
-    APP_STATE(ProvElastic.AppState.APP_STATE, new AppStateValParser()),
-    APP_ID(ProvElastic.AppState.APP_ID, new StringValParser());
+    APP_STATE(ProvFileFields.AppState.APP_STATE, new AppStateValParser()),
+    APP_ID(ProvFileFields.AppState.APP_ID, new StringValParser());
     
-    public final ProvElastic.AppState elasticField;
+    public final ProvFileFields.AppState elasticField;
     public final ValParser valParser;
     
-    ExpansionApp(ProvElastic.AppState elasticField, ValParser valParser) {
+    ExpansionApp(ProvFileFields.AppState elasticField, ValParser valParser) {
       this.elasticField = elasticField;
       this.valParser = valParser;
     }
@@ -475,6 +485,92 @@ public class ProvQuery {
       } catch (NullPointerException | IllegalArgumentException e) {
         throw new IllegalArgumentException("expected:" + EnumSet.allOf(ProvFileOps.class) + "found " + o, e);
       }
+    }
+  }
+  
+  public static FilterVal filterValInstance(FilterType filterType) {
+    FilterVal filterVal;
+    if(filterType == ProvFileQuery.FilterType.RANGE_GT
+      || filterType == ProvFileQuery.FilterType.RANGE_LT) {
+      filterVal = new FilterValRange();
+    } else {
+      filterVal = new FilterValInList();
+    }
+    return filterVal;
+  }
+  
+  public interface FilterVal {
+    void add(Pair<ProvFileQuery.Field, Object> filter) throws GenericException;
+    QueryBuilder query() throws GenericException;
+  }
+  
+  public static class FilterValInList implements FilterVal {
+    List<Pair<Field, Object>> inList = new LinkedList<>();
+    
+    @Override
+    public void add(Pair<ProvFileQuery.Field, Object> filter) throws GenericException {
+      if(filter.getValue0().filterType() == ProvFileQuery.FilterType.RANGE_GT
+        || filter.getValue0().filterType() == ProvFileQuery.FilterType.RANGE_LT) {
+        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+          "cannot combine range and not range filters on the same field");
+      }
+      inList.add(filter);
+    }
+    
+    @Override
+    public QueryBuilder query() throws GenericException {
+      BoolQueryBuilder fieldQuery = boolQuery();
+      for (Pair<ProvFileQuery.Field, Object> fieldFilter : inList) {
+        switch(fieldFilter.getValue0().filterType()) {
+          case EXACT:
+            fieldQuery.should(termQuery(fieldFilter.getValue0().elasticFieldName(), fieldFilter.getValue1()));
+            break;
+          case LIKE:
+            if (fieldFilter.getValue1() instanceof String) {
+              String sVal = (String) fieldFilter.getValue1();
+              fieldQuery.should(fullTextSearch(fieldFilter.getValue0().elasticFieldName(), sVal));
+            } else {
+              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+                "like queries only work on string values");
+            }
+            break;
+          default:
+            throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+              "in list filters do not allow: " + fieldFilter.getValue0().filterType());
+        }
+      }
+      return fieldQuery;
+    }
+  }
+  
+  public static class FilterValRange implements FilterVal {
+    String elasticFieldName;
+    Pair<ProvFileQuery.Field, Object> lt = null;
+    Pair<ProvFileQuery.Field, Object> gt = null;
+    
+    @Override
+    public void add(Pair<ProvFileQuery.Field, Object> filter) throws GenericException {
+      elasticFieldName = filter.getValue0().elasticFieldName();
+      if(filter.getValue0().filterType() == ProvFileQuery.FilterType.RANGE_GT && gt == null) {
+        gt = filter;
+      } else if(filter.getValue0().filterType() == ProvFileQuery.FilterType.RANGE_LT && lt == null) {
+        lt = filter;
+      } else {
+        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+          "cannot combine range and not range filters on the same field or more than one gt or lt");
+      }
+    }
+    
+    @Override
+    public QueryBuilder query() {
+      RangeQueryBuilder fieldQuery = rangeQuery(elasticFieldName);
+      if(lt != null) {
+        fieldQuery.lt(lt.getValue1());
+      }
+      if(gt != null) {
+        fieldQuery.gt(gt.getValue1());
+      }
+      return fieldQuery;
     }
   }
 }

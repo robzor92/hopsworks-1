@@ -21,7 +21,7 @@ import io.hops.hopsworks.restutils.RESTCodes;
 import java.util.EnumSet;
 import java.util.logging.Level;
 
-public class ProvElastic {
+public class ProvFileFields {
   public interface Field {
   }
   

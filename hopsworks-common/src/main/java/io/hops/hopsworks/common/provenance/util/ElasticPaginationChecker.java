@@ -22,7 +22,10 @@ import java.util.logging.Level;
 
 public class ElasticPaginationChecker {
   public static void checkPagination(Integer offset, Integer limit) throws GenericException {
-    if(offset != null && (offset < 0 || offset > HopsworksElasticClient.MAX_PAGE_SIZE)) {
+    if(offset == null) {
+      offset = 0;
+    }
+    if(offset < 0 || offset > HopsworksElasticClient.MAX_PAGE_SIZE) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
         "malformed - offset not between 0 and MAX_PAGE_SIZE:" + HopsworksElasticClient.MAX_PAGE_SIZE);
     }

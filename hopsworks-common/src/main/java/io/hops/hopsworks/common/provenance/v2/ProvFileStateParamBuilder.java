@@ -32,33 +32,30 @@ import java.util.Set;
 import java.util.logging.Level;
 
 public class ProvFileStateParamBuilder {
-  private Map<String, List<Pair<ProvQuery.Field, Object>>> fileStateFilter = new HashMap<>();
-  private List<Pair<ProvQuery.Field, SortOrder>> fileStateSortBy = new ArrayList<>();
+  private Map<String, ProvFileQuery.FilterVal> fileStateFilter = new HashMap<>();
+  private List<Pair<ProvFileQuery.Field, SortOrder>> fileStateSortBy = new ArrayList<>();
   private Map<String, String> exactXAttrFilter = new HashMap<>();
   private Map<String, String> likeXAttrFilter = new HashMap<>();
   private List<Pair<String, SortOrder>> xAttrSortBy = new ArrayList<>();
-  private Set<ProvQuery.FileExpansions> expansions = new HashSet<>();
-  private Map<String, List<Pair<ProvQuery.Field, Object>>> appStateFilter = new HashMap<>();
+  private Set<ProvFileQuery.FileExpansions> expansions = new HashSet<>();
+  private Map<String, ProvFileQuery.FilterVal> appStateFilter = new HashMap<>();
   private Pair<Integer, Integer> pagination = null;
   
   public ProvFileStateParamBuilder withQueryParamFileStateFilterBy(Set<String> params) throws GenericException {
-    for(String param : params) {
-      ParamBuilder.addToFilters(fileStateFilter,
-        ProvQuery.extractFilter(param, ProvQuery.QueryType.QUERY_FILE_STATE));
-    }
+    ProvParamBuilder.withFilterBy(fileStateFilter, params, ProvFileQuery.QueryType.QUERY_FILE_STATE);
     return this;
   }
   
   public ProvFileStateParamBuilder withQueryParamFileStateSortBy(List<String> params) throws GenericException {
     for(String param : params) {
-      fileStateSortBy.add(ProvQuery.extractSort(param, ProvQuery.QueryType.QUERY_FILE_STATE));
+      fileStateSortBy.add(ProvFileQuery.extractSort(param, ProvFileQuery.QueryType.QUERY_FILE_STATE));
     }
     return this;
   }
   
   public ProvFileStateParamBuilder withQueryParamExactXAttr(Set<String> params) throws GenericException {
     for(String param : params) {
-      Pair<String, String> p = ProvQuery.extractXAttrParam(param);
+      Pair<String, String> p = ProvFileQuery.extractXAttrParam(param);
       exactXAttrFilter.put(p.getValue0(), p.getValue1());
     }
     return this;
@@ -66,7 +63,7 @@ public class ProvFileStateParamBuilder {
   
   public ProvFileStateParamBuilder withQueryParamLikeXAttr(Set<String> params) throws GenericException {
     for(String param : params) {
-      Pair<String, String> p = ProvQuery.extractXAttrParam(param);
+      Pair<String, String> p = ProvFileQuery.extractXAttrParam(param);
       likeXAttrFilter.put(p.getValue0(), p.getValue1());
     }
     return this;
@@ -74,7 +71,7 @@ public class ProvFileStateParamBuilder {
   
   public ProvFileStateParamBuilder withQueryParamXAttrSortBy(List<String> params) throws GenericException {
     for(String param : params) {
-      Pair<String, String> xattr = ProvQuery.extractXAttrParam(param);
+      Pair<String, String> xattr = ProvFileQuery.extractXAttrParam(param);
       SortOrder order;
       try {
         order = SortOrder.valueOf(xattr.getValue1());
@@ -90,23 +87,14 @@ public class ProvFileStateParamBuilder {
   }
   
   public ProvFileStateParamBuilder withQueryParamExpansions(Set<String> params) throws GenericException {
-    for(String param : params) {
-      try {
-        expansions.add(ProvQuery.FileExpansions.valueOf(param));
-      } catch (NullPointerException | IllegalArgumentException e) {
-        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-          "param " + param + " not supported - supported params:"
-            + EnumSet.allOf(ProvQuery.FileExpansions.class),
-          "exception extracting FilterBy param", e);
-      }
-    }
+    ProvParamBuilder.withExpansions(expansions, params);
     return this;
   }
   
   public ProvFileStateParamBuilder withQueryParamAppExpansionFilter(Set<String> params) throws GenericException {
     for(String param : params) {
-      ParamBuilder.addToFilters(appStateFilter,
-        ProvQuery.extractFilter(param, ProvQuery.QueryType.QUERY_EXPANSION_APP));
+      ProvParamBuilder.addToFilters(appStateFilter,
+        ProvFileQuery.extractFilter(param, ProvFileQuery.QueryType.QUERY_EXPANSION_APP));
     }
     return this;
   }
@@ -117,11 +105,11 @@ public class ProvFileStateParamBuilder {
     return this;
   }
   
-  public Map<String, List<Pair<ProvQuery.Field, Object>>> getFileStateFilter() {
+  public Map<String, ProvFileQuery.FilterVal> getFileStateFilter() {
     return fileStateFilter;
   }
   
-  public List<Pair<ProvQuery.Field, SortOrder>> getFileStateSortBy() {
+  public List<Pair<ProvFileQuery.Field, SortOrder>> getFileStateSortBy() {
     return fileStateSortBy;
   }
   
@@ -137,11 +125,11 @@ public class ProvFileStateParamBuilder {
     return xAttrSortBy;
   }
   
-  public Set<ProvQuery.FileExpansions> getExpansions() {
+  public Set<ProvFileQuery.FileExpansions> getExpansions() {
     return expansions;
   }
   
-  public Map<String, List<Pair<ProvQuery.Field, Object>>> getAppStateFilter() {
+  public Map<String, ProvFileQuery.FilterVal> getAppStateFilter() {
     return appStateFilter;
   }
   
@@ -149,58 +137,60 @@ public class ProvFileStateParamBuilder {
     return pagination;
   }
   
-  public ProvFileStateParamBuilder withProjectInodeId(Long projectInodeId) {
-    ParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvQuery.FileState.PROJECT_I_ID, projectInodeId));
+  public ProvFileStateParamBuilder withProjectInodeId(Long projectInodeId) throws GenericException {
+    ProvParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvFileQuery.FileState.PROJECT_I_ID, projectInodeId));
     return this;
   }
   
-  public ProvFileStateParamBuilder withFileInodeId(Long inodeId) {
-    ParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvQuery.FileState.FILE_I_ID, inodeId));
+  public ProvFileStateParamBuilder withFileInodeId(Long inodeId) throws GenericException {
+    ProvParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvFileQuery.FileState.FILE_I_ID, inodeId));
     return this;
   }
   
-  public ProvFileStateParamBuilder withFileName(String fileName) {
-    ParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvQuery.FileState.FILE_NAME, fileName));
+  public ProvFileStateParamBuilder withFileName(String fileName) throws GenericException {
+    ProvParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvFileQuery.FileState.FILE_NAME, fileName));
     return this;
   }
   
-  public ProvFileStateParamBuilder withFileNameLike(String fileName) {
-    ParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvQuery.FileStateAux.FILE_NAME_LIKE, fileName));
+  public ProvFileStateParamBuilder withFileNameLike(String fileName) throws GenericException {
+    ProvParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvFileQuery.FileStateAux.FILE_NAME_LIKE, fileName));
     return this;
   }
   
-  public ProvFileStateParamBuilder withUserId(String userId) {
-    ParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvQuery.FileState.USER_ID, userId));
+  public ProvFileStateParamBuilder withUserId(String userId) throws GenericException {
+    ProvParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvFileQuery.FileState.USER_ID, userId));
     return this;
   }
   
-  public ProvFileStateParamBuilder createdBefore(Long timestamp) {
-    ParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvQuery.FileStateAux.CREATE_TIMESTAMP_LT, timestamp));
+  public ProvFileStateParamBuilder createdBefore(Long timestamp) throws GenericException {
+    ProvParamBuilder.addToFilters(fileStateFilter,
+      Pair.with(ProvFileQuery.FileStateAux.CREATE_TIMESTAMP_LT, timestamp));
     return this;
   }
   
-  public ProvFileStateParamBuilder createdAfter(Long timestamp) {
-    ParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvQuery.FileStateAux.CREATE_TIMESTAMP_GT, timestamp));
+  public ProvFileStateParamBuilder createdAfter(Long timestamp) throws GenericException {
+    ProvParamBuilder.addToFilters(fileStateFilter,
+      Pair.with(ProvFileQuery.FileStateAux.CREATE_TIMESTAMP_GT, timestamp));
     return this;
   }
   
-  public ProvFileStateParamBuilder createdOn(Long timestamp) {
-    ParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvQuery.FileState.CREATE_TIMESTAMP, timestamp));
+  public ProvFileStateParamBuilder createdOn(Long timestamp) throws GenericException {
+    ProvParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvFileQuery.FileState.CREATE_TIMESTAMP, timestamp));
     return this;
   }
   
-  public ProvFileStateParamBuilder withAppId(String appId) {
-    ParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvQuery.FileState.APP_ID, appId));
+  public ProvFileStateParamBuilder withAppId(String appId) throws GenericException {
+    ProvParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvFileQuery.FileState.APP_ID, appId));
     return this;
   }
   
-  public ProvFileStateParamBuilder withMlId(String mlId) {
-    ParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvQuery.FileState.ML_ID, mlId));
+  public ProvFileStateParamBuilder withMlId(String mlId) throws GenericException {
+    ProvParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvFileQuery.FileState.ML_ID, mlId));
     return this;
   }
   
-  public ProvFileStateParamBuilder withMlType(String mlType) {
-    ParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvQuery.FileState.ML_TYPE, mlType));
+  public ProvFileStateParamBuilder withMlType(String mlType) throws GenericException {
+    ProvParamBuilder.addToFilters(fileStateFilter, Pair.with(ProvFileQuery.FileState.ML_TYPE, mlType));
     return this;
   }
   
@@ -212,7 +202,7 @@ public class ProvFileStateParamBuilder {
   }
   
   public ProvFileStateParamBuilder withXAttr(String key, String val) {
-    String xattrKey = ProvQuery.processXAttrKey(key);
+    String xattrKey = ProvFileQuery.processXAttrKey(key);
     exactXAttrFilter.put(xattrKey, val);
     return this;
   }
@@ -225,42 +215,43 @@ public class ProvFileStateParamBuilder {
   }
   
   public ProvFileStateParamBuilder withXAttrLike(String key, String val) {
-    String xattrKey = ProvQuery.processXAttrKey(key);
+    String xattrKey = ProvFileQuery.processXAttrKey(key);
     likeXAttrFilter.put(xattrKey, val);
     return this;
   }
   
   public ProvFileStateParamBuilder withAppExpansion() {
-    expansions.add(ProvQuery.FileExpansions.APP);
+    expansions.add(ProvFileQuery.FileExpansions.APP);
     return this;
   }
   
-  public ProvFileStateParamBuilder withAppExpansionCurrentState(Provenance.AppState currentAppState) {
+  public ProvFileStateParamBuilder withAppExpansionCurrentState(Provenance.AppState currentAppState)
+    throws GenericException {
     withAppExpansion();
-    ParamBuilder.addToFilters(appStateFilter,
-      Pair.with(ProvQuery.ExpansionApp.APP_STATE, currentAppState.name()));
+    ProvParamBuilder.addToFilters(appStateFilter,
+      Pair.with(ProvFileQuery.ExpansionApp.APP_STATE, currentAppState.name()));
     return this;
   }
   
-  public ProvFileStateParamBuilder withAppExpansion(String appId) {
+  public ProvFileStateParamBuilder withAppExpansion(String appId) throws GenericException {
     withAppExpansion();
-    ParamBuilder.addToFilters(appStateFilter,
-      Pair.with(ProvQuery.ExpansionApp.APP_ID, appId));
+    ProvParamBuilder.addToFilters(appStateFilter,
+      Pair.with(ProvFileQuery.ExpansionApp.APP_ID, appId));
     return this;
   }
   
   public ProvFileStateParamBuilder sortBy(String field, SortOrder order) {
     try {
-      ProvQuery.Field sortField = ProvQuery.extractBaseField(field, ProvQuery.QueryType.QUERY_FILE_STATE);
+      ProvFileQuery.Field sortField = ProvFileQuery.extractBaseField(field, ProvFileQuery.QueryType.QUERY_FILE_STATE);
       fileStateSortBy.add(Pair.with(sortField, order));
     } catch(GenericException ex) {
-      String xattrKey = ProvQuery.processXAttrKeyAsKeyword(field);
+      String xattrKey = ProvFileQuery.processXAttrKeyAsKeyword(field);
       xAttrSortBy.add(Pair.with(xattrKey, order));
     }
     return this;
   }
   
   public boolean hasAppExpansion() {
-    return expansions.contains(ProvQuery.FileExpansions.APP);
+    return expansions.contains(ProvFileQuery.FileExpansions.APP);
   }
 }

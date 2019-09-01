@@ -42,15 +42,14 @@ import io.hops.hopsworks.common.provenance.AppProvenanceHit;
 import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.common.provenance.util.CheckedFunction;
 import io.hops.hopsworks.common.provenance.util.CheckedSupplier;
-import io.hops.hopsworks.common.provenance.v2.ProvElastic;
-import io.hops.hopsworks.common.provenance.v2.ProvQuery;
+import io.hops.hopsworks.common.provenance.v2.ProvFileFields;
+import io.hops.hopsworks.common.provenance.v2.ProvFileQuery;
 import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
 import io.hops.hopsworks.common.provenance.v2.xml.FileState;
 import io.hops.hopsworks.common.provenance.v2.xml.FileStateDTO;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ServiceException;
-import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -67,16 +66,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
-import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
-import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
-import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
-import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
-import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
 
 @Stateless
 public class ProvenanceElasticController {
@@ -85,8 +78,8 @@ public class ProvenanceElasticController {
   private HopsworksElasticClient heClient;
   
   public FileStateDTO.PList provFileState(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileStateFilters,
-    List<Pair<ProvQuery.Field, SortOrder>> fileStateSortBy,
+    Map<String, ProvFileQuery.FilterVal> fileStateFilters,
+    List<Pair<ProvFileQuery.Field, SortOrder>> fileStateSortBy,
     Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters,
     List<Pair<String, SortOrder>> xattrSortBy,
     Integer offset, Integer limit)
@@ -104,7 +97,7 @@ public class ProvenanceElasticController {
   }
   
   public Long provFileStateCount(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileStateFilters,
+    Map<String, ProvFileQuery.FilterVal> fileStateFilters,
     Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters)
     throws GenericException, ServiceException {
     CheckedSupplier<SearchRequest, GenericException> srF =
@@ -118,8 +111,8 @@ public class ProvenanceElasticController {
   }
   
   public List<FileOp> provFileOps(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileOpsFilters,
-    List<Pair<ProvQuery.Field, SortOrder>> fileOpsSortBy,
+    Map<String, ProvFileQuery.FilterVal> fileOpsFilters,
+    List<Pair<ProvFileQuery.Field, SortOrder>> fileOpsSortBy,
     Integer offset, Integer limit)
     throws GenericException, ServiceException {
     CheckedSupplier<SearchRequest, GenericException> srF =
@@ -135,7 +128,7 @@ public class ProvenanceElasticController {
   }
   
   public List<FileOp> provFileOps(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileOpsFilters)
+    Map<String, ProvFileQuery.FilterVal> fileOpsFilters)
     throws GenericException, ServiceException {
     CheckedSupplier<SearchRequest, GenericException> srF =
       scrollingSearchRequest(
@@ -148,7 +141,7 @@ public class ProvenanceElasticController {
   }
   
   public Long provFileOpsCount(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileOpsFilters)
+    Map<String, ProvFileQuery.FilterVal> fileOpsFilters)
     throws ServiceException, GenericException {
     CheckedSupplier<SearchRequest, GenericException> srF =
       countSearchRequest(
@@ -161,7 +154,7 @@ public class ProvenanceElasticController {
   }
   
   public Map<String, Map<Provenance.AppState, AppProvenanceHit>> provAppState(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> appStateFilters)
+    Map<String, ProvFileQuery.FilterVal> appStateFilters)
     throws GenericException, ServiceException {
     CheckedSupplier<SearchRequest, GenericException> srF =
       scrollingSearchRequest(
@@ -172,6 +165,10 @@ public class ProvenanceElasticController {
     Map<String, Map<Provenance.AppState, AppProvenanceHit>> searchResult
       = ElasticClientHelper.searchScrolling(heClient, request, appStateParser());
     return searchResult;
+  }
+  
+  public void provBulkDelete() {
+  
   }
   
   private CheckedSupplier<SearchRequest, GenericException> baseSearchRequest(String index, String docType) {
@@ -216,12 +213,12 @@ public class ProvenanceElasticController {
   }
   
   private CheckedFunction<SearchRequest, SearchRequest, GenericException> withFileStateOrder(
-    List<Pair<ProvQuery.Field, SortOrder>> fileStateSortBy, List<Pair<String, SortOrder>> xattrSortBy) {
+    List<Pair<ProvFileQuery.Field, SortOrder>> fileStateSortBy, List<Pair<String, SortOrder>> xattrSortBy) {
     return (SearchRequest sr) -> {
       //      if(fileStateSortBy.isEmpty() && xattrSortBy.isEmpty()) {
       //        srb.addSort(SortBuilders.fieldSort("_doc").order(SortOrder.ASC));
       //      } else {
-      for (Pair<ProvQuery.Field, SortOrder> sb : fileStateSortBy) {
+      for (Pair<ProvFileQuery.Field, SortOrder> sb : fileStateSortBy) {
         sr.source().sort(SortBuilders.fieldSort(sb.getValue0().elasticFieldName()).order(sb.getValue1()));
       }
       for (Pair<String, SortOrder> sb : xattrSortBy) {
@@ -232,9 +229,9 @@ public class ProvenanceElasticController {
   }
   
   private CheckedFunction<SearchRequest, SearchRequest, GenericException> withFileOpsOrder(
-    List<Pair<ProvQuery.Field, SortOrder>> fileOpsSortBy) {
+    List<Pair<ProvFileQuery.Field, SortOrder>> fileOpsSortBy) {
     return (SearchRequest sr) -> {
-      for (Pair<ProvQuery.Field, SortOrder> sb : fileOpsSortBy) {
+      for (Pair<ProvFileQuery.Field, SortOrder> sb : fileOpsSortBy) {
         sr.source().sort(SortBuilders.fieldSort(sb.getValue0().elasticFieldName()).order(sb.getValue1()));
       }
       return sr;
@@ -278,12 +275,12 @@ public class ProvenanceElasticController {
   }
   
   private CheckedFunction<SearchRequest, SearchRequest, GenericException> provFileStateQB(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileStateFilters,
+    Map<String, ProvFileQuery.FilterVal> fileStateFilters,
     Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters) {
     return (SearchRequest sr) -> {
       BoolQueryBuilder query = boolQuery()
-        .must(termQuery(ProvElastic.FileAux.ENTRY_TYPE.toString().toLowerCase(),
-          ProvElastic.EntryType.STATE.toString().toLowerCase()));
+        .must(termQuery(ProvFileFields.FileAux.ENTRY_TYPE.toString().toLowerCase(),
+          ProvFileFields.EntryType.STATE.toString().toLowerCase()));
       query = provFilterQB(query, fileStateFilters);
       for (Map.Entry<String, String> filter : xAttrsFilters.entrySet()) {
         query = query.must(getXAttrQB(filter.getKey(), filter.getValue()));
@@ -297,11 +294,11 @@ public class ProvenanceElasticController {
   }
   
   private CheckedFunction<SearchRequest, SearchRequest, GenericException> provFileOpsQB(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> fileOpsFilters) {
+    Map<String, ProvFileQuery.FilterVal> fileOpsFilters) {
     return (SearchRequest sr) -> {
       BoolQueryBuilder query = boolQuery()
-        .must(termQuery(ProvElastic.FileAux.ENTRY_TYPE.toString().toLowerCase(),
-          ProvElastic.EntryType.OPERATION.toString().toLowerCase()));
+        .must(termQuery(ProvFileFields.FileAux.ENTRY_TYPE.toString().toLowerCase(),
+          ProvFileFields.EntryType.OPERATION.toString().toLowerCase()));
       query = provFilterQB(query,  fileOpsFilters);
       sr.source().query(query);
       return sr;
@@ -309,7 +306,7 @@ public class ProvenanceElasticController {
   }
   
   private CheckedFunction<SearchRequest, SearchRequest, GenericException> provAppStateQB(
-    Map<String, List<Pair<ProvQuery.Field, Object>>> appStateFilters) {
+    Map<String, ProvFileQuery.FilterVal> appStateFilters) {
     return (SearchRequest sr) -> {
       BoolQueryBuilder query = boolQuery();
       query = provFilterQB(query, appStateFilters);
@@ -319,42 +316,11 @@ public class ProvenanceElasticController {
   }
   
   private BoolQueryBuilder provFilterQB(BoolQueryBuilder query,
-    Map<String, List<Pair<ProvQuery.Field, Object>>> filters) throws GenericException {
-    for (Map.Entry<String, List<Pair<ProvQuery.Field, Object>>> fieldFilters : filters.entrySet()) {
-      if (fieldFilters.getValue().size() == 1) {
-        Pair<ProvQuery.Field, Object> fieldFilter = fieldFilters.getValue().get(0);
-        query = query.must(getQB(fieldFilter.getValue0(), fieldFilter.getValue1()));
-      } else if (fieldFilters.getValue().size() > 1) {
-        BoolQueryBuilder fieldQuery = boolQuery();
-        query = query.must(fieldQuery);
-        for (Pair<ProvQuery.Field, Object> fieldFilter : fieldFilters.getValue()) {
-          fieldQuery = fieldQuery.should(getQB(fieldFilter.getValue0(), fieldFilter.getValue1()));
-        }
-      }
+    Map<String, ProvFileQuery.FilterVal> filters) throws GenericException {
+    for (Map.Entry<String, ProvFileQuery.FilterVal> fieldFilters : filters.entrySet()) {
+      query.must(fieldFilters.getValue().query());
     }
     return query;
-  }
-  
-  public QueryBuilder getQB(ProvQuery.Field filter, Object paramVal) throws GenericException {
-    switch(filter.filterType()) {
-      case EXACT:
-        return termQuery(filter.elasticFieldName(), paramVal);
-      case LIKE:
-        if (paramVal instanceof String) {
-          String sVal = (String) paramVal;
-          return fullTextSearch(filter.elasticFieldName(), sVal);
-        } else {
-          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-            "like queries only work on string values");
-        }
-      case RANGE_LT:
-        return rangeQuery(filter.elasticFieldName()).to(paramVal);
-      case RANGE_GT:
-        return rangeQuery(filter.elasticFieldName()).from(paramVal);
-      default:
-        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-          "unmanaged filter by filterType: " + filter.filterType());
-    }
   }
   
   public QueryBuilder getXAttrQB(String xattrAdjustedKey, String xattrVal) {
@@ -362,14 +328,6 @@ public class ProvenanceElasticController {
   }
   
   public QueryBuilder getLikeXAttrQB(String xattrAdjustedKey, String xattrVal) {
-    return fullTextSearch(xattrAdjustedKey, xattrVal);
-  }
-  
-  public QueryBuilder fullTextSearch(String key, String term) {
-    return boolQuery()
-      .should(matchPhraseQuery(key, term.toLowerCase()))
-      .should(prefixQuery(key, term.toLowerCase()))
-      .should(fuzzyQuery(key, term.toLowerCase()))
-      .should(wildcardQuery(key, String.format("*%s*", term.toLowerCase())));
+    return ElasticClientHelper.fullTextSearch(xattrAdjustedKey, xattrVal);
   }
 }

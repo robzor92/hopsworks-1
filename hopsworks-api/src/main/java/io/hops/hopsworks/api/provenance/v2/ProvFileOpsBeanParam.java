@@ -70,7 +70,7 @@ public class ProvFileOpsBeanParam {
     this.opsCompaction = opsCompaction;
   }
   
-  public Set<String> getFileOpsFilter() {
+  public Set<String> getFileOpsFilterBy() {
     return fileOpsFilter;
   }
   

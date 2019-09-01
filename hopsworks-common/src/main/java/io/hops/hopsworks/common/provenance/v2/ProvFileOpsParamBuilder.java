@@ -17,58 +17,44 @@ package io.hops.hopsworks.common.provenance.v2;
 
 import io.hops.hopsworks.common.provenance.util.ElasticPaginationChecker;
 import io.hops.hopsworks.exceptions.GenericException;
-import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.search.sort.SortOrder;
 import org.javatuples.Pair;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 
 public class ProvFileOpsParamBuilder {
-  private Map<String, List<Pair<ProvQuery.Field, Object>>> fileOpsFilter = new HashMap<>();
-  private List<Pair<ProvQuery.Field, SortOrder>> fileOpsSortBy = new ArrayList<>();
-  private Set<ProvQuery.FileExpansions> expansions = new HashSet<>();
-  private Map<String, List<Pair<ProvQuery.Field, Object>>> appStateFilter = new HashMap<>();
+  private Map<String, ProvFileQuery.FilterVal> fileOpsFilter = new HashMap<>();
+  private List<Pair<ProvFileQuery.Field, SortOrder>> fileOpsSortBy = new ArrayList<>();
+  private Set<ProvFileQuery.FileExpansions> expansions = new HashSet<>();
+  private Map<String, ProvFileQuery.FilterVal> appStateFilter = new HashMap<>();
   private Pair<Integer, Integer> pagination = null;
   
-  public ProvFileOpsParamBuilder withQueryParamFilter(Set<String> params) throws GenericException {
-    for(String param : params) {
-      ParamBuilder.addToFilters(fileOpsFilter, ProvQuery.extractFilter(param, ProvQuery.QueryType.QUERY_FILE_OP));
-    }
+  public ProvFileOpsParamBuilder withQueryParamFilterBy(Set<String> params) throws GenericException {
+    ProvParamBuilder.withFilterBy(fileOpsFilter, params, ProvFileQuery.QueryType.QUERY_FILE_OP);
     return this;
   }
   
   public ProvFileOpsParamBuilder withQueryParamSortBy(List<String> params) throws GenericException {
     for(String param : params) {
-      fileOpsSortBy.add(ProvQuery.extractSort(param, ProvQuery.QueryType.QUERY_FILE_STATE));
+      fileOpsSortBy.add(ProvFileQuery.extractSort(param, ProvFileQuery.QueryType.QUERY_FILE_OP));
     }
     return this;
   }
   
   public ProvFileOpsParamBuilder withQueryParamExpansions(Set<String> params) throws GenericException {
-    for(String param : params) {
-      try {
-        expansions.add(ProvQuery.FileExpansions.valueOf(param));
-      } catch (NullPointerException | IllegalArgumentException e) {
-        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-          "param " + param + " not supported - supported params:"
-            + EnumSet.allOf(ProvQuery.FileExpansions.class),
-          "exception extracting FilterBy param", e);
-      }
-    }
+    ProvParamBuilder.withExpansions(expansions, params);
     return this;
   }
   
   public ProvFileOpsParamBuilder withQueryParamAppExpansionFilter(Set<String> params) throws GenericException {
     for(String param : params) {
-      ParamBuilder.addToFilters(appStateFilter,
-        ProvQuery.extractFilter(param, ProvQuery.QueryType.QUERY_EXPANSION_APP));
+      ProvParamBuilder.addToFilters(appStateFilter,
+        ProvFileQuery.extractFilter(param, ProvFileQuery.QueryType.QUERY_EXPANSION_APP));
     }
     return this;
   }
@@ -88,51 +74,51 @@ public class ProvFileOpsParamBuilder {
   }
   
   public boolean hasAppExpansion() {
-    return expansions.contains(ProvQuery.FileExpansions.APP);
+    return expansions.contains(ProvFileQuery.FileExpansions.APP);
   }
   
   public ProvFileOpsParamBuilder withAppExpansion() {
-    expansions.add(ProvQuery.FileExpansions.APP);
+    expansions.add(ProvFileQuery.FileExpansions.APP);
     return this;
   }
   
-  public ProvFileOpsParamBuilder withAppExpansion(String appId) {
+  public ProvFileOpsParamBuilder withAppExpansion(String appId) throws GenericException {
     withAppExpansion();
-    ParamBuilder.addToFilters(appStateFilter,
-      Pair.with(ProvQuery.ExpansionApp.APP_ID, appId));
+    ProvParamBuilder.addToFilters(appStateFilter,
+      Pair.with(ProvFileQuery.ExpansionApp.APP_ID, appId));
     return this;
   }
   
-  public Map<String, List<Pair<ProvQuery.Field, Object>>> getFileOpsFilter() {
+  public Map<String, ProvFileQuery.FilterVal> getFileOpsFilter() {
     return fileOpsFilter;
   }
   
-  public List<Pair<ProvQuery.Field, SortOrder>> getFileOpsSortBy() {
+  public List<Pair<ProvFileQuery.Field, SortOrder>> getFileOpsSortBy() {
     return fileOpsSortBy;
   }
   
-  public Map<String, List<Pair<ProvQuery.Field, Object>>> getAppStateFilter() {
+  public Map<String, ProvFileQuery.FilterVal> getAppStateFilter() {
     return appStateFilter;
   }
   
-  public ProvFileOpsParamBuilder withProjectInodeId(Long projectInodeId) {
-    ParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvQuery.FileOps.PROJECT_I_ID, projectInodeId));
+  public ProvFileOpsParamBuilder withProjectInodeId(Long projectInodeId) throws GenericException {
+    ProvParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvFileQuery.FileOps.PROJECT_I_ID, projectInodeId));
     return this;
   }
   
-  public ProvFileOpsParamBuilder withFileInodeId(Long fileInodeId) {
-    ParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvQuery.FileOps.FILE_I_ID, fileInodeId));
+  public ProvFileOpsParamBuilder withFileInodeId(Long fileInodeId) throws GenericException {
+    ProvParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvFileQuery.FileOps.FILE_I_ID, fileInodeId));
     return this;
   }
   
   
-  public ProvFileOpsParamBuilder withAppId(String appId) {
-    ParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvQuery.FileOps.APP_ID, appId));
+  public ProvFileOpsParamBuilder withAppId(String appId) throws GenericException {
+    ProvParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvFileQuery.FileOps.APP_ID, appId));
     return this;
   }
   
-  public ProvFileOpsParamBuilder withFileOperation(ProvFileOps fileOp) {
-    ParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvQuery.FileOps.FILE_OPERATION, fileOp.name()));
+  public ProvFileOpsParamBuilder withFileOperation(ProvFileOps fileOp) throws GenericException {
+    ProvParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvFileQuery.FileOps.FILE_OPERATION, fileOp.name()));
     return this;
   }
 }

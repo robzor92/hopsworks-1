@@ -81,6 +81,10 @@ describe "On #{ENV['OS']}" do
 
   describe 'provenance tests - experiments' do
     describe 'simple experiments' do
+      it "check epipe" do
+        execute_remotely @hostname, "sudo systemctl restart epipe"
+      end
+
       it "create experiments" do
         prov_create_experiment(@project1, @experiment_app1_name1)
         prov_create_experiment(@project1, @experiment_app2_name1)
@@ -89,11 +93,11 @@ describe "On #{ENV['OS']}" do
 
       it "check experiments" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false, 2)
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false, 2)["items"]
         prov_check_asset_with_id(result1, prov_experiment_id(@experiment_app1_name1))
         prov_check_asset_with_id(result1, prov_experiment_id(@experiment_app2_name1))
 
-        result2 = get_ml_asset_in_project(@project2, "EXPERIMENT", false, 1)
+        result2 = get_ml_asset_in_project(@project2, "EXPERIMENT", false, 1)["items"]
         prov_check_asset_with_id(result2, prov_experiment_id(@experiment_app3_name1))
         
         result3 = get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
@@ -132,7 +136,7 @@ describe "On #{ENV['OS']}" do
 
       it "check experiment" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false, 1)
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false, 1)["items"]
         xattrsExact = Hash.new
         xattrsExact["xattr_key_1"] = "xattr_value_1"
         xattrsExact["xattr_key_2"] = "xattr_value_2"
@@ -171,7 +175,7 @@ describe "On #{ENV['OS']}" do
 
       it "check experiment" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false, 1)
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false, 1)["items"]
         xattrsExact = Hash.new
         xattrsExact["xattr_key_1"] = "xattr_value_1_updated"
         xattrsExact["xattr_key_3"] = "xattr_value_3"
@@ -220,7 +224,7 @@ describe "On #{ENV['OS']}" do
 
       it "check experiment" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", true, 3)
+        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", true, 3)["items"]
         prov_check_experiment3(result1, prov_experiment_id(@experiment_app1_name1), "RUNNING")
         prov_check_experiment3(result1, prov_experiment_id(@experiment_app1_name2), "RUNNING")
         prov_check_experiment3(result1, prov_experiment_id(@experiment_app2_name1), "FINISHED")
@@ -234,7 +238,7 @@ describe "On #{ENV['OS']}" do
 
       it "check cleanup" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", true, 0)
+        get_ml_asset_in_project(@project1, "EXPERIMENT", true, 0)
       end
     end
 
@@ -268,12 +272,12 @@ describe "On #{ENV['OS']}" do
 
       it "check models" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "MODEL", false, 3)
+        result1 = get_ml_asset_in_project(@project1, "MODEL", false, 3)["items"]
         prov_check_asset_with_id(result1, prov_model_id(@model1_name, @model_version1))
         prov_check_asset_with_id(result1, prov_model_id(@model1_name, @model_version2))
         prov_check_asset_with_id(result1, prov_model_id(@model2_name, @model_version1))
 
-        result2 = get_ml_asset_in_project(@project2, "MODEL", false, 1)
+        result2 = get_ml_asset_in_project(@project2, "MODEL", false, 1)["items"]
         prov_check_asset_with_id(result2, prov_model_id(@model1_name, @model_version1))
         
         result3 = get_ml_asset_by_id(@project1, "MODEL", prov_model_id(@model1_name, @model_version2), false)
@@ -287,8 +291,8 @@ describe "On #{ENV['OS']}" do
       
       it "check cleanup" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "MODEL", false, 0)
-        result2 = get_ml_asset_in_project(@project2, "MODEL", false, 0)
+        get_ml_asset_in_project(@project1, "MODEL", false, 0)
+        get_ml_asset_in_project(@project2, "MODEL", false, 0)
         result3 = check_no_ml_asset_by_id(@project1, "MODEL", prov_model_id(@model1_name, @model_version2), false)
       end
     end
@@ -312,7 +316,7 @@ describe "On #{ENV['OS']}" do
 
       it "check model" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "MODEL", false, 1)
+        result1 = get_ml_asset_in_project(@project1, "MODEL", false, 1)["items"]
         xattrsExact = Hash.new
         xattrsExact["xattr_key_1"] = "xattr_value_1"
         xattrsExact["xattr_key_2"] = "xattr_value_2"
@@ -325,7 +329,7 @@ describe "On #{ENV['OS']}" do
 
       it "check models" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "MODEL", false, 0)
+        get_ml_asset_in_project(@project1, "MODEL", false, 0)
       end
     end
   end
@@ -341,12 +345,12 @@ describe "On #{ENV['OS']}" do
 
       it "check training datasets" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 3)
+        result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 3)["items"]
         prov_check_asset_with_id(result1, prov_td_id(@td1_name, @td_version1))
         prov_check_asset_with_id(result1, prov_td_id(@td1_name, @td_version2))
         prov_check_asset_with_id(result1, prov_td_id(@td2_name, @td_version1))
 
-        result2 = get_ml_asset_in_project(@project2, "TRAINING_DATASET", false, 1)
+        result2 = get_ml_asset_in_project(@project2, "TRAINING_DATASET", false, 1)["items"]
         prov_check_asset_with_id(result2, prov_td_id(@td1_name, @td_version1))
         
         result3 = get_ml_asset_by_id(@project1, "TRAINING_DATASET", prov_td_id(@td1_name, @td_version1), false)
@@ -385,7 +389,7 @@ describe "On #{ENV['OS']}" do
 
       it "check training dataset" do 
         prov_wait_for_epipe() 
-        result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 1)
+        result1 = get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 1)["items"]
         xattrsExact = Hash.new
         xattrsExact["xattr_key_1"] = "xattr_value_1"
         xattrsExact["xattr_key_2"] = "xattr_value_2"
@@ -1240,6 +1244,57 @@ describe "On #{ENV['OS']}" do
     end
   end
 
+  describe 'timestamp range query' do
+    it "stop epipe" do
+      execute_remotely @hostname, "sudo systemctl stop epipe"
+    end
+
+    it "create mock file history" do
+      prov_create_experiment(@project1, prov_experiment_id("#{@app1_id}_1"))
+      sleep(1)
+      prov_create_experiment(@project1, prov_experiment_id("#{@app1_id}_2"))
+      sleep(1)
+      prov_create_experiment(@project1, prov_experiment_id("#{@app1_id}_3"))
+      sleep(1)
+      prov_create_experiment(@project1, prov_experiment_id("#{@app1_id}_4"))
+      sleep(1)
+      prov_create_experiment(@project1, prov_experiment_id("#{@app1_id}_5"))
+    end
+
+    it "restart epipe" do
+      execute_remotely @hostname, "sudo systemctl restart epipe"
+      prov_wait_for_epipe() 
+    end
+
+    it "check file history" do 
+      exp1 = get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id("#{@app1_id}_1"), false)
+      # pp exp1
+      exp3 = get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id("#{@app1_id}_3"), false)
+      # pp exp3
+      exp5 = get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id("#{@app1_id}_5"), false)
+      # pp exp5
+      get_ml_in_create_range(@project1, "EXPERIMENT", exp1["createTime"], exp5["createTime"], 3)
+      get_ml_in_create_range(@project1, "EXPERIMENT", exp3["createTime"], exp5["createTime"], 1)
+    end
+
+    it "cleanup" do
+      prov_delete_experiment(@project1, prov_experiment_id("#{@app1_id}_1"))
+      prov_delete_experiment(@project1, prov_experiment_id("#{@app1_id}_2"))
+      prov_delete_experiment(@project1, prov_experiment_id("#{@app1_id}_3"))
+      prov_delete_experiment(@project1, prov_experiment_id("#{@app1_id}_4"))
+      prov_delete_experiment(@project1, prov_experiment_id("#{@app1_id}_5"))
+    end
+
+    it "check cleanup" do 
+      prov_wait_for_epipe() 
+      check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id("#{@app1_id}_1"), false)
+      check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id("#{@app1_id}_2"), false)
+      check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id("#{@app1_id}_3"), false)
+      check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id("#{@app1_id}_4"), false)
+      check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id("#{@app1_id}_5"), false)
+    end
+  end
+
   describe "search by like file name" do
     it "stop epipe" do
       execute_remotely @hostname, "sudo systemctl stop epipe"
@@ -1351,8 +1406,12 @@ describe "On #{ENV['OS']}" do
     end
 
     it "check experiments pagination" do 
-      get_ml_asset_in_project_page(@project1, "EXPERIMENT", false, 0, 7, 7)
-      get_ml_asset_in_project_page(@project1, "EXPERIMENT", false, 7, 14, 3)
+      result1 = get_ml_asset_in_project_page(@project1, "EXPERIMENT", false, 0, 7)
+      expect(result1["items"].length).to eq 7
+      expect(result1["count"]).to eq 10
+      result2 = get_ml_asset_in_project_page(@project1, "EXPERIMENT", false, 7, 14)
+      expect(result2["items"].length).to eq 3
+      expect(result2["count"]).to eq 10
     end
 
     it "cleanup" do

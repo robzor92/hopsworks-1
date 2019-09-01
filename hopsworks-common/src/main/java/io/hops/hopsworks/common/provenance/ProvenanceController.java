@@ -278,7 +278,7 @@ public class ProvenanceController {
       (Map<Long, FootprintFileStateTree>)(Map)(result.getValue1()));
   }
   
-  public ProvFileOpsParamBuilder elasticTreeQueryParams(List<Long> inodeIds) {
+  public ProvFileOpsParamBuilder elasticTreeQueryParams(List<Long> inodeIds) throws GenericException {
     ProvFileOpsParamBuilder params = new ProvFileOpsParamBuilder()
       .withFileOperation(ProvFileOps.CREATE)
       .withFileOperation(ProvFileOps.DELETE);
@@ -288,7 +288,8 @@ public class ProvenanceController {
     return params;
   }
   
-  private void addAppFootprintFileOps(ProvFileOpsParamBuilder params, AppFootprintType footprintType) {
+  private void addAppFootprintFileOps(ProvFileOpsParamBuilder params, AppFootprintType footprintType)
+    throws GenericException {
     switch(footprintType) {
       case ALL:
         break;

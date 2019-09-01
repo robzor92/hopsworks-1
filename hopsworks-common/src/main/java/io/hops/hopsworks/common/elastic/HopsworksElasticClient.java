@@ -20,6 +20,8 @@ import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.action.ActionFuture;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
@@ -146,6 +148,10 @@ public class HopsworksElasticClient {
   
   public  ActionFuture<SearchResponse> searchScroll(SearchScrollRequest request) throws ServiceException {
     return getClient().searchScroll(request);
+  }
+  
+  public ActionFuture<BulkResponse> bulkOp(BulkRequest request) throws ServiceException {
+    return getClient().bulk(request);
   }
   
   public void processException(ServiceException ex) {

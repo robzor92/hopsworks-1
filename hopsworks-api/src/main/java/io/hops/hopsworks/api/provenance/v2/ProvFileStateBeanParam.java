@@ -93,7 +93,7 @@ public class ProvFileStateBeanParam {
     this.returnType = returnType;
   }
   
-  public Set<String> getFileStateParams() {
+  public Set<String> getFileStateFilterBy() {
     return fileStateParams;
   }
   

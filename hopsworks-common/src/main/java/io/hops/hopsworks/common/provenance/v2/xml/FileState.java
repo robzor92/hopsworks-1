@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
-import io.hops.hopsworks.common.provenance.v2.ProvElastic;
+import io.hops.hopsworks.common.provenance.v2.ProvFileFields;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
@@ -59,15 +59,15 @@ public class FileState implements Comparator<FileState>, ProvenanceController.Ba
   public static FileState instance(SearchHit hit) throws GenericException {
     FileState result = new FileState();
     result.id = hit.getId();
-    result.score = hit.getScore();
+    result.score = Float.isNaN(hit.getScore()) ? 0 : hit.getScore();
     //the source of the retrieved record (i.e. all the indexed information)
     result.map = hit.getSourceAsMap();
   
     for (Map.Entry<String, Object> entry : result.map.entrySet()) {
       try {
-        ProvElastic.Field field = ProvElastic.extractFileStateQueryResultFields(entry.getKey());
-        if (field instanceof ProvElastic.FileBase) {
-          ProvElastic.FileBase fileBase = (ProvElastic.FileBase) field;
+        ProvFileFields.Field field = ProvFileFields.extractFileStateQueryResultFields(entry.getKey());
+        if (field instanceof ProvFileFields.FileBase) {
+          ProvFileFields.FileBase fileBase = (ProvFileFields.FileBase) field;
           switch (fileBase) {
             case PROJECT_I_ID:
               result.projectInodeId = ((Number) entry.getValue()).longValue();
@@ -88,8 +88,8 @@ public class FileState implements Comparator<FileState>, ProvenanceController.Ba
               throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
                 "field:" + field + "not managed in file state return (1)");
           }
-        } else if (field instanceof ProvElastic.FileStateBase) {
-          ProvElastic.FileStateBase fileStateBase = (ProvElastic.FileStateBase) field;
+        } else if (field instanceof ProvFileFields.FileStateBase) {
+          ProvFileFields.FileStateBase fileStateBase = (ProvFileFields.FileStateBase) field;
           switch (fileStateBase) {
             case CREATE_TIMESTAMP:
               result.createTime = ((Number) entry.getValue()).longValue();
@@ -104,8 +104,8 @@ public class FileState implements Comparator<FileState>, ProvenanceController.Ba
               throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
                 "field:" + field + "not managed in file state return (2)");
           }
-        } else if (field instanceof ProvElastic.FileAux) {
-          ProvElastic.FileAux fileReturn = (ProvElastic.FileAux) field;
+        } else if (field instanceof ProvFileFields.FileAux) {
+          ProvFileFields.FileAux fileReturn = (ProvFileFields.FileAux) field;
           switch(fileReturn) {
             case DATASET_I_ID:
               break;
@@ -121,8 +121,8 @@ public class FileState implements Comparator<FileState>, ProvenanceController.Ba
               throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
                 "field:" + field + "not managed in file state return (3)");
           }
-        } else if (field instanceof ProvElastic.FileStateAux) {
-          ProvElastic.FileStateAux fileStateReturn = (ProvElastic.FileStateAux) field;
+        } else if (field instanceof ProvFileFields.FileStateAux) {
+          ProvFileFields.FileStateAux fileStateReturn = (ProvFileFields.FileStateAux) field;
           switch (fileStateReturn) {
             case PROJECT_NAME:
               result.projectName = entry.getValue().toString();

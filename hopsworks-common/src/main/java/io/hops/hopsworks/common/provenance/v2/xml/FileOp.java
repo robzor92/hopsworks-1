@@ -18,7 +18,7 @@ package io.hops.hopsworks.common.provenance.v2.xml;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
-import io.hops.hopsworks.common.provenance.v2.ProvElastic;
+import io.hops.hopsworks.common.provenance.v2.ProvFileFields;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.search.SearchHit;
@@ -59,14 +59,14 @@ public class FileOp implements Comparator<FileOp>  {
   public static FileOp instance(SearchHit hit) {
     FileOp result = new FileOp();
     result.id = hit.getId();
-    result.score = hit.getScore();
+    result.score = Float.isNaN(hit.getScore()) ? 0 : hit.getScore();
     result.map = hit.getSourceAsMap();
   
     for (Map.Entry<String, Object> entry : result.map.entrySet()) {
       try {
-        ProvElastic.Field field = ProvElastic.extractFileOpsQueryResultFields(entry.getKey());
-        if (field instanceof ProvElastic.FileBase) {
-          ProvElastic.FileBase fileBase = (ProvElastic.FileBase) field;
+        ProvFileFields.Field field = ProvFileFields.extractFileOpsQueryResultFields(entry.getKey());
+        if (field instanceof ProvFileFields.FileBase) {
+          ProvFileFields.FileBase fileBase = (ProvFileFields.FileBase) field;
           switch (fileBase) {
             case PROJECT_I_ID:
               result.projectInodeId = ((Number) entry.getValue()).longValue();
@@ -87,8 +87,8 @@ public class FileOp implements Comparator<FileOp>  {
               throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
                 "field:" + field + "not managed in file ops return (1)");
           }
-        } else if (field instanceof ProvElastic.FileOpsBase) {
-          ProvElastic.FileOpsBase fileOpsBase = (ProvElastic.FileOpsBase) field;
+        } else if (field instanceof ProvFileFields.FileOpsBase) {
+          ProvFileFields.FileOpsBase fileOpsBase = (ProvFileFields.FileOpsBase) field;
           switch (fileOpsBase) {
             case INODE_OPERATION:
               result.inodeOperation = entry.getValue().toString();
@@ -100,8 +100,8 @@ public class FileOp implements Comparator<FileOp>  {
               throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
                 "field:" + field + "not managed in file ops return (2)");
           }
-        } else if (field instanceof ProvElastic.FileAux) {
-          ProvElastic.FileAux fileReturn = (ProvElastic.FileAux) field;
+        } else if (field instanceof ProvFileFields.FileAux) {
+          ProvFileFields.FileAux fileReturn = (ProvFileFields.FileAux) field;
           switch (fileReturn) {
             case PARENT_I_ID:
               result.parentInodeId = ((Number) entry.getValue()).longValue();
@@ -115,8 +115,8 @@ public class FileOp implements Comparator<FileOp>  {
               throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
                 "field:" + field + "not managed in file ops return (3)");
           }
-        } else if (field instanceof ProvElastic.FileOpsAux) {
-          ProvElastic.FileOpsAux fileOpsReturn = (ProvElastic.FileOpsAux) field;
+        } else if (field instanceof ProvFileFields.FileOpsAux) {
+          ProvFileFields.FileOpsAux fileOpsReturn = (ProvFileFields.FileOpsAux) field;
           switch (fileOpsReturn) {
             case ML_ID:
               break;

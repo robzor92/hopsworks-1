@@ -184,10 +184,10 @@ module ProvenanceHelper
     parsed_result = JSON.parse(result)
     expect(parsed_result["items"].length).to eq expected
     expect(parsed_result["count"]).to eq expected
-    parsed_result["items"]
+    parsed_result
   end
 
-  def get_ml_asset_in_project_page(project, ml_type, withAppState, offset, limit, expected) 
+  def get_ml_asset_in_project_page(project, ml_type, withAppState, offset, limit) 
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
     query_params = "?filter_by=ML_TYPE:#{ml_type}&offset=#{offset}&limit=#{limit}"
     if withAppState
@@ -197,9 +197,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
-    expect(parsed_result["items"].length).to eq expected
-    expect(parsed_result["count"]).to eq expected
-    parsed_result["items"]
+    parsed_result
   end
 
   def check_no_ml_asset_by_id(project, ml_type, ml_id, withAppState) 
@@ -238,6 +236,18 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
+    parsed_result["items"]
+  end
+
+  def get_ml_in_create_range(project, ml_type, from, to, expected) 
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
+    query_params = "?filter_by=ML_TYPE:#{ml_type}&filter_by=CREATE_TIMESTAMP_LT:#{to}&filter_by=CREATE_TIMESTAMP_GT:#{from}"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+    expect(parsed_result["items"].length).to eq expected
+    expect(parsed_result["count"]).to eq expected
     parsed_result["items"]
   end
 
@@ -318,5 +328,15 @@ module ProvenanceHelper
     expect_status(200)
     parsed_result = JSON.parse(result)
     parsed_result["items"]
+  end
+
+  def get_file_oldest_deleted(limit) 
+    resource = "#{ENV['HOPSWORKS_API']}/provenance/file/ops"
+    query_params = "?filter_by=FILE_OPERATION:DELETE&sort_by=TIMESTAMP:asc&limit=#{limit}"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+    parsed_result
   end
 end

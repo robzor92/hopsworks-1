@@ -40,8 +40,11 @@ package io.hops.hopsworks.api.provenance;
 
 import io.hops.hopsworks.api.filter.AllowedProjectRoles;
 import io.hops.hopsworks.api.filter.Audience;
+import io.hops.hopsworks.api.provenance.v2.ProvFileOpsBeanParam;
 import io.hops.hopsworks.api.provenance.v2.ProvFileStateBeanParam;
+import io.hops.hopsworks.api.util.Pagination;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
+import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ServiceException;
@@ -80,17 +83,41 @@ public class GlobalProvenanceResource {
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response getFiles(
     @BeanParam ProvFileStateBeanParam params,
+    @BeanParam
+      Pagination pagination,
     @Context HttpServletRequest req) throws ServiceException, GenericException {
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
-      .withQueryParamFileStateFilterBy(params.getFileStateParams())
+      .withQueryParamFileStateFilterBy(params.getFileStateFilterBy())
       .withQueryParamFileStateSortBy(params.getFileStateSortBy())
       .withQueryParamExactXAttr(params.getExactXAttrParams())
       .withQueryParamLikeXAttr(params.getLikeXAttrParams())
       .withQueryParamXAttrSortBy(params.getXattrSortBy())
       .withQueryParamExpansions(params.getExpansions())
-      .withQueryParamAppExpansionFilter(params.getAppExpansionParams());
+      .withQueryParamAppExpansionFilter(params.getAppExpansionParams())
+      .withPagination(pagination.getOffset(), pagination.getLimit());
     return ProvenanceResourceHelper.getFileStates(provenanceCtrl, paramBuilder, params.getReturnType());
+  }
+  
+  @GET
+  @Path("file/ops")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response getFileOps(
+    @BeanParam ProvFileOpsBeanParam params,
+    @BeanParam Pagination pagination,
+    @Context HttpServletRequest req) throws ServiceException, GenericException {
+    logger.log(Level.INFO, "Local content path:{0} file ops params:{1} ",
+      new Object[]{req.getRequestURL().toString(), params});
+    ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
+      .withQueryParamFilterBy(params.getFileOpsFilterBy())
+      .withQueryParamSortBy(params.getFileOpsSortBy())
+      .withQueryParamExpansions(params.getExpansions())
+      .withQueryParamAppExpansionFilter(params.getAppExpansionParams())
+      .withPagination(pagination.getOffset(), pagination.getLimit());
+    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder, params.getOpsCompaction(),
+      params.getReturnType());
   }
 }
