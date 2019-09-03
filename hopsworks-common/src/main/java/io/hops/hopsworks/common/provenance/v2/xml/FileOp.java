@@ -18,7 +18,7 @@ package io.hops.hopsworks.common.provenance.v2.xml;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
-import io.hops.hopsworks.common.provenance.v2.ProvFileFields;
+import io.hops.hopsworks.common.provenance.v2.ProvElasticFields;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.search.SearchHit;
@@ -52,21 +52,33 @@ public class FileOp implements Comparator<FileOp>  {
   private String xattrName;
   private String inodePath;
   private Long partitionId;
+  private String projectName;
   private MLAssetAppState appState;
   
   public FileOp() {}
-
+  
   public static FileOp instance(SearchHit hit) {
     FileOp result = new FileOp();
     result.id = hit.getId();
     result.score = Float.isNaN(hit.getScore()) ? 0 : hit.getScore();
-    result.map = hit.getSourceAsMap();
+    return instance(result, hit.getSourceAsMap());
+  }
   
-    for (Map.Entry<String, Object> entry : result.map.entrySet()) {
+  public static FileOp instance(String id, Map<String, Object> sourceMap) {
+    FileOp result = new FileOp();
+    result.id = id;
+    result.score = 0;
+    return instance(result, sourceMap);
+  }
+  
+  private static FileOp instance(FileOp result, Map<String, Object> sourceMap) {
+    result.map = sourceMap;
+    
+    for (Map.Entry<String, Object> entry : sourceMap.entrySet()) {
       try {
-        ProvFileFields.Field field = ProvFileFields.extractFileOpsQueryResultFields(entry.getKey());
-        if (field instanceof ProvFileFields.FileBase) {
-          ProvFileFields.FileBase fileBase = (ProvFileFields.FileBase) field;
+        ProvElasticFields.Field field = ProvElasticFields.extractFileOpsQueryResultFields(entry.getKey());
+        if (field instanceof ProvElasticFields.FileBase) {
+          ProvElasticFields.FileBase fileBase = (ProvElasticFields.FileBase) field;
           switch (fileBase) {
             case PROJECT_I_ID:
               result.projectInodeId = ((Number) entry.getValue()).longValue();
@@ -87,8 +99,8 @@ public class FileOp implements Comparator<FileOp>  {
               throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
                 "field:" + field + "not managed in file ops return (1)");
           }
-        } else if (field instanceof ProvFileFields.FileOpsBase) {
-          ProvFileFields.FileOpsBase fileOpsBase = (ProvFileFields.FileOpsBase) field;
+        } else if (field instanceof ProvElasticFields.FileOpsBase) {
+          ProvElasticFields.FileOpsBase fileOpsBase = (ProvElasticFields.FileOpsBase) field;
           switch (fileOpsBase) {
             case INODE_OPERATION:
               result.inodeOperation = entry.getValue().toString();
@@ -100,8 +112,8 @@ public class FileOp implements Comparator<FileOp>  {
               throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
                 "field:" + field + "not managed in file ops return (2)");
           }
-        } else if (field instanceof ProvFileFields.FileAux) {
-          ProvFileFields.FileAux fileReturn = (ProvFileFields.FileAux) field;
+        } else if (field instanceof ProvElasticFields.FileAux) {
+          ProvElasticFields.FileAux fileReturn = (ProvElasticFields.FileAux) field;
           switch (fileReturn) {
             case PARENT_I_ID:
               result.parentInodeId = ((Number) entry.getValue()).longValue();
@@ -111,12 +123,15 @@ public class FileOp implements Comparator<FileOp>  {
               break;
             case ENTRY_TYPE:
               break;
+            case PROJECT_NAME:
+              result.projectName = entry.getValue().toString();
+              break;
             default:
               throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
                 "field:" + field + "not managed in file ops return (3)");
           }
-        } else if (field instanceof ProvFileFields.FileOpsAux) {
-          ProvFileFields.FileOpsAux fileOpsReturn = (ProvFileFields.FileOpsAux) field;
+        } else if (field instanceof ProvElasticFields.FileOpsAux) {
+          ProvElasticFields.FileOpsAux fileOpsReturn = (ProvElasticFields.FileOpsAux) field;
           switch (fileOpsReturn) {
             case ML_ID:
               break;
@@ -314,5 +329,13 @@ public class FileOp implements Comparator<FileOp>  {
       }
       return result;
     }
+  }
+  
+  public String getProjectName() {
+    return projectName;
+  }
+  
+  public void setProjectName(String projectName) {
+    this.projectName = projectName;
   }
 }

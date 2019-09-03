@@ -30,7 +30,8 @@ public class ProvFileStateBeanParam {
       "filter_by=FILE_NAME:file1, filter_by=FILE_NAME_LIKE:fil, " +
       "filter_by=USER_ID:user1, filter_by=APP_ID:app1, " +
       "filter_by=CREATE_TIMESTAMP:10030042, " +
-      "filter_by=CREATE_TIMESTAMP_LT:10030042, filter_by=CREATE_TIMESTAMP_GT:10010042, " +
+      "filter_by=CREATE_TIMESTAMP_LT:10030042, filter_by=CREATE_TIMESTAMP_GT:10010042," +
+      "filter_by=CREATE_TIMESTAMP_LTE:10030042, filter_by=CREATE_TIMESTAMP_GTE:10010042, " +
       "filter_by=ML_TYPE:EXPERIMENT, filter_by=ML_ID:id",
     allowMultiple = true)
   private Set<String> fileStateParams;

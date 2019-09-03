@@ -22,9 +22,15 @@ import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -60,6 +66,7 @@ public class HopsworksElasticClient {
   private static final Logger LOG = Logger.getLogger(HopsworksElasticClient.class.getName());
   public static final Integer DEFAULT_PAGE_SIZE = 1000;
   public static final Integer MAX_PAGE_SIZE = 10000;
+  public static final Integer ARCHIVAL_PAGE_SIZE = 50;
 
   @EJB
   private Settings settings;
@@ -142,6 +149,16 @@ public class HopsworksElasticClient {
     return addr;
   }
   
+  public ActionFuture<GetResponse> get(GetRequest request) throws ServiceException {
+    return getClient().get(request);
+  }
+  
+  public ActionFuture<IndexResponse> index(IndexRequest request) throws ServiceException {
+    return getClient().index(request);
+  }
+  public ActionFuture<UpdateResponse> update(UpdateRequest request) throws ServiceException {
+    return getClient().update(request);
+  }
   public ActionFuture<SearchResponse> search(SearchRequest request) throws ServiceException {
     return getClient().search(request);
   }

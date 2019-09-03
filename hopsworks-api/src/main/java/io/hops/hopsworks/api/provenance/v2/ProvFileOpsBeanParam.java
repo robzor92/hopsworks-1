@@ -30,9 +30,12 @@ public class ProvFileOpsBeanParam {
       "filter_by=FILE_NAME:file1, filter_by=FILE_NAME_LIKE:fil, " +
       "filter_by=FILE_OPERATION:CREATE/DELETE/ACCESS_DATA/MODIFY_DATA" +
       "filter_by=USER_ID:user1, filter_by=APP_ID:app1," +
-      "filter_by=TIMESTAMP:10030042, filter_by=TIMESTAMP_LT:10030042, filter_by=TIMESTAMP_GT:10010042",
+      "filter_by=TIMESTAMP:10030042, " +
+      "filter_by=TIMESTAMP_LT:10030042, filter_by=TIMESTAMP_GT:10010042" +
+      "filter_by=TIMESTAMP_LTE:10030042, filter_by=TIMESTAMP_GTE:10010042",
+    
     allowMultiple = true)
-  private Set<String> fileOpsFilter;
+  private Set<String> fileOpsFilterBy;
   
   @QueryParam("sort_by")
   @ApiParam(value = "ex. sort_by=CREATE_TIMESTAMP:asc",
@@ -50,7 +53,14 @@ public class ProvFileOpsBeanParam {
   @ApiParam(value = "ex. app_filter_by=APP_STATE:state",
     allowableValues = "app_filter_by=APP_ID:appId, app_filter_by=APP_STATE:state",
     allowMultiple = true)
-  private Set<String> appStateParams;
+  private Set<String> appExpansionParams;
+  
+  @QueryParam("aggregations")
+  @ApiParam(value = "ex. aggregations=FILES_IN, FILES_LEAST_ACTIVE_BY_LAST_ACCESSED",
+    allowableValues = "aggregations=FILES_IN, FILES_LEAST_ACTIVE_BY_LAST_ACCESSED, " +
+      "PROJECTS_LEAST_ACTIVE_BY_LAST_ACCESSED",
+    allowMultiple = true)
+  private Set<String> aggregations;
   
   @QueryParam("return_type")
   @DefaultValue("LIST")
@@ -61,21 +71,29 @@ public class ProvFileOpsBeanParam {
   private ProjectProvenanceResource.FileOpsCompactionType opsCompaction;
   
   public ProvFileOpsBeanParam(
-    @QueryParam("filter_by") Set<String> fileOpsFilter,
+    @QueryParam("filter_by") Set<String> fileOpsFilterBy,
+    @QueryParam("sort_by") List<String> fileOpsSortBy,
+    @QueryParam("expand") Set<String> expansions,
+    @QueryParam("app_filter_by") Set<String> appExpansionParams,
+    @QueryParam("aggregations") Set<String> aggregations,
     @QueryParam("return_type") @DefaultValue("LIST") ProjectProvenanceResource.FileStructReturnType returnType,
     @QueryParam("compaction") @DefaultValue("NONE") ProjectProvenanceResource.FileOpsCompactionType opsCompaction) {
     
-    this.fileOpsFilter = fileOpsFilter;
+    this.fileOpsFilterBy = fileOpsFilterBy;
+    this.fileOpsSortBy = fileOpsSortBy;
+    this.expansions = expansions;
+    this.appExpansionParams = appExpansionParams;
+    this.aggregations = aggregations;
     this.returnType = returnType;
     this.opsCompaction = opsCompaction;
   }
   
   public Set<String> getFileOpsFilterBy() {
-    return fileOpsFilter;
+    return fileOpsFilterBy;
   }
   
-  public void setFileOpsFilter(Set<String> fileOpsFilter) {
-    this.fileOpsFilter = fileOpsFilter;
+  public void setFileOpsFilterBy(Set<String> fileOpsFilterBy) {
+    this.fileOpsFilterBy = fileOpsFilterBy;
   }
   
   public List<String> getFileOpsSortBy() {
@@ -95,11 +113,19 @@ public class ProvFileOpsBeanParam {
   }
   
   public Set<String> getAppExpansionParams() {
-    return appStateParams;
+    return appExpansionParams;
   }
   
-  public void setAppStateParams(Set<String> appStateParams) {
-    this.appStateParams = appStateParams;
+  public void setAppExpansionParams(Set<String> appExpansionParams) {
+    this.appExpansionParams = appExpansionParams;
+  }
+  
+  public Set<String> getAggregations() {
+    return aggregations;
+  }
+  
+  public void setAggregations(Set<String> aggregations) {
+    this.aggregations = aggregations;
   }
   
   public ProjectProvenanceResource.FileStructReturnType getReturnType() {
@@ -121,7 +147,7 @@ public class ProvFileOpsBeanParam {
   @Override
   public String toString() {
     return "ProvFileStateBeanParam{"
-      + "file ops:" + fileOpsFilter.toString()
+      + "file ops:" + fileOpsFilterBy.toString()
       + "ops compaction:" + opsCompaction
       + "return type:" + returnType
       + '}';

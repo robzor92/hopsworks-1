@@ -19,7 +19,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Collection;
 import java.util.List;
 
-public class FootprintFileStateResult {
+public class FootprintFileStateDTO {
   @XmlRootElement
   public static class PList {
     List<FootprintFileState> items;

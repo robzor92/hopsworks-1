@@ -16,14 +16,14 @@
 package io.hops.hopsworks.api.provenance;
 
 import io.hops.hopsworks.common.provenance.AppFootprintType;
-import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
 import io.hops.hopsworks.common.provenance.ProvFileOpsCompactByApp;
 import io.hops.hopsworks.common.provenance.ProvFileOpsSummaryByApp;
+import io.hops.hopsworks.common.provenance.v2.xml.FileOpDTO;
 import io.hops.hopsworks.common.provenance.v2.xml.FileStateDTO;
 import io.hops.hopsworks.common.provenance.v2.xml.FileStateTree;
 import io.hops.hopsworks.common.provenance.v2.xml.FootprintFileState;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
-import io.hops.hopsworks.common.provenance.v2.xml.FootprintFileStateResult;
+import io.hops.hopsworks.common.provenance.v2.xml.FootprintFileStateDTO;
 import io.hops.hopsworks.common.provenance.v2.xml.SimpleResult;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
@@ -86,19 +86,19 @@ public class ProvenanceResourceHelper {
       switch(returnType) {
         case LIST:
           List<FootprintFileState> listAux = provenanceCtrl.provAppFootprintList(params, footprintType);
-          FootprintFileStateResult.PList listResult = new FootprintFileStateResult.PList(listAux);
+          FootprintFileStateDTO.PList listResult = new FootprintFileStateDTO.PList(listAux);
           return Response.ok().entity(listResult).build();
         case MIN_TREE:
           Pair<Map<Long, FootprintFileStateTree>, Map<Long, FootprintFileStateTree>> minAux
             = provenanceCtrl.provAppFootprintTree(params, footprintType, false);
-          FootprintFileStateResult.MinTree minTreeResult
-            = new FootprintFileStateResult.MinTree(minAux.getValue0().values());
+          FootprintFileStateDTO.MinTree minTreeResult
+            = new FootprintFileStateDTO.MinTree(minAux.getValue0().values());
           return Response.ok().entity(minTreeResult).build();
         case FULL_TREE:
           Pair<Map<Long, FootprintFileStateTree>, Map<Long, FootprintFileStateTree>> fullAux
             = provenanceCtrl.provAppFootprintTree(params, footprintType,true);
-          FootprintFileStateResult.FullTree fullTreeResult
-            = new FootprintFileStateResult.FullTree(fullAux.getValue0().values(), fullAux.getValue1().values());
+          FootprintFileStateDTO.FullTree fullTreeResult
+            = new FootprintFileStateDTO.FullTree(fullAux.getValue0().values(), fullAux.getValue1().values());
           return Response.ok().entity(fullTreeResult).build();
         case COUNT:
         default:
@@ -120,18 +120,18 @@ public class ProvenanceResourceHelper {
     throws ServiceException, GenericException {
     try {
       if(ProjectProvenanceResource.FileStructReturnType.COUNT.equals(returnType)) {
-        Long result = provenanceCtrl.provFileOpsCount(params);
-        return Response.ok().entity(new SimpleResult<>(result)).build();
+        FileOpDTO.Count result = provenanceCtrl.provFileOpsCount(params);
+        return Response.ok().entity(result).build();
       } else {
-        List<FileOp> result = provenanceCtrl.provFileOpsList(params);
+        FileOpDTO.PList result = provenanceCtrl.provFileOpsList(params);
         switch(opsCompaction) {
           case NONE:
-            return Response.ok().entity(new GenericEntity<List<FileOp>>(result) {}).build();
+            return Response.ok().entity(result).build();
           case FILE_COMPACT:
-            List<ProvFileOpsCompactByApp> compactResults = ProvFileOpsCompactByApp.compact(result);
+            List<ProvFileOpsCompactByApp> compactResults = ProvFileOpsCompactByApp.compact(result.getItems());
             return Response.ok().entity(new GenericEntity<List<ProvFileOpsCompactByApp>>(compactResults) {}).build();
           case FILE_SUMMARY:
-            List<ProvFileOpsSummaryByApp> summaryResults = ProvFileOpsSummaryByApp.summary(result);
+            List<ProvFileOpsSummaryByApp> summaryResults = ProvFileOpsSummaryByApp.summary(result.getItems());
             return Response.ok().entity(new GenericEntity<List<ProvFileOpsSummaryByApp>>(summaryResults) {}).build();
           default:
             throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,

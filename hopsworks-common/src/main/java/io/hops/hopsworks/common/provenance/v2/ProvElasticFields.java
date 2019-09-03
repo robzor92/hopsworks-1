@@ -21,7 +21,7 @@ import io.hops.hopsworks.restutils.RESTCodes;
 import java.util.EnumSet;
 import java.util.logging.Level;
 
-public class ProvFileFields {
+public class ProvElasticFields {
   public interface Field {
   }
   
@@ -30,30 +30,53 @@ public class ProvFileFields {
     INODE_ID,
     INODE_NAME,
     USER_ID,
-    APP_ID
+    APP_ID;
+  
+    @Override
+    public String toString() {
+      return name().toLowerCase();
+    }
   }
   
   public enum FileAux implements Field {
     DATASET_I_ID,
     PARENT_I_ID,
     PARTITION_ID,
-    ENTRY_TYPE
+    ENTRY_TYPE,
+    PROJECT_NAME;
+  
+    @Override
+    public String toString() {
+      return name().toLowerCase();
+    }
   }
   
   public enum FileStateBase implements Field {
     CREATE_TIMESTAMP,
     ML_TYPE,
-    ML_ID
+    ML_ID;
+    @Override
+    public String toString() {
+      return name().toLowerCase();
+    }
   }
   
   public enum FileStateAux implements Field {
-    PROJECT_NAME,
     R_CREATE_TIMESTAMP;
+    @Override
+    public String toString() {
+      return name().toLowerCase();
+    }
   }
   
   public enum FileOpsBase implements Field {
     INODE_OPERATION,
-    TIMESTAMP
+    TIMESTAMP,
+    ARCHIVE_LOC;
+    @Override
+    public String toString() {
+      return name().toLowerCase();
+    }
   }
   
   public enum FileOpsAux implements Field {
@@ -62,17 +85,30 @@ public class ProvFileFields {
     LOGICAL_TIME,
     R_TIMESTAMP,
     INODE_PATH,
-    XATTR
+    XATTR;
+    @Override
+    public String toString() {
+      return name().toLowerCase();
+    }
   }
   
   public enum AppState implements Field {
     APP_STATE,
-    APP_ID
+    APP_ID;
+    @Override
+    public String toString() {
+      return name().toLowerCase();
+    }
   }
   
   public enum EntryType {
     STATE,
-    OPERATION
+    OPERATION,
+    ARCHIVE;
+    @Override
+    public String toString() {
+      return name().toLowerCase();
+    }
   }
   
   public static Field extractFileStateQueryResultFields(String val) throws GenericException {

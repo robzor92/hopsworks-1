@@ -137,7 +137,7 @@ module ProvenanceHelper
       sleep(1)
       sleepCounter2 += 1
     end
-    sleep(3)
+    sleep(1)
     expect(sleepCounter1).to be < 10
     expect(sleepCounter2).to be < 10
     pp "done waiting"
@@ -246,6 +246,7 @@ module ProvenanceHelper
     result = get "#{resource}#{query_params}"
     expect_status(200)
     parsed_result = JSON.parse(result)
+    #pp parsed_result
     expect(parsed_result["items"].length).to eq expected
     expect(parsed_result["count"]).to eq expected
     parsed_result["items"]
@@ -307,6 +308,23 @@ module ProvenanceHelper
     query_params = "?compaction=#{compaction}&return_type=#{return_type}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+  end
+
+  def get_file_ops_archival(project)
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/ops"
+    query_params = "?return_type=COUNT&aggregations=FILES_IN"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+  end
+
+  def file_ops_archival(project, inode_id)
+    resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/#{inode_id}/ops/cleanup"
+    pp "#{resource}"
+    result = delete "#{resource}"
     expect_status(200)
     parsed_result = JSON.parse(result)
   end

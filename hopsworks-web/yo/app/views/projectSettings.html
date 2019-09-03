@@ -393,6 +393,37 @@
                           </div>
                         </fieldset>
                         <fieldset>
+                          <label>Size</label>
+                          <table st-table="rowCollection" class="table table-striped">
+                            <tbody>
+                            <tr class="row">
+                              <td class="col-sm-3 pull-left">
+                                <div style="margin-left: 10px;"><b> States </b></div>
+                              </td>
+                              <td class="col-sm-9">
+                                <div style="margin-left: 10px;"><b>{{provenanceCtrl.provStateSize}}</b></div>
+                              </td>
+                            </tr>
+                            <tr class="row">
+                              <td class="col-sm-3 pull-left">
+                                <div style="margin-left: 10px;"><b> Ops </b></div>
+                              </td>
+                              <td class="col-sm-9">
+                                <div style="margin-left: 10px;"><b>{{provenanceCtrl.provOpsSize}}</b></div>
+                              </td>
+                            </tr>
+                            <tr class="row">
+                              <td class="col-sm-3 pull-left">
+                                <div style="margin-left: 10px;"><b> Cleanup </b></div>
+                              </td>
+                              <td class="col-sm-9">
+                                <div style="margin-left: 10px;"><b>{{provenanceCtrl.provCleanupSize}}</b></div>
+                              </td>
+                            </tr>
+                            </tbody>
+                          </table>
+                        </fieldset>
+                        <fieldset>
                           <label>Datasets</label>
                           <table st-table="rowCollection" class="table table-striped"
                                  ng-show="provenanceCtrl.datasetProvenanceStatus.length > 0">

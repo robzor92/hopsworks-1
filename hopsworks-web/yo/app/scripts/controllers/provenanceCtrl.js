@@ -57,6 +57,9 @@ angular.module('hopsWorksApp')
       self.dGetStatusWorking = false;
       self.setStatusWorking = false;
       self.projectProvenanceEnabled = false;
+      self.provStateSize = 0;
+      self.provOpsSize = 0;
+      self.provCleanupSize = 0;
 
       self.getProjectProvenanceStatus = function () {
         self.pGetStatusWorking = true;
@@ -125,4 +128,44 @@ angular.module('hopsWorksApp')
       self.isWorking = function() {
         return self.pGetStatusWorking || self.dGetStatusWorking || self.setStatusWorking;
       }
+
+      self.getSize = function() {
+        ProjectService.provStates({id: self.projectId})
+          .$promise.then(
+          function (response) {
+            self.provStatesSize = response.result.value;
+          },
+          function (error) {
+            if (typeof error.data.usrMsg !== 'undefined') {
+              growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 5000});
+            } else {
+              growl.error("", {title: error.data.errorMsg, ttl: 5000});
+            }
+          });
+        ProjectService.provOps({id: self.projectId})
+          .$promise.then(
+          function (response) {
+            self.provOpsSize = response.count;
+          },
+          function (error) {
+            if (typeof error.data.usrMsg !== 'undefined') {
+              growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 5000});
+            } else {
+              growl.error("", {title: error.data.errorMsg, ttl: 5000});
+            }
+          });
+        ProjectService.provCleanup({id: self.projectId})
+          .$promise.then(
+          function (response) {
+            self.provCleanupSize = response.count;
+          },
+          function (error) {
+            if (typeof error.data.usrMsg !== 'undefined') {
+              growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 5000});
+            } else {
+              growl.error("", {title: error.data.errorMsg, ttl: 5000});
+            }
+          });
+      }
+      self.getSize();
     }]);

@@ -15,17 +15,23 @@
  */
 package io.hops.hopsworks.common.provenance.v2;
 
+import io.hops.hopsworks.common.elastic.ProvElasticHelper;
 import io.hops.hopsworks.common.provenance.util.ElasticPaginationChecker;
 import io.hops.hopsworks.exceptions.GenericException;
+import io.hops.hopsworks.restutils.RESTCodes;
+import org.elasticsearch.script.Script;
 import org.elasticsearch.search.sort.SortOrder;
 import org.javatuples.Pair;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 
 public class ProvFileOpsParamBuilder {
   private Map<String, ProvFileQuery.FilterVal> fileOpsFilter = new HashMap<>();
@@ -33,8 +39,11 @@ public class ProvFileOpsParamBuilder {
   private Set<ProvFileQuery.FileExpansions> expansions = new HashSet<>();
   private Map<String, ProvFileQuery.FilterVal> appStateFilter = new HashMap<>();
   private Pair<Integer, Integer> pagination = null;
+  private List<Script> filterScripts = new LinkedList<>();
+  private List<ProvElasticHelper.ProvAggregations> aggregations = new LinkedList<>();
   
-  public ProvFileOpsParamBuilder withQueryParamFilterBy(Set<String> params) throws GenericException {
+  public ProvFileOpsParamBuilder withQueryParamFilterBy(Set<String> params)
+    throws GenericException {
     ProvParamBuilder.withFilterBy(fileOpsFilter, params, ProvFileQuery.QueryType.QUERY_FILE_OP);
     return this;
   }
@@ -69,10 +78,6 @@ public class ProvFileOpsParamBuilder {
     return pagination != null;
   }
   
-  public Pair<Integer, Integer> getPagination() {
-    return pagination;
-  }
-  
   public boolean hasAppExpansion() {
     return expansions.contains(ProvFileQuery.FileExpansions.APP);
   }
@@ -87,18 +92,6 @@ public class ProvFileOpsParamBuilder {
     ProvParamBuilder.addToFilters(appStateFilter,
       Pair.with(ProvFileQuery.ExpansionApp.APP_ID, appId));
     return this;
-  }
-  
-  public Map<String, ProvFileQuery.FilterVal> getFileOpsFilter() {
-    return fileOpsFilter;
-  }
-  
-  public List<Pair<ProvFileQuery.Field, SortOrder>> getFileOpsSortBy() {
-    return fileOpsSortBy;
-  }
-  
-  public Map<String, ProvFileQuery.FilterVal> getAppStateFilter() {
-    return appStateFilter;
   }
   
   public ProvFileOpsParamBuilder withProjectInodeId(Long projectInodeId) throws GenericException {
@@ -117,8 +110,69 @@ public class ProvFileOpsParamBuilder {
     return this;
   }
   
-  public ProvFileOpsParamBuilder withFileOperation(ProvFileOps fileOp) throws GenericException {
+  public ProvFileOpsParamBuilder filterByFileOperation(ProvFileOps fileOp) throws GenericException {
     ProvParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvFileQuery.FileOps.FILE_OPERATION, fileOp.name()));
     return this;
+  }
+  
+  public ProvFileOpsParamBuilder filterByScript(ProvElasticHelper.FilterByScripts script) {
+    filterScripts.add(script.script);
+    return this;
+  }
+  
+  public ProvFileOpsParamBuilder withAggregation(ProvElasticHelper.ProvAggregations aggregation) {
+    this.aggregations.add(aggregation);
+    return this;
+  }
+  
+  public ProvFileOpsParamBuilder withAggregations(Set<String> aggregations) throws GenericException {
+    for(String agg : aggregations) {
+      try {
+        ProvElasticHelper.ProvAggregations aggregation = ProvElasticHelper.ProvAggregations.valueOf(agg);
+        withAggregation(aggregation);
+      } catch(NullPointerException | IllegalArgumentException e) {
+        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+          "aggregation" + agg + " not supported - supported:" + EnumSet.allOf(ProvElasticHelper.ProvAggregations.class),
+          "exception extracting aggregations");
+      }
+    }
+    return this;
+  }
+  
+  public ProvFileOpsParamBuilder sortBy(String field, SortOrder order) throws GenericException {
+    ProvFileQuery.Field sortField = ProvFileQuery.extractBaseField(field, ProvFileQuery.QueryType.QUERY_FILE_OP);
+    fileOpsSortBy.add(Pair.with(sortField, order));
+    return this;
+  }
+  
+  public ProvFileOpsParamBuilder sortByField(ProvElasticFields.Field field, SortOrder order) throws GenericException {
+    ProvFileQuery.Field sortField
+      = ProvFileQuery.extractBaseField(field.toString().toLowerCase(), ProvFileQuery.QueryType.QUERY_FILE_OP);
+    fileOpsSortBy.add(Pair.with(sortField, order));
+    return this;
+  }
+  
+  public Map<String, ProvFileQuery.FilterVal> getFileOpsFilter() {
+    return fileOpsFilter;
+  }
+  
+  public List<Pair<ProvFileQuery.Field, SortOrder>> getFileOpsSortBy() {
+    return fileOpsSortBy;
+  }
+  
+  public Map<String, ProvFileQuery.FilterVal> getAppStateFilter() {
+    return appStateFilter;
+  }
+  
+  public Pair<Integer, Integer> getPagination() {
+    return pagination;
+  }
+  
+  public List<Script> getFilterScripts() {
+    return filterScripts;
+  }
+  
+  public List<ProvElasticHelper.ProvAggregations> getAggregations() {
+    return aggregations;
   }
 }

@@ -51,8 +51,7 @@ public class ProvParamBuilder {
   }
   
   public static void withFilterBy(Map<String, ProvFileQuery.FilterVal> filters, Set<String> params,
-    ProvFileQuery.QueryType queryType)
-    throws GenericException {
+    ProvFileQuery.QueryType queryType) throws GenericException {
     for(String param : params) {
       addToFilters(filters, ProvFileQuery.extractFilter(param, queryType));
     }

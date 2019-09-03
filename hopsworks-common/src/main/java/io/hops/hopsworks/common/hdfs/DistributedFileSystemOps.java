@@ -492,7 +492,28 @@ public class DistributedFileSystemOps {
   public FSDataOutputStream create(Path path) throws IOException {
     return create(path.toString());
   }
-
+  
+  /**
+   * Creates a file and all parent dirs that does not exist and returns
+   * an FSDataOutputStream ready for append
+   *
+   * @param path
+   * @return FSDataOutputStream
+   * @throws IOException
+   */
+  public FSDataOutputStream append(String path) throws IOException {
+    return append(new Path(path));
+  }
+  
+  public FSDataOutputStream append(Path path) throws IOException {
+    if (!exists(path)) {
+      return create(path);
+    } else {
+      return dfs.append(path);
+    }
+  }
+  
+  
   /**
    * Set permission for path.
    * <p>

@@ -677,6 +677,7 @@ public class Settings implements Serializable {
       FEATURESTORE_DB_DEFAULT_STORAGE_FORMAT =
           setStrVar(VARIABLE_FEATURESTORE_DEFAULT_STORAGE_FORMAT, FEATURESTORE_DB_DEFAULT_STORAGE_FORMAT);
 
+      populateProvenanceCache();
       cached = true;
     }
   }
@@ -3480,5 +3481,18 @@ public class Settings implements Serializable {
   public Boolean isHopsUtilInsecure() {
     return isCloud() || isLocalHost();
   }
-
+  
+  //-------------------------------- PROVENANCE ----------------------------------------------//
+  private static final String VARIABLE_PROVENANCE_ARCHIVE_SIZE = "provenance_archive_size";
+  private int PROVENANCE_ARCHIVE_SIZE = 100;
+  
+  private void populateProvenanceCache() {
+    PROVENANCE_ARCHIVE_SIZE = setIntVar(VARIABLE_PROVENANCE_ARCHIVE_SIZE, PROVENANCE_ARCHIVE_SIZE);
+  }
+  
+  public synchronized int getProvArchiveSize() {
+    checkCache();
+    return PROVENANCE_ARCHIVE_SIZE;
+  }
+  //------------------------------ END PROVENANCE --------------------------------------------//
 }

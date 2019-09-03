@@ -55,6 +55,8 @@ import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.provenance.AppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvDatasetState;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
+import io.hops.hopsworks.common.provenance.v2.ProvFileOps;
+import io.hops.hopsworks.common.provenance.v2.xml.ArchiveDTO;
 import io.hops.hopsworks.common.provenance.v2.xml.SimpleResult;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
@@ -76,6 +78,7 @@ import javax.ejb.TransactionAttributeType;
 import javax.enterprise.context.RequestScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BeanParam;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -146,6 +149,90 @@ public class ProjectProvenanceResource {
   }
   
   @GET
+  @Path("file/ops/size")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response getFileOpsSize() throws ServiceException, GenericException {
+    ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
+      .withProjectInodeId(project.getInode().getId());
+    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder,
+      FileOpsCompactionType.NONE, FileStructReturnType.COUNT);
+  }
+  
+  @GET
+  @Path("file/ops/cleanupsize")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response getFileOpsCleanupSize() throws ServiceException, GenericException {
+    ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
+      .withProjectInodeId(project.getInode().getId())
+      .filterByFileOperation(ProvFileOps.DELETE);
+    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder,
+      FileOpsCompactionType.NONE, FileStructReturnType.COUNT);
+  }
+  
+  @GET
+  @Path("file/ops")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response getFileOps(
+    @BeanParam ProvFileOpsBeanParam params,
+    @BeanParam Pagination pagination,
+    @Context HttpServletRequest req) throws ServiceException, GenericException {
+    ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
+      .withProjectInodeId(project.getInode().getId())
+      .withQueryParamFilterBy(params.getFileOpsFilterBy())
+      .withQueryParamSortBy(params.getFileOpsSortBy())
+      .withQueryParamExpansions(params.getExpansions())
+      .withQueryParamAppExpansionFilter(params.getAppExpansionParams())
+      .withAggregations(params.getAggregations())
+      .withPagination(pagination.getOffset(), pagination.getLimit());
+    logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
+      new Object[]{req.getRequestURL().toString(), params});
+    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder,
+      params.getOpsCompaction(), params.getReturnType());
+  }
+  
+  @GET
+  @Path("file/{inodeId}/ops")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response getFileOps(
+    @PathParam("inodeId") Long fileInodeId,
+    @BeanParam ProvFileOpsBeanParam params,
+    @BeanParam Pagination pagination,
+    @Context HttpServletRequest req) throws ServiceException, GenericException {
+    ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
+      .withProjectInodeId(project.getInode().getId())
+      .withFileInodeId(fileInodeId)
+      .withQueryParamFilterBy(params.getFileOpsFilterBy())
+      .withQueryParamSortBy(params.getFileOpsSortBy())
+      .withQueryParamExpansions(params.getExpansions())
+      .withQueryParamAppExpansionFilter(params.getAppExpansionParams())
+      .withAggregations(params.getAggregations())
+      .withPagination(pagination.getOffset(), pagination.getLimit());
+    logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
+      new Object[]{req.getRequestURL().toString(), params});
+    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder, params.getOpsCompaction(),
+      params.getReturnType());
+  }
+  
+  @GET
+  @Path("file/state/size")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response getFileStatesSize() throws ServiceException, GenericException {
+    ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
+      .withProjectInodeId(project.getInode().getId());
+    return ProvenanceResourceHelper.getFileStates(provenanceCtrl, paramBuilder,FileStructReturnType.COUNT);
+  }
+  
+  @GET
   @Path("file/state")
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
@@ -167,28 +254,6 @@ public class ProjectProvenanceResource {
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     return ProvenanceResourceHelper.getFileStates(provenanceCtrl, paramBuilder, params.getReturnType());
-  }
-  
-  @GET
-  @Path("file/ops")
-  @Produces(MediaType.APPLICATION_JSON)
-  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
-  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response getFileOps(
-    @BeanParam ProvFileOpsBeanParam params,
-    @BeanParam Pagination pagination,
-    @Context HttpServletRequest req) throws ServiceException, GenericException {
-    ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
-      .withProjectInodeId(project.getInode().getId())
-      .withQueryParamFilterBy(params.getFileOpsFilterBy())
-      .withQueryParamSortBy(params.getFileOpsSortBy())
-      .withQueryParamExpansions(params.getExpansions())
-      .withQueryParamAppExpansionFilter(params.getAppExpansionParams())
-      .withPagination(pagination.getOffset(), pagination.getLimit());
-    logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
-      new Object[]{req.getRequestURL().toString(), params});
-    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder,
-      params.getOpsCompaction(), params.getReturnType());
   }
   
   @GET
@@ -217,29 +282,6 @@ public class ProjectProvenanceResource {
     return ProvenanceResourceHelper.getFileStates(provenanceCtrl, paramBuilder, params.getReturnType());
   }
   
-  @GET
-  @Path("file/{inodeId}/ops")
-  @Produces(MediaType.APPLICATION_JSON)
-  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
-  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response getFileOps(
-    @PathParam("inodeId") Long fileInodeId,
-    @BeanParam ProvFileOpsBeanParam params,
-    @BeanParam Pagination pagination,
-    @Context HttpServletRequest req) throws ServiceException, GenericException {
-    ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
-      .withProjectInodeId(project.getInode().getId())
-      .withFileInodeId(fileInodeId)
-      .withQueryParamFilterBy(params.getFileOpsFilterBy())
-      .withQueryParamSortBy(params.getFileOpsSortBy())
-      .withQueryParamExpansions(params.getExpansions())
-      .withQueryParamAppExpansionFilter(params.getAppExpansionParams())
-      .withPagination(pagination.getOffset(), pagination.getLimit());
-    logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
-      new Object[]{req.getRequestURL().toString(), params});
-    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder, params.getOpsCompaction(),
-      params.getReturnType());
-  }
   
   @GET
   @Path("app/{appId}/footprint/{type}")
@@ -257,6 +299,7 @@ public class ProjectProvenanceResource {
       .withAppId(appId)
       .withQueryParamFilterBy(params.getFileOpsFilterBy())
       .withQueryParamSortBy(params.getFileOpsSortBy())
+      .withAggregations(params.getAggregations())
       .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
@@ -266,11 +309,11 @@ public class ProjectProvenanceResource {
   }
   
   @POST
-  @Path("test/{inodeId}")
+  @Path("testXAttr/{inodeId}")
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response test(
+  public Response testXAttr(
     @PathParam("inodeId") Long inodeId) throws GenericException {
     Inode inode = inodeFacade.findById(inodeId);
     Dataset dataset = datasetFacade.findByProjectAndInode(project, inode);
@@ -294,6 +337,31 @@ public class ProjectProvenanceResource {
     createTestXAttr(dfso, path);
     deleteTestXAttr(dfso, path);
     return Response.ok().build();
+  }
+  
+  @DELETE
+  @Path("file/{inodeId}/ops/cleanup")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response testArchival(
+    @PathParam("inodeId") Long inodeId)
+    throws ServiceException, GenericException {
+    ArchiveDTO.Round result = provenanceCtrl.provCleanupFilePrefix(inodeId);
+    return Response.ok().entity(result).build();
+  }
+  
+  @DELETE
+  @Path("file/{inodeId}/ops/cleanup/upto/{timestamp}")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response testArchival(
+    @PathParam("inodeId") Long inodeId,
+    @PathParam("timestamp") Long timestamp)
+    throws ServiceException, GenericException {
+    ArchiveDTO.Round result = provenanceCtrl.provCleanupFilePrefix(inodeId, timestamp);
+    return Response.ok().entity(result).build();
   }
   
   private void createTestXAttr(DistributedFileSystemOps dfso, String datasetPath) throws GenericException {
