@@ -52,6 +52,10 @@ angular.module('hopsWorksApp')
         {id: 'META_ENABLED', label: 'Meta Enabled - Searchable'},
         {id: 'PROVENANCE_ENABLED', label: 'Provenance Enabled - Operations and states are searchable'},
       ]
+      self.projectProv = [
+        {id: false, label: 'Disabled'},
+        {id: true, label: 'Enabled'}
+      ]
       self.projectId = $routeParams.projectID;
       self.pGetStatusWorking = false;
       self.dGetStatusWorking = false;
@@ -82,27 +86,29 @@ angular.module('hopsWorksApp')
       self.getProjectProvenanceStatus();
 
       self.setProvenanceStatus = function () {
+        self.projectProvenanceEnabled = !self.projectProvenanceEnabled;
         self.setStatusWorking = true;
         var provenanceStatus;
-        if(self.projectProvenanceEnabled === true) {
+        if (self.projectProvenanceEnabled === true) {
           provenanceStatus = "PROVENANCE_ENABLED";
         } else {
           provenanceStatus = "DISABLED";
         }
         ProjectService.setProjectProvenanceStatus({id: self.projectId, provenanceStatus: provenanceStatus})
           .$promise.then(
-            function (response) {
-              self.setStatusWorking = false;
-              self.getDatasetsProvenanceStatus();
-            },
-            function (error) {
-              if (typeof error.data.usrMsg !== 'undefined') {
-                growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 5000});
-              } else {
-                growl.error("", {title: error.data.errorMsg, ttl: 5000});
-              }
-              self.setStatusWorking = false;
-            });
+          function (response) {
+            self.setStatusWorking = false;
+            self.getDatasetsProvenanceStatus();
+          },
+          function (error) {
+            if (typeof error.data.usrMsg !== 'undefined') {
+              growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 5000});
+            } else {
+              growl.error("", {title: error.data.errorMsg, ttl: 5000});
+            }
+            self.projectProvenanceEnabled = !self.projectProvenanceEnabled;
+            self.setStatusWorking = false;
+          });
       };
 
       self.getDatasetsProvenanceStatus = function() {
