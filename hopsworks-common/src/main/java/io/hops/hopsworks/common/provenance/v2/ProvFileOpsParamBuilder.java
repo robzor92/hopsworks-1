@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.logging.Level;
 
 public class ProvFileOpsParamBuilder {
-  private Map<String, ProvFileQuery.FilterVal> fileOpsFilter = new HashMap<>();
+  private Map<String, ProvFileQuery.FilterVal> fileOpsFilterBy = new HashMap<>();
   private List<Pair<ProvFileQuery.Field, SortOrder>> fileOpsSortBy = new ArrayList<>();
   private Set<ProvFileQuery.FileExpansions> expansions = new HashSet<>();
   private Map<String, ProvFileQuery.FilterVal> appStateFilter = new HashMap<>();
@@ -44,7 +44,7 @@ public class ProvFileOpsParamBuilder {
   
   public ProvFileOpsParamBuilder withQueryParamFilterBy(Set<String> params)
     throws GenericException {
-    ProvParamBuilder.withFilterBy(fileOpsFilter, params, ProvFileQuery.QueryType.QUERY_FILE_OP);
+    ProvParamBuilder.withFilterBy(fileOpsFilterBy, params, ProvFileQuery.QueryType.QUERY_FILE_OP);
     return this;
   }
   
@@ -95,23 +95,23 @@ public class ProvFileOpsParamBuilder {
   }
   
   public ProvFileOpsParamBuilder withProjectInodeId(Long projectInodeId) throws GenericException {
-    ProvParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvFileQuery.FileOps.PROJECT_I_ID, projectInodeId));
+    ProvParamBuilder.addToFilters(fileOpsFilterBy, Pair.with(ProvFileQuery.FileOps.PROJECT_I_ID, projectInodeId));
     return this;
   }
   
   public ProvFileOpsParamBuilder withFileInodeId(Long fileInodeId) throws GenericException {
-    ProvParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvFileQuery.FileOps.FILE_I_ID, fileInodeId));
+    ProvParamBuilder.addToFilters(fileOpsFilterBy, Pair.with(ProvFileQuery.FileOps.FILE_I_ID, fileInodeId));
     return this;
   }
   
   
   public ProvFileOpsParamBuilder withAppId(String appId) throws GenericException {
-    ProvParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvFileQuery.FileOps.APP_ID, appId));
+    ProvParamBuilder.addToFilters(fileOpsFilterBy, Pair.with(ProvFileQuery.FileOps.APP_ID, appId));
     return this;
   }
   
   public ProvFileOpsParamBuilder filterByFileOperation(ProvFileOps fileOp) throws GenericException {
-    ProvParamBuilder.addToFilters(fileOpsFilter, Pair.with(ProvFileQuery.FileOps.FILE_OPERATION, fileOp.name()));
+    ProvParamBuilder.addToFilters(fileOpsFilterBy, Pair.with(ProvFileQuery.FileOps.FILE_OPERATION, fileOp.name()));
     return this;
   }
   
@@ -152,8 +152,18 @@ public class ProvFileOpsParamBuilder {
     return this;
   }
   
-  public Map<String, ProvFileQuery.FilterVal> getFileOpsFilter() {
-    return fileOpsFilter;
+  public ProvFileOpsParamBuilder filterByField(ProvFileQuery.Field field, String val) throws GenericException {
+    if(!(field instanceof ProvFileQuery.FileOps
+      || field instanceof ProvFileQuery.FileOpsAux)) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "allowed fields - FileOps and fileOpsAux");
+    }
+    Object v = field.filterValParser().parse(val);
+    ProvParamBuilder.addToFilters(fileOpsFilterBy, Pair.with(field, val));
+    return this;
+  }
+  public Map<String, ProvFileQuery.FilterVal> getFileOpsFilterBy() {
+    return fileOpsFilterBy;
   }
   
   public List<Pair<ProvFileQuery.Field, SortOrder>> getFileOpsSortBy() {
@@ -174,5 +184,9 @@ public class ProvFileOpsParamBuilder {
   
   public List<ProvElasticHelper.ProvAggregations> getAggregations() {
     return aggregations;
+  }
+  
+  public boolean hasFileOpFilters() {
+    return fileOpsFilterBy.containsKey(ProvFileQuery.FileOps.FILE_OPERATION.queryFieldName());
   }
 }

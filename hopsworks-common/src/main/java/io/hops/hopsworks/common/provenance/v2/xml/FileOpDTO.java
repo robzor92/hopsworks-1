@@ -16,6 +16,7 @@
 package io.hops.hopsworks.common.provenance.v2.xml;
 
 import io.hops.hopsworks.common.elastic.ProvElasticHelper;
+import io.hops.hopsworks.common.provenance.v2.ProvElasticFields;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.javatuples.Pair;
@@ -373,17 +374,20 @@ public class FileOpDTO {
     CountAux filesInProject = null;
     CountAux filesLeastAccessedByLastAccessed = null;
     CountAux projectLeastAccessedByLastAccessed = null;
+    CountAux artifactFootprint = null;
   
     public Count() {}
     
     public Count(Long count,
       CountAux filesInProject,
       CountAux filesLeastAccessedByLastAccessed,
-      CountAux projectLeastAccessedByLastAccessed) {
+      CountAux projectLeastAccessedByLastAccessed,
+      CountAux artifactFootprint) {
       this.count = count;
       this.filesInProject = filesInProject;
       this.filesLeastAccessedByLastAccessed = filesLeastAccessedByLastAccessed;
       this.projectLeastAccessedByLastAccessed = projectLeastAccessedByLastAccessed;
+      this.artifactFootprint = artifactFootprint;
     }
     
     public static Count instance(Pair<Long, List<Pair<ProvElasticHelper.ProvAggregations, List>>> elasticResult)
@@ -391,6 +395,7 @@ public class FileOpDTO {
       CountAux filesInProject = null;
       CountAux filesLeastAccessedByLastAccessed = null;
       CountAux projectLeastAccessedByLastAccessed = null;
+      CountAux artifactFootprint = null;
       
       for(Pair<ProvElasticHelper.ProvAggregations, List> aggregation : elasticResult.getValue1()) {
         switch(aggregation.getValue0()) {
@@ -403,13 +408,16 @@ public class FileOpDTO {
           case PROJECTS_LEAST_ACTIVE_BY_LAST_ACCESSED:
             projectLeastAccessedByLastAccessed = new CountAux(aggregation.getValue1());
             break;
+          case ARTIFACT_FOOTPRINT:
+            artifactFootprint = new CountAux(aggregation.getValue1());
+            break;
           default:
             throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
               "aggregation:" + aggregation.getValue0().toString() + " not handled");
         }
       }
       return new Count(elasticResult.getValue0(), filesInProject, filesLeastAccessedByLastAccessed,
-        projectLeastAccessedByLastAccessed);
+        projectLeastAccessedByLastAccessed, artifactFootprint);
     }
     
     public Long getCount() {
@@ -432,8 +440,7 @@ public class FileOpDTO {
       return filesLeastAccessedByLastAccessed;
     }
   
-    public void setFilesLeastAccessedByLastAccessed(
-      CountAux filesLeastAccessedByLastAccessed) {
+    public void setFilesLeastAccessedByLastAccessed(CountAux filesLeastAccessedByLastAccessed) {
       this.filesLeastAccessedByLastAccessed = filesLeastAccessedByLastAccessed;
     }
   
@@ -441,9 +448,16 @@ public class FileOpDTO {
       return projectLeastAccessedByLastAccessed;
     }
   
-    public void setProjectLeastAccessedByLastAccessed(
-      CountAux projectLeastAccessedByLastAccessed) {
+    public void setProjectLeastAccessedByLastAccessed(CountAux projectLeastAccessedByLastAccessed) {
       this.projectLeastAccessedByLastAccessed = projectLeastAccessedByLastAccessed;
+    }
+  
+    public CountAux getArtifactFootprint() {
+      return artifactFootprint;
+    }
+  
+    public void setArtifactFootprint(CountAux artifactFootprint) {
+      this.artifactFootprint = artifactFootprint;
     }
   }
   
@@ -488,6 +502,248 @@ public class FileOpDTO {
   
     public void setLastAccessed(Long lastAccessed) {
       this.lastAccessed = lastAccessed;
+    }
+  }
+  
+  public enum ArtifactOp {
+    CREATE,
+    DELETE,
+    READ,
+    MODIFY
+  }
+  
+  @XmlRootElement
+  public static class ArtifactFile {
+    private Long parentId;
+    private Long inodeId;
+    private Base createOp;
+    private Base deleteOp;
+    private Base firstReadOp;
+    private Long readCount;
+    private Base firstAppendOp;
+    private Long appendCount;
+  
+    public ArtifactFile() {
+    }
+  
+    public void addCreate(FileOp createOp) {
+      init(createOp);
+      this.createOp = new Base(createOp);
+    }
+  
+    public void addDelete(FileOp deleteOp) {
+      init(deleteOp);
+      this.deleteOp = new Base(deleteOp);
+    }
+  
+    public void addFirstRead(FileOp readOp, Long readCount) {
+      init(readOp);
+      this.firstReadOp = new Base(readOp);
+      this.readCount = readCount;
+    }
+    public void addFirstAppend(FileOp appendOp, Long appendCount) {
+      init(appendOp);
+      this.firstAppendOp = new Base(appendOp);
+      this.appendCount = appendCount;
+    }
+    
+    private void init(FileOp op) {
+      if(parentId == null) {
+        parentId = op.getParentInodeId();
+      }
+      if(inodeId == null) {
+        inodeId = op.getInodeId();
+      }
+    }
+  
+    public Long getParentId() {
+      return parentId;
+    }
+  
+    public void setParentId(Long parentId) {
+      this.parentId = parentId;
+    }
+  
+    public Long getInodeId() {
+      return inodeId;
+    }
+  
+    public void setInodeId(Long inodeId) {
+      this.inodeId = inodeId;
+    }
+  
+    public Base getCreateOp() {
+      return createOp;
+    }
+  
+    public void setCreateOp(Base createOp) {
+      this.createOp = createOp;
+    }
+  
+    public Base getDeleteOp() {
+      return deleteOp;
+    }
+  
+    public void setDeleteOp(Base deleteOp) {
+      this.deleteOp = deleteOp;
+    }
+  
+    public Base getFirstReadOp() {
+      return firstReadOp;
+    }
+  
+    public void setFirstReadOp(Base firstReadOp) {
+      this.firstReadOp = firstReadOp;
+    }
+  
+    public Base getFirstAppendOp() {
+      return firstAppendOp;
+    }
+  
+    public void setFirstAppendOp(Base firstAppendOp) {
+      this.firstAppendOp = firstAppendOp;
+    }
+  
+    public Long getReadOps() {
+      return readCount;
+    }
+  
+    public void setReadOps(Long readOps) {
+      this.readCount = readOps;
+    }
+  
+    public Long getReadCount() {
+      return readCount;
+    }
+  
+    public void setReadCount(Long readCount) {
+      this.readCount = readCount;
+    }
+  
+    public Long getAppendCount() {
+      return appendCount;
+    }
+  
+    public void setAppendCount(Long appendCount) {
+      this.appendCount = appendCount;
+    }
+  }
+  
+  @XmlRootElement
+  public static class ArtifactBase {
+    private Long projectInodeId;
+    private Long datasetInodeId;
+    private String mlId;
+    private ProvElasticFields.MLType mlType;
+  
+    public ArtifactBase() {
+    }
+  
+    public ArtifactBase(Long projectInodeId, Long datasetInodeId, String mlId,
+      ProvElasticFields.MLType mlType) {
+      this.projectInodeId = projectInodeId;
+      this.datasetInodeId = datasetInodeId;
+      this.mlId = mlId;
+      this.mlType = mlType;
+    }
+  
+    public Long getProjectInodeId() {
+      return projectInodeId;
+    }
+  
+    public void setProjectInodeId(Long projectInodeId) {
+      this.projectInodeId = projectInodeId;
+    }
+  
+    public Long getDatasetInodeId() {
+      return datasetInodeId;
+    }
+  
+    public void setDatasetInodeId(Long datasetInodeId) {
+      this.datasetInodeId = datasetInodeId;
+    }
+  
+    public String getMlId() {
+      return mlId;
+    }
+  
+    public void setMlId(String mlId) {
+      this.mlId = mlId;
+    }
+  
+    public ProvElasticFields.MLType getMlType() {
+      return mlType;
+    }
+  
+    public void setMlType(ProvElasticFields.MLType mlType) {
+      this.mlType = mlType;
+    }
+  }
+  
+  @XmlRootElement
+  public static class Artifact {
+    private ArtifactBase base;
+    private List<ArtifactFile> components = new LinkedList<>();
+  
+    public Artifact() {}
+    
+    public void addComponent(ArtifactFile file) {
+      components.add(file);
+    }
+  
+    public ArtifactBase getBase() {
+      return base;
+    }
+  
+    public void setBase(ArtifactBase base) {
+      this.base = base;
+    }
+  
+    public List<ArtifactFile> getComponents() {
+      return components;
+    }
+  
+    public void setComponents(List<ArtifactFile> components) {
+      this.components = components;
+    }
+  }
+  
+  @XmlRootElement
+  public static class DatasetArtifacts {
+    private Long projectInodeId;
+    private Long datasetInodeId;
+    private List<Artifact> artifacts = new LinkedList<>();
+  
+    public DatasetArtifacts() {}
+  
+    public DatasetArtifacts(Long projectInodeId, Long datasetInodeId, List<Artifact> artifacts) {
+      this.projectInodeId = projectInodeId;
+      this.datasetInodeId = datasetInodeId;
+      this.artifacts = artifacts;
+    }
+  
+    public Long getProjectInodeId() {
+      return projectInodeId;
+    }
+  
+    public void setProjectInodeId(Long projectInodeId) {
+      this.projectInodeId = projectInodeId;
+    }
+  
+    public Long getDatasetInodeId() {
+      return datasetInodeId;
+    }
+  
+    public void setDatasetInodeId(Long datasetInodeId) {
+      this.datasetInodeId = datasetInodeId;
+    }
+  
+    public List<Artifact> getArtifacts() {
+      return artifacts;
+    }
+  
+    public void setArtifacts(List<Artifact> artifacts) {
+      this.artifacts = artifacts;
     }
   }
 }

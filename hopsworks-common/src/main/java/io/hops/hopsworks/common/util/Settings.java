@@ -3412,15 +3412,37 @@ public class Settings implements Serializable {
   
   //-------------------------------- PROVENANCE ----------------------------------------------//
   private static final String VARIABLE_PROVENANCE_ARCHIVE_SIZE = "provenance_archive_size";
-  private int PROVENANCE_ARCHIVE_SIZE = 100;
+  private static final String VARIABLE_PROVENANCE_ARCHIVE_DELAY = "provenance_archive_delay";
+  private Integer PROVENANCE_ARCHIVE_SIZE = 100;
+  private Long PROVENANCE_ARCHIVE_DELAY = 0l;
   
   private void populateProvenanceCache() {
     PROVENANCE_ARCHIVE_SIZE = setIntVar(VARIABLE_PROVENANCE_ARCHIVE_SIZE, PROVENANCE_ARCHIVE_SIZE);
+    PROVENANCE_ARCHIVE_DELAY = setLongVar(VARIABLE_PROVENANCE_ARCHIVE_DELAY, PROVENANCE_ARCHIVE_DELAY);
   }
   
-  public synchronized int getProvArchiveSize() {
+  public synchronized Integer getProvArchiveSize() {
     checkCache();
     return PROVENANCE_ARCHIVE_SIZE;
+  }
+  
+  public synchronized void setProvArchiveSize(Integer size) {
+    if(!PROVENANCE_ARCHIVE_SIZE.equals(size)) {
+      em.merge(new Variables(VARIABLE_PROVENANCE_ARCHIVE_SIZE, size.toString()));
+      PROVENANCE_ARCHIVE_SIZE = size;
+    }
+  }
+  
+  public synchronized Long getProvArchiveDelay() {
+    checkCache();
+    return PROVENANCE_ARCHIVE_DELAY;
+  }
+  
+  public synchronized void setProvArchiveDelay(Long delay) {
+    if(!PROVENANCE_ARCHIVE_DELAY.equals(delay)) {
+      em.merge(new Variables(VARIABLE_PROVENANCE_ARCHIVE_DELAY, delay.toString()));
+      PROVENANCE_ARCHIVE_DELAY = delay;
+    }
   }
   //------------------------------ END PROVENANCE --------------------------------------------//
 }

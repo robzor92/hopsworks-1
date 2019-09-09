@@ -447,7 +447,7 @@ public class ProvFileQuery {
     public String parse(String o) {
       return o;
     }
-    
+  
   }
   
   public static class BooleanValParser implements ValParser {
@@ -456,6 +456,7 @@ public class ProvFileQuery {
     public Boolean parse(String o) {
       return Boolean.valueOf(o);
     }
+    
   }
   
   public static class LongValParser implements ValParser {
