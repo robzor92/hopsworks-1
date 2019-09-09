@@ -19,15 +19,14 @@ import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
 import io.hops.hopsworks.common.provenance.v2.ProvElasticFields;
+import io.hops.hopsworks.common.provenance.v2.ProvHelper;
 import io.hops.hopsworks.exceptions.GenericException;
-import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.search.SearchHit;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @XmlRootElement
@@ -45,6 +44,7 @@ public class FileOp implements Comparator<FileOp>  {
   private Integer userId;
   private Long parentInodeId;
   private Long projectInodeId;
+  private Long datasetInodeId;
   private int logicalTime;
   private long timestamp;
   private String readableTimestamp;
@@ -53,115 +53,64 @@ public class FileOp implements Comparator<FileOp>  {
   private String inodePath;
   private Long partitionId;
   private String projectName;
+  private String mlType;
+  private String mlId;
   private MLAssetAppState appState;
   
   public FileOp() {}
   
-  public static FileOp instance(SearchHit hit) {
+  public static FileOp instance(SearchHit hit) throws GenericException {
     FileOp result = new FileOp();
     result.id = hit.getId();
     result.score = Float.isNaN(hit.getScore()) ? 0 : hit.getScore();
     return instance(result, hit.getSourceAsMap());
   }
   
-  public static FileOp instance(String id, Map<String, Object> sourceMap) {
+  public static FileOp instance(String id, Map<String, Object> sourceMap) throws GenericException {
     FileOp result = new FileOp();
     result.id = id;
     result.score = 0;
     return instance(result, sourceMap);
   }
   
-  private static FileOp instance(FileOp result, Map<String, Object> sourceMap) {
+  private static FileOp instance(FileOp result, Map<String, Object> sourceMap) throws GenericException {
     result.map = sourceMap;
+    Map<String, Object> auxMap = new HashMap<>(sourceMap);
+    result.projectInodeId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileBase.PROJECT_I_ID, ProvHelper.asLong(false));
+    result.datasetInodeId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileAux.DATASET_I_ID, ProvHelper.asLong(false));
+    result.inodeId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileBase.INODE_ID, ProvHelper.asLong(false));
+    result.appId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileBase.APP_ID, ProvHelper.asString(false));
+    result.userId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileBase.USER_ID, ProvHelper.asInt(false));
+    result.inodeName = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileBase.INODE_NAME, ProvHelper.asString(false));
+    result.inodeOperation = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileOpsBase.INODE_OPERATION, ProvHelper.asString(false));
+    result.timestamp = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileOpsBase.TIMESTAMP, ProvHelper.asLong(false));
+    result.parentInodeId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileAux.PARENT_I_ID, ProvHelper.asLong(false));
+    result.partitionId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileAux.PARTITION_ID, ProvHelper.asLong(false));
+    result.projectName = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileAux.PROJECT_NAME, ProvHelper.asString(false));
+    result.mlId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileOpsAux.ML_ID, ProvHelper.asString(false));
+    result.mlType = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileOpsAux.ML_TYPE, ProvHelper.asString(false));
+    result.logicalTime =ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileOpsAux.LOGICAL_TIME, ProvHelper.asInt(false));
+    result.readableTimestamp = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileOpsAux.R_TIMESTAMP, ProvHelper.asString(false));
+    ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileAux.ENTRY_TYPE, ProvHelper.asString(false));
+    result.xattrName = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileOpsAux.XATTR, ProvHelper.asString(true));
     
-    for (Map.Entry<String, Object> entry : sourceMap.entrySet()) {
-      try {
-        ProvElasticFields.Field field = ProvElasticFields.extractFileOpsQueryResultFields(entry.getKey());
-        if (field instanceof ProvElasticFields.FileBase) {
-          ProvElasticFields.FileBase fileBase = (ProvElasticFields.FileBase) field;
-          switch (fileBase) {
-            case PROJECT_I_ID:
-              result.projectInodeId = ((Number) entry.getValue()).longValue();
-              break;
-            case INODE_ID:
-              result.inodeId = ((Number) entry.getValue()).longValue();
-              break;
-            case APP_ID:
-              result.appId = entry.getValue().toString();
-              break;
-            case USER_ID:
-              result.userId = ((Number) entry.getValue()).intValue();
-              break;
-            case INODE_NAME:
-              result.inodeName = entry.getValue().toString();
-              break;
-            default:
-              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-                "field:" + field + "not managed in file ops return (1)");
-          }
-        } else if (field instanceof ProvElasticFields.FileOpsBase) {
-          ProvElasticFields.FileOpsBase fileOpsBase = (ProvElasticFields.FileOpsBase) field;
-          switch (fileOpsBase) {
-            case INODE_OPERATION:
-              result.inodeOperation = entry.getValue().toString();
-              break;
-            case TIMESTAMP:
-              result.timestamp = ((Number) entry.getValue()).longValue();
-              break;
-            default:
-              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-                "field:" + field + "not managed in file ops return (2)");
-          }
-        } else if (field instanceof ProvElasticFields.FileAux) {
-          ProvElasticFields.FileAux fileReturn = (ProvElasticFields.FileAux) field;
-          switch (fileReturn) {
-            case PARENT_I_ID:
-              result.parentInodeId = ((Number) entry.getValue()).longValue();
-              break;
-            case PARTITION_ID:
-              result.partitionId = ((Number) entry.getValue()).longValue();
-              break;
-            case ENTRY_TYPE:
-              break;
-            case PROJECT_NAME:
-              result.projectName = entry.getValue().toString();
-              break;
-            default:
-              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-                "field:" + field + "not managed in file ops return (3)");
-          }
-        } else if (field instanceof ProvElasticFields.FileOpsAux) {
-          ProvElasticFields.FileOpsAux fileOpsReturn = (ProvElasticFields.FileOpsAux) field;
-          switch (fileOpsReturn) {
-            case ML_ID:
-              break;
-            case ML_TYPE:
-              break;
-            case LOGICAL_TIME:
-              result.logicalTime = ((Number) entry.getValue()).intValue();
-              break;
-            case R_TIMESTAMP:
-              result.readableTimestamp = entry.getValue().toString();
-              break;
-            case INODE_PATH:
-              result.inodePath = entry.getValue().toString();
-              break;
-            case XATTR:
-              result.xattrName = entry.getValue().toString();
-              break;
-            default:
-              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-                "field:" + field + "not managed in file ops return (3)");
-          }
-        } else {
-          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-            "field:" + field + "not managed in file ops return (4)");
-        }
-      } catch (GenericException e) {
-        LOG.log(Level.WARNING, "file osp - unknown key:{0} value:{1}",
-          new Object[]{entry.getKey(), entry.getValue()});
-      }
-    }
     return result;
   }
   
@@ -319,6 +268,22 @@ public class FileOp implements Comparator<FileOp>  {
     this.appState = appState;
   }
   
+  public String getMlType() {
+    return mlType;
+  }
+  
+  public void setMlType(String mlType) {
+    this.mlType = mlType;
+  }
+  
+  public String getMlId() {
+    return mlId;
+  }
+  
+  public void setMlId(String mlId) {
+    this.mlId = mlId;
+  }
+  
   public static class TimestampComparator implements Comparator<FileOp> {
   
     @Override
@@ -337,5 +302,13 @@ public class FileOp implements Comparator<FileOp>  {
   
   public void setProjectName(String projectName) {
     this.projectName = projectName;
+  }
+  
+  public Long getDatasetInodeId() {
+    return datasetInodeId;
+  }
+  
+  public void setDatasetInodeId(Long datasetInodeId) {
+    this.datasetInodeId = datasetInodeId;
   }
 }

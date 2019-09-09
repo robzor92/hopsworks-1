@@ -61,7 +61,7 @@ angular.module('hopsWorksApp')
       self.dGetStatusWorking = false;
       self.setStatusWorking = false;
       self.projectProvenanceEnabled = false;
-      self.provStateSize = 0;
+      self.provStatesSize = 0;
       self.provOpsSize = 0;
       self.provCleanupSize = 0;
 

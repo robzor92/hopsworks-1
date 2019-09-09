@@ -25,6 +25,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import io.hops.hopsworks.common.provenance.MLAssetAppState;
 import io.hops.hopsworks.common.provenance.v2.ProvElasticFields;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
+import io.hops.hopsworks.common.provenance.v2.ProvHelper;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.search.SearchHit;
@@ -41,6 +42,7 @@ public class FileState implements Comparator<FileState>, ProvenanceController.Ba
   private String appId;
   private Integer userId;
   private Long projectInodeId;
+  private Long datasetInodeId;
   private String inodeName;
   private String projectName;
   private String mlType;
@@ -69,109 +71,58 @@ public class FileState implements Comparator<FileState>, ProvenanceController.Ba
   
   private static FileState instance(FileState result, Map<String, Object> sourceMap) throws GenericException {
     result.map = sourceMap;
-    for (Map.Entry<String, Object> entry : result.map.entrySet()) {
-      try {
-        ProvElasticFields.Field field = ProvElasticFields.extractFileStateQueryResultFields(entry.getKey());
-        if (field instanceof ProvElasticFields.FileBase) {
-          ProvElasticFields.FileBase fileBase = (ProvElasticFields.FileBase) field;
-          switch (fileBase) {
-            case PROJECT_I_ID:
-              result.projectInodeId = ((Number) entry.getValue()).longValue();
-              break;
-            case INODE_ID:
-              result.inodeId = ((Number) entry.getValue()).longValue();
-              break;
-            case APP_ID:
-              result.appId = entry.getValue().toString();
-              break;
-            case USER_ID:
-              result.userId = ((Number) entry.getValue()).intValue();
-              break;
-            case INODE_NAME:
-              result.inodeName = entry.getValue().toString();
-              break;
-            default:
-              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-                "field:" + field + "not managed in file state return (1)");
-          }
-        } else if (field instanceof ProvElasticFields.FileStateBase) {
-          ProvElasticFields.FileStateBase fileStateBase = (ProvElasticFields.FileStateBase) field;
-          switch (fileStateBase) {
-            case CREATE_TIMESTAMP:
-              result.createTime = ((Number) entry.getValue()).longValue();
-              break;
-            case ML_TYPE:
-              result.mlType = entry.getValue().toString();
-              break;
-            case ML_ID:
-              result.mlId = entry.getValue().toString();
-              break;
-            default:
-              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-                "field:" + field + "not managed in file state return (2)");
-          }
-        } else if (field instanceof ProvElasticFields.FileAux) {
-          ProvElasticFields.FileAux fileReturn = (ProvElasticFields.FileAux) field;
-          switch(fileReturn) {
-            case DATASET_I_ID:
-              break;
-            case PARENT_I_ID:
-              result.parentInodeId = ((Number) entry.getValue()).longValue();
-              break;
-            case PARTITION_ID:
-              result.partitionId = ((Number) entry.getValue()).longValue();
-              break;
-            case ENTRY_TYPE:
-              break;
-            case PROJECT_NAME:
-              result.projectName = entry.getValue().toString();
-              break;
-            default:
-              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-                "field:" + field + "not managed in file state return (3)");
-          }
-        } else if (field instanceof ProvElasticFields.FileStateAux) {
-          ProvElasticFields.FileStateAux fileStateReturn = (ProvElasticFields.FileStateAux) field;
-          switch (fileStateReturn) {
-            case R_CREATE_TIMESTAMP:
-              result.readableCreateTime = entry.getValue().toString();
-              break;
-            default:
-              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-                "field:" + field + "not managed in file state return (4)");
-          }
-        } else {
-          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-            "field:" + field + "not managed in file state return (5)");
-        }
-      } catch (GenericException e) {
-        if (entry.getValue() == null) {
-          LOG.log(Level.WARNING, "empty key:{0}", new Object[]{entry.getKey()});
-        } else {
-          String xattrKey = entry.getKey();
-          String xattrVal;
-          if (entry.getValue() instanceof Map) {
-            try {
-              Map<String, Object> aux = (Map<String, Object>) entry.getValue();
-              if (aux.containsKey("raw")) {
-                xattrVal = (String) aux.get("raw");
-              } else {
-                throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-                  "field:" + entry.getKey() + "not managed in file state return (6)");
-              }
-            } catch (ClassCastException e2) {
-              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-                "field:" + entry.getKey() + "not managed in file state return (7)");
-            }
-          } else if (entry.getValue() instanceof String) {
-            xattrVal = (String) entry.getValue();
+    Map<String, Object> auxMap = new HashMap<>(sourceMap);
+    result.projectInodeId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileBase.PROJECT_I_ID, ProvHelper.asLong(false));
+    result.inodeId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileBase.INODE_ID, ProvHelper.asLong(false));
+    result.appId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileBase.APP_ID, ProvHelper.asString(false));
+    result.userId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileBase.USER_ID, ProvHelper.asInt(false));
+    result.inodeName = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileBase.INODE_NAME, ProvHelper.asString(false));
+    result.createTime = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileStateBase.CREATE_TIMESTAMP, ProvHelper.asLong(false));
+    result.mlType = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileStateBase.ML_TYPE, ProvHelper.asString(false));
+    result.mlId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileStateBase.ML_ID, ProvHelper.asString(false));
+    result.datasetInodeId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileAux.DATASET_I_ID, ProvHelper.asLong(false));
+    result.parentInodeId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileAux.PARENT_I_ID, ProvHelper.asLong(false));
+    result.partitionId = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileAux.PARTITION_ID, ProvHelper.asLong(false));
+    result.projectName = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileAux.PROJECT_NAME, ProvHelper.asString(false));
+    result.readableCreateTime = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileStateAux.R_CREATE_TIMESTAMP, ProvHelper.asString(false));
+    ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.FileAux.ENTRY_TYPE, ProvHelper.asString(false));
+    for (Map.Entry<String, Object> entry : auxMap.entrySet()) {
+      String xattrKey = entry.getKey();
+      String xattrVal;
+      if (entry.getValue() instanceof Map) {
+        try {
+          Map<String, Object> aux = (Map<String, Object>) entry.getValue();
+          if (aux.containsKey("raw")) {
+            xattrVal = (String) aux.get("raw");
           } else {
             throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-              "field:" + entry.getKey() + "not managed in file state return (8)");
+              "field:" + entry.getKey() + "not managed in file state return (1)");
           }
-          result.xattrs.put(xattrKey, xattrVal);
+        } catch (ClassCastException e2) {
+          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+            "field:" + entry.getKey() + "not managed in file state return (2)");
         }
+      } else if (entry.getValue() instanceof String) {
+        xattrVal = (String) entry.getValue();
+      } else {
+        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+          "field:" + entry.getKey() + "not managed in file state return (3)");
       }
+      result.xattrs.put(xattrKey, xattrVal);
     }
     return result;
   }

@@ -15,10 +15,12 @@
  */
 package io.hops.hopsworks.common.provenance.v2;
 
+import io.hops.hopsworks.common.provenance.util.CheckedFunction;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
 
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.logging.Level;
 
 public class ProvElasticFields {
@@ -111,6 +113,33 @@ public class ProvElasticFields {
     }
   }
   
+  public enum MLType {
+    NONE,
+    FEATURE,
+    TRAINING_DATASET,
+    EXPERIMENT,
+    MODEL,
+    FEATURE_PART,
+    TRAINING_PART,
+    EXPERIMENT_PART,
+    MODEL_PART;
+  
+    @Override
+    public String toString() {
+      return name().toLowerCase();
+    }
+  }
+  
+  public static MLType parseMLType(String val) throws GenericException {
+    try {
+      return MLType.valueOf(val.toUpperCase());
+    } catch (NullPointerException | IllegalArgumentException e) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "ML_TYPE" + val + " not supported - supported:" + EnumSet.allOf(MLType.class),
+        "exception extracting ML_TYPE");
+    }
+  }
+  
   public static Field extractFileStateQueryResultFields(String val) throws GenericException {
     try {
       return FileBase.valueOf(val.toUpperCase());
@@ -173,5 +202,16 @@ public class ProvElasticFields {
     throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
       "file ops items - param" + val + " not supported - supported:" + supported,
       "exception extracting SortBy param");
+  }
+  
+  public static <C> C extractField(Map<String, Object> fields, Field field,
+    CheckedFunction<Object, C, GenericException> parser) throws GenericException {
+    Object val = fields.get(field.toString());
+    try {
+      return parser.apply(fields.remove(field.toString()));
+    } catch (GenericException e) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "problem parsing field:" + field, "problem parsing field:" + field, e);
+    }
   }
 }

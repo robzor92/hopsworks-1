@@ -45,7 +45,7 @@ describe "On #{ENV['OS']}" do
       entry = parsed_result["hits"]["hits"][0]["_source"]
       expect(entry["i_name"]).to eq iName
       expect(entry["inode_operation"]).to eq "CREATE"
-      expect(entry["ml_type"]).to eq mlType
+      expect(entry["mlType"]).to eq mlType
     end
     
     def check_file_entry(key, opName, mlType) 
@@ -69,7 +69,7 @@ describe "On #{ENV['OS']}" do
       index_name = "fileprovenance"
       parsed_result = get_entry(index_name, key)
       entry = parsed_result["hits"]["hits"][0]["_source"]
-      expect(entry["ml_type"]).to eq mlType
+      expect(entry["mlType"]).to eq mlType
     end
 
     it "should find the fileprovenance index" do

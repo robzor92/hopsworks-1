@@ -16,12 +16,12 @@
 package io.hops.hopsworks.common.provenance.v2.xml;
 
 import io.hops.hopsworks.common.provenance.v2.ProvElasticFields;
+import io.hops.hopsworks.common.provenance.v2.ProvHelper;
 import io.hops.hopsworks.exceptions.GenericException;
-import io.hops.hopsworks.restutils.RESTCodes;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 
 
 public class ArchiveDTO {
@@ -33,22 +33,14 @@ public class ArchiveDTO {
     public Base() {
     }
   
-    public static Base instance(Map<String, Object> fields) throws GenericException {
+    public static Base instance(Map<String, Object> sourceMap) throws GenericException {
       ArchiveDTO.Base result = new ArchiveDTO.Base();
-      result.inodeId = ((Number) extractField(fields, ProvElasticFields.FileBase.INODE_ID.toString())).longValue();
-      if (fields.containsKey(ProvElasticFields.FileOpsBase.ARCHIVE_LOC.toString())) {
-        result.archived = fields.get(ProvElasticFields.FileOpsBase.ARCHIVE_LOC.toString()).toString();
-      }
+      Map<String, Object> auxMap = new HashMap<>(sourceMap);
+      result.inodeId = ProvElasticFields.extractField(auxMap,
+        ProvElasticFields.FileBase.INODE_ID, ProvHelper.asLong(false));
+      result.archived = ProvElasticFields.extractField(auxMap,
+        ProvElasticFields.FileBase.INODE_ID, ProvHelper.asString(true));
       return result;
-    }
-  
-    private static Object extractField(Map<String, Object> fields, String field) throws GenericException {
-      if (fields.containsKey(field)) {
-        return fields.get(field);
-      } else {
-        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-          "field:" + field + "missing");
-      }
     }
     
     public Long getInodeId() {

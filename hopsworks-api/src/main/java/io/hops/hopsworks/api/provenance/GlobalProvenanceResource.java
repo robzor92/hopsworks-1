@@ -54,6 +54,8 @@ import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.xml.ArchiveDTO;
 import io.hops.hopsworks.common.provenance.v2.xml.FileOpDTO;
+import io.hops.hopsworks.common.provenance.v2.xml.SimpleResult;
+import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
@@ -71,6 +73,7 @@ import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -93,6 +96,8 @@ public class GlobalProvenanceResource {
   
   @EJB
   private ProjectController projectCtrl;
+  @EJB
+  private Settings settings;
   
   private Project getProject(Integer projectId) throws ProjectException {
     return projectCtrl.findProjectById(projectId);
@@ -246,5 +251,25 @@ public class GlobalProvenanceResource {
     throws ServiceException, GenericException {
     ArchiveDTO.Base result = provenanceCtrl.getArchiveDoc(inodeId);
     return Response.ok().entity(result).build();
+  }
+  
+  
+  @GET
+  @Path("settings/archive")
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response archiveInfo() {
+    return Response.ok().entity(new SimpleResult<>(settings.getProvArchiveSize())).build();
+  }
+  
+  @POST
+  @Path("settings/archive")
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN"})
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response archiveInfo(@QueryParam("size") Integer size) {
+    if(size != null) {
+      settings.setProvArchiveSize(size);
+    }
+    return Response.ok().build();
   }
 }

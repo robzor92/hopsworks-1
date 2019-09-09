@@ -55,8 +55,8 @@ import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.provenance.AppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvDatasetState;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
-import io.hops.hopsworks.common.provenance.v2.ProvFileOps;
 import io.hops.hopsworks.common.provenance.v2.xml.ArchiveDTO;
+import io.hops.hopsworks.common.provenance.v2.xml.FileOpDTO;
 import io.hops.hopsworks.common.provenance.v2.xml.SimpleResult;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
@@ -166,11 +166,8 @@ public class ProjectProvenanceResource {
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response getFileOpsCleanupSize() throws ServiceException, GenericException {
-    ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
-      .withProjectInodeId(project.getInode().getId())
-      .filterByFileOperation(ProvFileOps.DELETE);
-    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder,
-      FileOpsCompactionType.NONE, FileStructReturnType.COUNT);
+    FileOpDTO.Count result = provenanceCtrl.cleanupSize(project.getInode().getId());
+    return Response.ok().entity(result).build();
   }
   
   @GET
@@ -399,7 +396,8 @@ public class ProjectProvenanceResource {
     LIST,
     MIN_TREE,
     FULL_TREE,
-    COUNT;
+    COUNT,
+    ARTIFACTS;
   }
   public enum FileOpsCompactionType {
     NONE,

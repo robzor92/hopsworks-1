@@ -43,6 +43,7 @@ import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
 import io.hops.hopsworks.common.dao.hdfs.inode.InodeFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.elastic.ProvElasticController;
+import io.hops.hopsworks.common.elastic.ProvElasticHelper;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
@@ -50,6 +51,7 @@ import io.hops.hopsworks.common.project.ProjectController;
 import io.hops.hopsworks.common.provenance.v2.ProvElasticFields;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOps;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
+import io.hops.hopsworks.common.provenance.v2.ProvFileQuery;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.xml.ArchiveDTO;
 import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
@@ -60,6 +62,7 @@ import io.hops.hopsworks.common.provenance.v2.xml.FileStateTree;
 import io.hops.hopsworks.common.provenance.v2.xml.FootprintFileState;
 import io.hops.hopsworks.common.provenance.v2.xml.FootprintFileStateTree;
 import io.hops.hopsworks.common.provenance.v2.xml.TreeHelper;
+import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
@@ -93,6 +96,8 @@ public class ProvenanceController {
   private InodeFacade inodeFacade;
   @EJB
   private ProjectController projectCtrl;
+  @EJB
+  private Settings settings;
   
   public static final String PROJECT_PROVENANCE_STATUS_XATTR_NAME = "provenance.meta_status";
   
@@ -239,10 +244,10 @@ public class ProvenanceController {
     FileOpDTO.PList fileOps;
     if(params.hasPagination()) {
       fileOps =  elasticCtrl.provFileOpsBase(
-        params.getFileOpsFilter(), params.getFilterScripts(), params.getFileOpsSortBy(),
+        params.getFileOpsFilterBy(), params.getFilterScripts(), params.getFileOpsSortBy(),
         params.getPagination().getValue0(), params.getPagination().getValue1());
     } else {
-      fileOps =  elasticCtrl.provFileOpsScrolling(params.getFileOpsFilter(), params.getFilterScripts());
+      fileOps =  elasticCtrl.provFileOpsScrolling(params.getFileOpsFilterBy(), params.getFilterScripts());
     }
   
     if (params.hasAppExpansion()) {
@@ -270,11 +275,26 @@ public class ProvenanceController {
   
   public FileOpDTO.Count provFileOpsCount(ProvFileOpsParamBuilder params)
     throws ServiceException, GenericException {
-    return elasticCtrl.provFileOpsCount(params.getFileOpsFilter(), params.getFilterScripts(), params.getAggregations());
+    return elasticCtrl.provFileOpsCount(
+      params.getFileOpsFilterBy(), params.getFilterScripts(), params.getAggregations());
   }
   
+  public FileOpDTO.Count provAppArtifactFootprint(ProvFileOpsParamBuilder params)
+    throws GenericException, ServiceException {
+    if(params.hasFileOpFilters()) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "footprint should have no predefined file operation filters");
+    }
+    params.withAggregation(ProvElasticHelper.ProvAggregations.ARTIFACT_FOOTPRINT);
+    return elasticCtrl.provFileOpsCount(params.getFileOpsFilterBy(), params.getFilterScripts(),
+      params.getAggregations());
+  }
   public List<FootprintFileState> provAppFootprintList(ProvFileOpsParamBuilder params, AppFootprintType footprintType)
     throws GenericException, ServiceException {
+    if(params.hasFileOpFilters()) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "footprint should have no predefined file operation filters");
+    }
     if(!params.getAggregations().isEmpty()) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
         "aggregations currently only allowed with count");
@@ -310,26 +330,44 @@ public class ProvenanceController {
     return params;
   }
   
-  private FileOpDTO.PList cleanupFiles(Integer limit) throws GenericException, ServiceException {
+  private FileOpDTO.PList cleanupFiles(Integer limit, Long beforeTimestamp) throws GenericException, ServiceException {
     ProvFileOpsParamBuilder params = new ProvFileOpsParamBuilder()
       .filterByFileOperation(ProvFileOps.DELETE)
+      .filterByField(ProvFileQuery.FileOpsAux.TIMESTAMP_LT, beforeTimestamp.toString())
       .sortByField(ProvElasticFields.FileOpsBase.TIMESTAMP, SortOrder.ASC)
       .withPagination(0, limit);
     return provFileOpsList(params);
   }
   
-  private FileOpDTO.PList cleanupFiles(Long projectId, Integer limit) throws GenericException, ServiceException {
+  private FileOpDTO.PList cleanupFiles(Long projectId, Integer limit, Long beforeTimestamp) throws GenericException,
+    ServiceException {
     ProvFileOpsParamBuilder params = new ProvFileOpsParamBuilder()
       .withProjectInodeId(projectId)
       .filterByFileOperation(ProvFileOps.DELETE)
+      .filterByField(ProvFileQuery.FileOpsAux.TIMESTAMP_LT, beforeTimestamp.toString())
       .sortByField(ProvElasticFields.FileOpsBase.TIMESTAMP, SortOrder.ASC)
       .withPagination(0, limit);
     return provFileOpsList(params);
   }
   
+  private FileOpDTO.Count cleanupFilesSize(Long projectIId, Integer limit, Long beforeTimestamp)
+    throws GenericException, ServiceException {
+    ProvFileOpsParamBuilder params = new ProvFileOpsParamBuilder()
+      .withProjectInodeId(projectIId)
+      .filterByFileOperation(ProvFileOps.DELETE)
+      .filterByField(ProvFileQuery.FileOpsAux.TIMESTAMP_LT, beforeTimestamp.toString())
+      .withPagination(0, limit);
+    return provFileOpsCount(params);
+  }
+  
   public ArchiveDTO.Round cleanupRound(Integer limit) throws GenericException, ServiceException {
+    Long beforeTimestamp = System.currentTimeMillis() - (settings.getProvArchiveDelay() * 1000);
+    return cleanupRound(limit, beforeTimestamp);
+  }
+  
+  public ArchiveDTO.Round cleanupRound(Integer limit, Long beforeTimestamp) throws GenericException, ServiceException {
     Long cleaned = 0l;
-    for(FileOp fileOp : cleanupFiles(limit).getItems()) {
+    for(FileOp fileOp : cleanupFiles(limit, beforeTimestamp).getItems()) {
       cleaned += elasticCtrl.provCleanupFilePrefix(fileOp.getInodeId(), Optional.empty());
       if(cleaned > limit) {
         break;
@@ -355,10 +393,27 @@ public class ProvenanceController {
     return new ArchiveDTO.Round(0l, cleaned);
   }
   
-  public ArchiveDTO.Round archiveRound(Integer limit) throws GenericException, ServiceException, ProjectException {
+  public FileOpDTO.Count cleanupSize(Long projectIId) throws GenericException, ServiceException {
+    Long beforeTimestamp = System.currentTimeMillis() - ( settings.getProvArchiveDelay() * 1000);
+    FileOpDTO.Count result = cleanupFilesSize(projectIId, settings.getProvArchiveSize(), beforeTimestamp);
+    return result;
+  }
+  
+  public ArchiveDTO.Round archiveRound() throws GenericException, ProjectException, ServiceException {
+    Long beforeTimestamp = System.currentTimeMillis() - ( settings.getProvArchiveDelay() * 1000);
+    return archiveRound(settings.getProvArchiveSize(), beforeTimestamp);
+  }
+  
+  public ArchiveDTO.Round archiveRound(Integer limit) throws GenericException, ProjectException, ServiceException {
+    Long beforeTimestamp = System.currentTimeMillis() - ( settings.getProvArchiveDelay() * 1000);
+    return archiveRound(limit, beforeTimestamp);
+  }
+  
+  public ArchiveDTO.Round archiveRound(Integer limit, Long beforeTimestamp) throws GenericException, ServiceException,
+    ProjectException {
     Long archived = 0l;
     Long cleaned = 0l;
-    for(FileOp fileOp : cleanupFiles(limit).getItems()) {
+    for(FileOp fileOp : cleanupFiles(limit, beforeTimestamp).getItems()) {
       try {
         projectCtrl.getProjectByName(fileOp.getProjectName());
       } catch(ProjectException ex) {
@@ -380,8 +435,13 @@ public class ProvenanceController {
   
   public ArchiveDTO.Round projectArchiveRound(Project project, Integer limit)
     throws GenericException, ServiceException {
+    Long beforeTimestamp = System.currentTimeMillis() - settings.getProvArchiveDelay();
+    return projectArchiveRound(project, limit, beforeTimestamp);
+  }
+  public ArchiveDTO.Round projectArchiveRound(Project project, Integer limit, Long beforeTimestamp)
+    throws GenericException, ServiceException {
     Long archived = 0l;
-    for(FileOp fileOp : cleanupFiles(project.getInode().getId(), limit).getItems()) {
+    for(FileOp fileOp : cleanupFiles(project.getInode().getId(), limit, beforeTimestamp).getItems()) {
       archived += elasticCtrl.provArchiveFilePrefix(fileOp.getInodeId(), Optional.empty(),
         Utils.getProjectPath(project.getName()));
     }

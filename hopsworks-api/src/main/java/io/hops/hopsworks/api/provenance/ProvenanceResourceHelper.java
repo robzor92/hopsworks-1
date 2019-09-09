@@ -100,6 +100,9 @@ public class ProvenanceResourceHelper {
           FootprintFileStateDTO.FullTree fullTreeResult
             = new FootprintFileStateDTO.FullTree(fullAux.getValue0().values(), fullAux.getValue1().values());
           return Response.ok().entity(fullTreeResult).build();
+        case ARTIFACTS:
+          FileOpDTO.Count aux = provenanceCtrl.provAppArtifactFootprint(params);
+          return Response.ok().entity(aux).build();
         case COUNT:
         default:
           throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
@@ -119,23 +122,32 @@ public class ProvenanceResourceHelper {
     ProjectProvenanceResource.FileStructReturnType returnType)
     throws ServiceException, GenericException {
     try {
-      if(ProjectProvenanceResource.FileStructReturnType.COUNT.equals(returnType)) {
-        FileOpDTO.Count result = provenanceCtrl.provFileOpsCount(params);
-        return Response.ok().entity(result).build();
-      } else {
-        FileOpDTO.PList result = provenanceCtrl.provFileOpsList(params);
-        switch(opsCompaction) {
-          case NONE:
-            return Response.ok().entity(result).build();
-          case FILE_COMPACT:
-            List<ProvFileOpsCompactByApp> compactResults = ProvFileOpsCompactByApp.compact(result.getItems());
-            return Response.ok().entity(new GenericEntity<List<ProvFileOpsCompactByApp>>(compactResults) {}).build();
-          case FILE_SUMMARY:
-            List<ProvFileOpsSummaryByApp> summaryResults = ProvFileOpsSummaryByApp.summary(result.getItems());
-            return Response.ok().entity(new GenericEntity<List<ProvFileOpsSummaryByApp>>(summaryResults) {}).build();
-          default:
-            throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
-              "footprint filterType: " + returnType);
+      switch(returnType) {
+        case COUNT: {
+          FileOpDTO.Count result = provenanceCtrl.provFileOpsCount(params);
+          return Response.ok().entity(result).build();
+        }
+        case ARTIFACTS: {
+          FileOpDTO.PList result = provenanceCtrl.provFileOpsList(params);
+          
+        }
+        default: {
+          FileOpDTO.PList result = provenanceCtrl.provFileOpsList(params);
+          switch (opsCompaction) {
+            case NONE:
+              return Response.ok().entity(result).build();
+            case FILE_COMPACT:
+              List<ProvFileOpsCompactByApp> compactResults = ProvFileOpsCompactByApp.compact(result.getItems());
+              return Response.ok().entity(new GenericEntity<List<ProvFileOpsCompactByApp>>(compactResults) {
+              }).build();
+            case FILE_SUMMARY:
+              List<ProvFileOpsSummaryByApp> summaryResults = ProvFileOpsSummaryByApp.summary(result.getItems());
+              return Response.ok().entity(new GenericEntity<List<ProvFileOpsSummaryByApp>>(summaryResults) {
+              }).build();
+            default:
+              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_ARGUMENT, Level.WARNING,
+                "footprint filterType: " + returnType);
+          }
         }
       }
     } catch (GenericException | ServiceException e) {
