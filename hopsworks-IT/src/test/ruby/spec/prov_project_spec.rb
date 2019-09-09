@@ -71,12 +71,19 @@ describe "On #{ENV['OS']}" do
     prov_wait_for_epipe() 
   end
 
-  def cleanup(project, ops)
+  def cleanup_cycle(project) 
+    prov_wait_for_epipe()
+    sleep(1)
+    ops = get_file_ops_archival(project)
+    #pp ops
     ops["filesInProject"]["items"].each do |file|
       aux = file_ops_archival(project, file["inodeId"])
-      #pp "#{aux} #{file["count"]}"
+      # pp "#{aux} #{file["count"]}"
       expect(aux["cleaned"]).to eq file["count"]
     end
+
+    sleep(1)
+    get_file_ops_archival(project)
   end
 
   describe 'test suite - 2 projects' do
@@ -87,24 +94,25 @@ describe "On #{ENV['OS']}" do
       @project2 = create_project_by_name(@project2_name)
     end
 
-    after :each do 
-      pp "cleanup provenance index" 
-      sleep(1)
-      ops = get_file_ops_archival(@project1)
-      #pp ops
-      cleanup(@project1, ops)
-      ops = get_file_ops_archival(@project2)
-      #pp ops
-      cleanup(@project2, ops)
+    after :each do
+      pp "cleanup cycle"
+      ops1 = cleanup_cycle(@project1)
+      ops2 = cleanup_cycle(@project2)
+      
+      if ops1["count"] != 0
+        pp "secondary cleanup cycle(1)"
+        sleep(1)
+        ops1 = cleanup_cycle(@project1)
+      end
 
-      pp "check provenance index cleanup" 
-      sleep(1)
-      ops = get_file_ops_archival(@project1)
-      #pp ops
-      expect(ops["count"]).to eq 0
-      ops = get_file_ops_archival(@project2)
-      #pp ops
-      expect(ops["count"]).to eq 0
+      if ops2["count"] != 0
+        pp "secondary cleanup cycle(2)"
+        sleep(1)
+        ops2 = cleanup_cycle(@project2)
+      end
+
+      expect(ops1["count"]).to eq 0
+      expect(ops2["count"]).to eq 0
     end
 
     after :all do 
@@ -315,18 +323,17 @@ describe "On #{ENV['OS']}" do
       pp "create project: #{@project1_name}"
       @project1 = create_project_by_name(@project1_name)
     end
-
+    
     after :each do
-      pp "cleanup provenance index"
-      sleep(1)
-      ops = get_file_ops_archival(@project1)
+      pp "cleanup cycle"
+      ops = cleanup_cycle(@project1)
+      
       #pp ops
-      cleanup(@project1, ops)
-
-      pp "check provenance index cleanup"
-      sleep(1)
-      ops = get_file_ops_archival(@project1)
-      #pp ops
+      if ops["count"] != 0 
+        pp "secondary cleanup cycle"
+        sleep(1)
+        ops = cleanup_cycle(@project1)
+      end
       expect(ops["count"]).to eq 0
     end
 
@@ -353,6 +360,7 @@ describe "On #{ENV['OS']}" do
       pp "check experiment" 
       prov_wait_for_epipe() 
       result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false, 1)["items"]
+      #pp result1
       xattrsExact = Hash.new
       xattrsExact["xattr_key_1"] = "xattr_value_1"
       xattrsExact["xattr_key_2"] = "xattr_value_2"
@@ -386,6 +394,7 @@ describe "On #{ENV['OS']}" do
       pp "check experiment" 
       prov_wait_for_epipe() 
       result1 = get_ml_asset_in_project(@project1, "EXPERIMENT", false, 1)["items"]
+      #pp result1
       xattrsExact = Hash.new
       xattrsExact["xattr_key_1"] = "xattr_value_1_updated"
       xattrsExact["xattr_key_3"] = "xattr_value_3"
@@ -987,7 +996,7 @@ describe "On #{ENV['OS']}" do
       check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false)
     end
 
-    it 'mock app footprint' do
+    it 'mock app footprint', focus: true do
       pp "stop epipe"
       execute_remotely @hostname, "sudo systemctl stop epipe"
 
@@ -1304,53 +1313,146 @@ describe "On #{ENV['OS']}" do
     end
   end
 
-  describe 'test suite - break project' do
-    before :all do
-      pp "create project: #{@project1_name}"
-      @project1 = create_project_by_name(@project1_name)
-    end
+  # describe "test" do
+  #   before :all do
+  #     pp "create project: #{@project1_name}"
+  #     @project1 = create_project_by_name(@project1_name)
+  #   end
 
-    after :all do 
-      pp "delete projects"
-      delete_project(@project1)
-      @project1 = nil
-    end
-    it 'delete Experiments dataset - check cleanup' do
-      pp "restart epipe"
-      execute_remotely @hostname, "sudo systemctl restart epipe"
+  #   after :each do
+  #     pp "cleanup provenance index"
+  #     sleep(1)
+  #     ops = get_file_ops_archival(@project1)
+  #     #pp ops
+  #     cleanup(@project1, ops)
 
-      pp "create experiments"
-      prov_create_experiment(@project1, @experiment_app1_name1)
-      prov_create_experiment(@project1, @experiment_app2_name1)
+  #     pp "check provenance index cleanup"
+  #     sleep(1)
+  #     ops = get_file_ops_archival(@project1)
+  #     #pp ops
+  #     expect(ops["count"]).to eq 0
+  #   end
 
-      pp "wait for epipe"
-      prov_wait_for_epipe() 
+  #   after :all do 
+  #     pp "delete projects"
+  #     delete_project(@project1)
+  #     @project1 = nil
+  #   end
 
-      pp "check experiments" 
-      get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
-      get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
+  #   it "experiment artifact footprint" do
+  #     pp "check epipe"
+  #     execute_remotely @hostname, "sudo systemctl restart epipe"
 
-      pp "delete Experiments dataset"
-      prov_delete_dataset(@project1, "Experiments")
+  #     prov_create_experiment(@project1, "#{@app1_id}_1")
+  #     prov_create_experiment(@project1, "#{@app1_id}_2")
 
-      pp "check experiments" 
-      prov_wait_for_epipe() 
-      check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
-      check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
+  #     pp "cleanup hops"
+  #     prov_delete_experiment(@project1, "#{@app1_id}_1")
+  #     prov_delete_experiment(@project1, "#{@app1_id}_2")
 
-      pp "cleanup provenance index"
-      sleep(1)
-      ops = get_file_ops_archival(@project1)
-      #pp ops
-      cleanup(@project1, ops)
+  #     pp "artifact footprint"
 
-      pp "check provenance index cleanup"
-      sleep(1)
-      ops = get_file_ops_archival(@project1)
-      #pp ops
-      expect(ops["count"]).to eq 0
-    end
-  end
+  #     pp "check cleanup" 
+  #     prov_wait_for_epipe() 
+  #     check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
+  #     check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
+  #   end
+  # end
+
+  # describe "test2" do
+  #   before :all do
+  #     pp "create project: #{@project1_name}"
+  #     @project1 = create_project_by_name(@project1_name)
+  #   end
+
+    # after :each do
+    #   pp "cleanup provenance index"
+    #   sleep(1)
+    #   ops = get_file_ops_archival(@project1)
+    #   #pp ops
+    #   cleanup(@project1, ops)
+
+    #   pp "check provenance index cleanup"
+    #   sleep(1)
+    #   ops = get_file_ops_archival(@project1)
+    #   #pp ops
+    #   expect(ops["count"]).to eq 0
+    # end
+
+    # after :all do 
+    #   pp "delete projects"
+    #   delete_project(@project1)
+    #   @project1 = nil
+    # end
+
+    # it "epipe test" do
+    #   pp "check epipe"
+    #   execute_remotely @hostname, "sudo systemctl restart epipe"
+
+    #   experiment1_id = prov_experiment_id("#{@app1_id}_1");
+    #   prov_create_experiment(@project1, experiment1_id)
+
+    #   experiment_record = FileProv.where("project_name": @project1["inode_name"], "i_name": experiment1_id)
+    #   expect(experiment_record.length).to eq 1
+    #   prov_add_xattr(experiment_record[0], "xattr1", 99, "XATTR_ADD", 1)
+      #pp experiment_record
+
+      # pp "cleanup hops"
+      # prov_delete_experiment(@project1, "#{@app1_id}_1")
+
+      # pp "check cleanup" 
+      # prov_wait_for_epipe() 
+      # check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
+  #   end
+  # end
+
+  # describe 'test suite - break project' do
+  #   before :all do
+  #     pp "create project: #{@project1_name}"
+  #     @project1 = create_project_by_name(@project1_name)
+  #   end
+
+  #   after :all do 
+  #     pp "delete projects"
+  #     delete_project(@project1)
+  #     @project1 = nil
+  #   end
+  #   it 'delete Experiments dataset - check cleanup' do
+  #     pp "restart epipe"
+  #     execute_remotely @hostname, "sudo systemctl restart epipe"
+
+  #     pp "create experiments"
+  #     prov_create_experiment(@project1, @experiment_app1_name1)
+  #     prov_create_experiment(@project1, @experiment_app2_name1)
+
+  #     pp "wait for epipe"
+  #     prov_wait_for_epipe() 
+
+  #     pp "check experiments" 
+  #     get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
+  #     get_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
+
+  #     pp "delete Experiments dataset"
+  #     prov_delete_dataset(@project1, "Experiments")
+
+  #     pp "check experiments" 
+  #     prov_wait_for_epipe() 
+  #     check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app1_name1), false)
+  #     check_no_ml_asset_by_id(@project1, "EXPERIMENT", prov_experiment_id(@experiment_app2_name1), false)
+
+  #     pp "cleanup provenance index"
+  #     sleep(1)
+  #     ops = get_file_ops_archival(@project1)
+  #     #pp ops
+  #     cleanup(@project1, ops)
+
+  #     pp "check provenance index cleanup"
+  #     sleep(1)
+  #     ops = get_file_ops_archival(@project1)
+  #     #pp ops
+  #     expect(ops["count"]).to eq 0
+  #   end
+  # end
 
   # describe 'test suite - break project' do
   #   before :all do

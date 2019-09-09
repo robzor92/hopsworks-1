@@ -43,6 +43,7 @@ import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
 import io.hops.hopsworks.common.dao.hdfs.inode.InodeFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.elastic.ProvElasticController;
+import io.hops.hopsworks.common.elastic.ProvElasticHelper;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
@@ -239,10 +240,10 @@ public class ProvenanceController {
     FileOpDTO.PList fileOps;
     if(params.hasPagination()) {
       fileOps =  elasticCtrl.provFileOpsBase(
-        params.getFileOpsFilter(), params.getFilterScripts(), params.getFileOpsSortBy(),
+        params.getFileOpsFilterBy(), params.getFilterScripts(), params.getFileOpsSortBy(),
         params.getPagination().getValue0(), params.getPagination().getValue1());
     } else {
-      fileOps =  elasticCtrl.provFileOpsScrolling(params.getFileOpsFilter(), params.getFilterScripts());
+      fileOps =  elasticCtrl.provFileOpsScrolling(params.getFileOpsFilterBy(), params.getFilterScripts());
     }
   
     if (params.hasAppExpansion()) {
@@ -270,11 +271,26 @@ public class ProvenanceController {
   
   public FileOpDTO.Count provFileOpsCount(ProvFileOpsParamBuilder params)
     throws ServiceException, GenericException {
-    return elasticCtrl.provFileOpsCount(params.getFileOpsFilter(), params.getFilterScripts(), params.getAggregations());
+    return elasticCtrl.provFileOpsCount(
+      params.getFileOpsFilterBy(), params.getFilterScripts(), params.getAggregations());
   }
   
+  public FileOpDTO.Count provAppArtifactFootprint(ProvFileOpsParamBuilder params)
+    throws GenericException, ServiceException {
+    if(params.hasFileOpFilters()) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "footprint should have no predefined file operation filters");
+    }
+    params.withAggregation(ProvElasticHelper.ProvAggregations.ARTIFACT_FOOTPRINT);
+    return elasticCtrl.provFileOpsCount(params.getFileOpsFilterBy(), params.getFilterScripts(),
+      params.getAggregations());
+  }
   public List<FootprintFileState> provAppFootprintList(ProvFileOpsParamBuilder params, AppFootprintType footprintType)
     throws GenericException, ServiceException {
+    if(params.hasFileOpFilters()) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "footprint should have no predefined file operation filters");
+    }
     if(!params.getAggregations().isEmpty()) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
         "aggregations currently only allowed with count");

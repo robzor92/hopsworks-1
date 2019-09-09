@@ -17,6 +17,8 @@ package io.hops.hopsworks.common.elastic;
 
 import io.hops.hopsworks.common.provenance.util.CheckedFunction;
 import io.hops.hopsworks.common.provenance.v2.ProvElasticFields;
+import io.hops.hopsworks.common.provenance.v2.ProvFileOps;
+import io.hops.hopsworks.common.provenance.v2.xml.FileOp;
 import io.hops.hopsworks.common.provenance.v2.xml.FileOpDTO;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ServiceException;
@@ -41,8 +43,11 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.InternalOrder;
+import org.elasticsearch.search.aggregations.bucket.filter.Filter;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.metrics.max.Max;
+import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
+import org.elasticsearch.search.sort.SortOrder;
 import org.javatuples.Pair;
 
 import java.util.Collections;
@@ -57,6 +62,7 @@ import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
 import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
+import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
 
 public class ProvElasticHelper {
@@ -375,7 +381,8 @@ public class ProvElasticHelper {
       leastActiveByLastAccessedABuilder(
         "projects_least_active_by_last_accessed", ProvElasticFields.FileBase.PROJECT_I_ID,
         "lastOpTimestamp", ProvElasticFields.FileOpsBase.TIMESTAMP),
-      leastActiveByLastAccessedAParser("projects_least_active_by_last_accessed", "lastOpTimestamp"));
+      leastActiveByLastAccessedAParser("projects_least_active_by_last_accessed", "lastOpTimestamp")),
+    ARTIFACT_FOOTPRINT(appArtifactFootprintABuilder(), appArtifactFootprintAParser());
     
     public final AggregationBuilder aggregation;
     public final CheckedFunction<Aggregations, List, GenericException> parser;
@@ -425,8 +432,8 @@ public class ProvElasticHelper {
       if(agg1 == null) {
         return result;
       }
-      List<? extends Terms.Bucket> buckets = agg1.getBuckets();
-      for(Terms.Bucket bucket : buckets) {
+      List<? extends Terms.Bucket> agg1Buckets = agg1.getBuckets();
+      for(Terms.Bucket bucket : agg1Buckets) {
         Max agg2 = bucket.getAggregations().get(agg2Name);
         Long inodeId = (Long)bucket.getKeyAsNumber();
         Long lastAccessed = ((Number) agg2.getValue()).longValue();
@@ -434,5 +441,121 @@ public class ProvElasticHelper {
       }
       return result;
     };
+  }
+  
+  private static CheckedFunction<Aggregations, List, GenericException> appArtifactFootprintAParser() {
+    return (Aggregations aggregations) -> {
+      List<FileOpDTO.Artifact> result = new LinkedList<>();
+      Terms artifacts = aggregations.get("artifacts");
+      if(artifacts == null) {
+        return result;
+      }
+      for(Terms.Bucket artifactBucket : artifacts.getBuckets()) {
+        FileOpDTO.Artifact artifact = new FileOpDTO.Artifact();
+  
+        Terms files = artifactBucket.getAggregations().get("files");
+        if(files == null) {
+          continue;
+        }
+        result.add(artifact);
+        
+        FileOpDTO.ArtifactBase base = null;
+        for(Terms.Bucket fileBucket : artifacts.getBuckets()) {
+          FileOpDTO.ArtifactFile file = new FileOpDTO.ArtifactFile();
+          //create
+          Filter createFilter = fileBucket.getAggregations().get("create");
+          if(createFilter != null) {
+            TopHits createOpHits = createFilter.getAggregations().get("create_op");
+            if(createOpHits.getHits().getTotalHits() > 1) {
+              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.WARNING,
+                "cannot have two create ops on the same inode");
+            }
+            FileOp createOp = FileOp.instance(createOpHits.getHits().getAt(0));
+            file.addCreate(createOp);
+            base = extractBaseIfNotExists(base, createOp);
+          }
+  
+          //delete
+          Filter deleteFilter = fileBucket.getAggregations().get("delete");
+          if(deleteFilter != null) {
+            TopHits deleteOpHits = deleteFilter.getAggregations().get("delete_op");
+            if(deleteOpHits.getHits().getTotalHits() > 1) {
+              throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.WARNING,
+                "cannot have two delete ops on the same inode");
+            }
+            FileOp deleteOp = FileOp.instance(deleteOpHits.getHits().getAt(0));
+            file.addDelete(deleteOp);
+            base = extractBaseIfNotExists(base, deleteOp);
+          }
+  
+          //read
+          Filter readFilter = fileBucket.getAggregations().get("read");
+          if(readFilter != null) {
+            TopHits readOpHits = readFilter.getAggregations().get("first_read");
+            FileOp readOp = FileOp.instance(readOpHits.getHits().getAt(0));
+            file.addFirstRead(readOp, readOpHits.getHits().getTotalHits());
+            base = extractBaseIfNotExists(base, readOp);
+          }
+  
+          //append
+          Filter appendFilter = fileBucket.getAggregations().get("append");
+          if(appendFilter != null) {
+            TopHits appendOpHits = appendFilter.getAggregations().get("first_append");
+            FileOp appendOp = FileOp.instance(appendOpHits.getHits().getAt(0));
+            file.addFirstAppend(appendOp, appendOpHits.getHits().getTotalHits());
+            base = extractBaseIfNotExists(base, appendOp);
+          }
+          artifact.addComponent(file);
+        }
+        artifact.setBase(base);
+      }
+      return result;
+    };
+  }
+  
+  private static FileOpDTO.ArtifactBase extractBaseIfNotExists(FileOpDTO.ArtifactBase base, FileOp op)
+    throws GenericException {
+    if(base != null) {
+      return base;
+    }
+    ProvElasticFields.MLType mlType = ProvElasticFields.parseMLType(op.getMlType());
+    return new FileOpDTO.ArtifactBase(op.getProjectInodeId(), op.getDatasetInodeId(), op.getMlId(), mlType);
+  }
+  
+  private static AggregationBuilder appArtifactFootprintABuilder() {
+    return
+      AggregationBuilders.terms("artifacts")
+        .field(ProvElasticFields.FileOpsAux.ML_ID.toString())
+        .subAggregation(
+          AggregationBuilders.terms("files")
+            .field(ProvElasticFields.FileBase.INODE_ID.toString())
+            .subAggregation(AggregationBuilders
+              .filter("create", termQuery(ProvElasticFields.FileOpsBase.INODE_OPERATION.toString(),
+                  ProvFileOps.CREATE.toString()))
+              .subAggregation(AggregationBuilders
+                .topHits("create_op")
+                .sort(ProvElasticFields.FileOpsBase.TIMESTAMP.toString(), SortOrder.ASC)
+                .size(1)))
+            .subAggregation(AggregationBuilders
+              .filter("delete", termQuery(ProvElasticFields.FileOpsBase.INODE_OPERATION.toString(),
+                ProvFileOps.ACCESS_DATA.toString()))
+              .subAggregation(AggregationBuilders
+                .topHits("delete_op")
+                .sort(ProvElasticFields.FileOpsBase.TIMESTAMP.toString(), SortOrder.ASC)
+                .size(1)))
+            .subAggregation(AggregationBuilders
+              .filter("read", termQuery(ProvElasticFields.FileOpsBase.INODE_OPERATION.toString(),
+                  ProvFileOps.ACCESS_DATA.toString()))
+              .subAggregation(AggregationBuilders
+                .topHits("first_read")
+                .sort(ProvElasticFields.FileOpsBase.TIMESTAMP.toString(), SortOrder.ASC)
+                .size(1)))
+            .subAggregation(AggregationBuilders
+              .filter("append", termQuery(ProvElasticFields.FileOpsBase.INODE_OPERATION.toString(),
+                  ProvFileOps.ACCESS_DATA.toString()))
+              .subAggregation(AggregationBuilders
+                .topHits("first_append")
+                .sort(ProvElasticFields.FileOpsBase.TIMESTAMP.toString(), SortOrder.ASC)
+                .size(1))));
   }
 }

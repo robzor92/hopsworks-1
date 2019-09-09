@@ -399,7 +399,8 @@ public class ProjectProvenanceResource {
     LIST,
     MIN_TREE,
     FULL_TREE,
-    COUNT;
+    COUNT,
+    ARTIFACTS;
   }
   public enum FileOpsCompactionType {
     NONE,

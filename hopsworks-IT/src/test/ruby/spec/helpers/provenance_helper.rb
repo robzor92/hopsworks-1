@@ -137,7 +137,7 @@ module ProvenanceHelper
       sleep(1)
       sleepCounter2 += 1
     end
-    sleep(1)
+    sleep(2)
     expect(sleepCounter1).to be < 10
     expect(sleepCounter2).to be < 10
     pp "done waiting"
@@ -172,14 +172,15 @@ module ProvenanceHelper
     end
   end 
 
-  def get_ml_asset_in_project(project, ml_type, withAppState, expected) 
+  def get_ml_asset_in_project(project, mlType, withAppState, expected)
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
-    query_params = "?filter_by=ML_TYPE:#{ml_type}"
+    query_params = "?filter_by=ML_TYPE:#{mlType}"
     if withAppState
       query_params = query_params + "&expand=APP"
     end
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
+    #pp result
     expect_status(200)
     parsed_result = JSON.parse(result)
     expect(parsed_result["items"].length).to eq expected
@@ -187,9 +188,37 @@ module ProvenanceHelper
     parsed_result
   end
 
-  def get_ml_asset_in_project_page(project, ml_type, withAppState, offset, limit) 
+  @prov_in_proj = ->(project) {
+    "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}"
+  }
+
+  @prov_file_ops = ->(url, inode_id) {
+    "#{url}/provenance/file/#{inode_id}/ops"
+  }
+
+  @prov_file_ops_g = ->(url) {
+    "#{url}/provenance/file/ops"
+  }
+
+  @prov_cleanup = ->(url) {
+    "#{url}/cleanup"
+  }
+
+  def get_file_ops_archival(project)
+    resource_f = @prov_in_proj << @prof_file_ops_g << @prov_cleanup
+    resource = resource_f.call(project)
+    pp resource
+    # resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/ops"
+    query_params = "?return_type=COUNT&aggregations=FILES_IN"
+    pp "#{resource}#{query_params}"
+    result = get "#{resource}#{query_params}"
+    expect_status(200)
+    parsed_result = JSON.parse(result)
+  end
+
+  def get_ml_asset_in_project_page(project, mlType, withAppState, offset, limit)
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
-    query_params = "?filter_by=ML_TYPE:#{ml_type}&offset=#{offset}&limit=#{limit}"
+    query_params = "?filter_by=ML_TYPE:#{mlType}&offset=#{offset}&limit=#{limit}"
     if withAppState
       query_params = query_params + "&expand=APP"
     end
@@ -200,9 +229,9 @@ module ProvenanceHelper
     parsed_result
   end
 
-  def check_no_ml_asset_by_id(project, ml_type, ml_id, withAppState) 
+  def check_no_ml_asset_by_id(project, mlType, mlId, withAppState)
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
-    query_params = "?filter_by=ML_TYPE:#{ml_type}&filter_by=ML_ID:#{ml_id}"
+    query_params = "?filter_by=ML_TYPE:#{mlType}&filter_by=ML_ID:#{mlId}"
     if withAppState
       query_params = query_params + "&expand=APP"
     end
@@ -214,9 +243,9 @@ module ProvenanceHelper
     expect(parsed_result["count"]).to eq 0
   end
 
-  def get_ml_asset_by_id(project, ml_type, ml_id, withAppState) 
+  def get_ml_asset_by_id(project, mlType, mlId, withAppState)
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
-    query_params = "?filter_by=ML_TYPE:#{ml_type}&filter_by=ML_ID:#{ml_id}"
+    query_params = "?filter_by=ML_TYPE:#{mlType}&filter_by=ML_ID:#{mlId}"
     if withAppState
       query_params = query_params + "&expand=APP"
     end
@@ -229,9 +258,9 @@ module ProvenanceHelper
     parsed_result["items"][0]
   end
 
-  def get_ml_asset_like_name(project, ml_type, term) 
+  def get_ml_asset_like_name(project, mlType, term)
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
-    query_params = "?filter_by=ML_TYPE:#{ml_type}&filter_by=FILE_NAME_LIKE:#{term}"
+    query_params = "?filter_by=ML_TYPE:#{mlType}&filter_by=FILE_NAME_LIKE:#{term}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -239,9 +268,9 @@ module ProvenanceHelper
     parsed_result["items"]
   end
 
-  def get_ml_in_create_range(project, ml_type, from, to, expected) 
+  def get_ml_in_create_range(project, mlType, from, to, expected)
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
-    query_params = "?filter_by=ML_TYPE:#{ml_type}&filter_by=CREATE_TIMESTAMP_LT:#{to}&filter_by=CREATE_TIMESTAMP_GT:#{from}"
+    query_params = "?filter_by=ML_TYPE:#{mlType}&filter_by=CREATE_TIMESTAMP_LT:#{to}&filter_by=CREATE_TIMESTAMP_GT:#{from}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -252,9 +281,9 @@ module ProvenanceHelper
     parsed_result["items"]
   end
 
-  def get_ml_asset_by_xattr(project, ml_type, xattr_key, xattr_val)
+  def get_ml_asset_by_xattr(project, mlType, xattr_key, xattr_val)
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
-    query_params = "?filter_by=ML_TYPE:#{ml_type}&xattr_filter_by=#{xattr_key}:#{xattr_val}"
+    query_params = "?filter_by=ML_TYPE:#{mlType}&xattr_filter_by=#{xattr_key}:#{xattr_val}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -262,9 +291,9 @@ module ProvenanceHelper
     parsed_result["items"]
   end
 
-  def get_ml_asset_by_xattr_count(project, ml_type, xattr_key, xattr_val, count) 
+  def get_ml_asset_by_xattr_count(project, mlType, xattr_key, xattr_val, count)
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
-    query_params = "?filter_by=ML_TYPE:#{ml_type}&xattr_filter_by=#{xattr_key}:#{xattr_val}&return_type=COUNT"
+    query_params = "?filter_by=ML_TYPE:#{mlType}&xattr_filter_by=#{xattr_key}:#{xattr_val}&return_type=COUNT"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)
@@ -273,9 +302,9 @@ module ProvenanceHelper
     parsed_result["result"]
   end
 
-  def get_ml_asset_like_xattr(project, ml_type, xattr_key, xattr_val)
+  def get_ml_asset_like_xattr(project, mlType, xattr_key, xattr_val)
     resource = "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/provenance/file/state"
-    query_params = "?filter_by=ML_TYPE:#{ml_type}&xattr_like=#{xattr_key}:#{xattr_val}"
+    query_params = "?filter_by=ML_TYPE:#{mlType}&xattr_like=#{xattr_key}:#{xattr_val}"
     pp "#{resource}#{query_params}"
     result = get "#{resource}#{query_params}"
     expect_status(200)

@@ -173,7 +173,7 @@ describe "On #{ENV['OS']}" do
   describe 'raw elastic' do
     def t_elastic_1(project_inode_id, metrics) 
       url = "http://#{ENV['ELASTIC_API']}/fileprovenance/_search"
-      body = JSON.parse('{"from":10,"size":20,"query":{"bool":{"must":[{"term":{"entry_type":{"value":"state","boost":1.0}}},{"term":{"ml_type":{"value":"EXPERIMENT","boost":1.0}}},{"term":{"project_i_id":{"value":' + "#{project_inode_id}" + ',"boost":1.0}}}],"adjust_pure_negative":true,"boost":1.0}},"sort":[{"create_timestamp":{"order":"desc"}}]}').to_json
+      body = JSON.parse('{"from":10,"size":20,"query":{"bool":{"must":[{"term":{"entry_type":{"value":"state","boost":1.0}}},{"term":{"mlType":{"value":"EXPERIMENT","boost":1.0}}},{"term":{"project_i_id":{"value":' + "#{project_inode_id}" + ',"boost":1.0}}}],"adjust_pure_negative":true,"boost":1.0}},"sort":[{"create_timestamp":{"order":"desc"}}]}').to_json
       pp "#{url} #{body}"
       request = t_e_request_umb(url, body)
       t_request_success(request, metrics)
