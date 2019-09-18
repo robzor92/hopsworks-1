@@ -75,6 +75,7 @@ import io.hops.hopsworks.common.dao.user.activity.ActivityFlag;
 import io.hops.hopsworks.common.dao.user.security.apiKey.ApiScope;
 import io.hops.hopsworks.common.dataset.DatasetController;
 import io.hops.hopsworks.common.dataset.FilePreviewDTO;
+import io.hops.hopsworks.common.project.ProjectController;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.HopsSecurityException;
@@ -138,6 +139,8 @@ public class DataSetService {
 
   @EJB
   private ProjectFacade projectFacade;
+  @EJB
+  private ProjectController projectCtrl;
   @EJB
   private DatasetFacade datasetFacade;
   @EJB
@@ -595,8 +598,19 @@ public class DataSetService {
     DistributedFileSystemOps udfso = dfs.getDfsOps(username);
 
     try {
+      Inode.MetaStatus datasetMetaStatus;
+      if(dataSet.isSearchable()) {
+        Inode.MetaStatus projectMetaStatus = projectCtrl.getProvenanceStatus(project, dfso);
+        if(Inode.MetaStatus.DISABLED.equals(projectMetaStatus)) {
+          datasetMetaStatus = Inode.MetaStatus.META_ENABLED;
+        } else {
+          datasetMetaStatus = projectMetaStatus;
+        }
+      } else {
+        datasetMetaStatus = Inode.MetaStatus.DISABLED;
+      }
       datasetController.createDataset(user, project, dataSet.getName(),
-        dataSet.getDescription(), dataSet.getTemplate(), dataSet.isSearchable(),
+        dataSet.getDescription(), dataSet.getTemplate(), datasetMetaStatus,
         false, false, dfso);
       //Generate README.md for the dataset if the user requested it
       if (dataSet.isGenerateReadme()) {

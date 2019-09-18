@@ -38,13 +38,11 @@
  */
 package io.hops.hopsworks.common.provenance;
 
-import io.hops.hopsworks.common.dao.dataset.Dataset;
 import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
 import io.hops.hopsworks.common.dao.hdfs.inode.InodeFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.elastic.ProvElasticController;
 import io.hops.hopsworks.common.elastic.ProvElasticHelper;
-import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.project.ProjectController;
@@ -74,7 +72,6 @@ import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -98,87 +95,6 @@ public class ProvenanceController {
   private ProjectController projectCtrl;
   @EJB
   private Settings settings;
-  
-  public static final String PROJECT_PROVENANCE_STATUS_XATTR_NAME = "provenance.meta_status";
-  
-  public boolean isProjectProvenanceEnabled(Project project) throws GenericException {
-    return getProjectProvenanceStatus(project).equals(Inode.MetaStatus.PROVENANCE_ENABLED);
-  }
-  
-  public boolean isProjectProvenanceEnabled(Project project, DistributedFileSystemOps dfso) throws GenericException {
-    return getProjectProvenanceStatus(project, dfso).equals(Inode.MetaStatus.PROVENANCE_ENABLED);
-  }
-  
-  public Inode.MetaStatus getProjectProvenanceStatus(Project project) throws GenericException {
-    DistributedFileSystemOps dfso = dfs.getDfsOps();
-    try {
-      return getProjectProvenanceStatus(project, dfso);
-    } finally {
-      if (dfso != null) {
-        dfso.close();
-      }
-    }
-  }
-  
-  public Inode.MetaStatus getProjectProvenanceStatus(Project project, DistributedFileSystemOps dfso)
-    throws GenericException {
-    String projectPath = Utils.getProjectPath(project.getName());
-    try {
-      byte[] bVal = dfso.getXAttr(projectPath, PROJECT_PROVENANCE_STATUS_XATTR_NAME);
-      Inode.MetaStatus status;
-      if(bVal == null) {
-        status = Inode.MetaStatus.DISABLED;
-      } else {
-        status = Inode.MetaStatus.valueOf(new String(bVal));
-      }
-      return status;
-    } catch (IOException e) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-        "project provenance xattr persistance exception");
-    }
-  }
-  
-  public void changeProjectProvenanceStatus(Project project, Inode.MetaStatus newStatus) throws GenericException {
-    String projectPath = Utils.getProjectPath(project.getName());
-    DistributedFileSystemOps dfso = dfs.getDfsOps();
-    try {
-      byte[] bVal = dfso.getXAttr(projectPath, PROJECT_PROVENANCE_STATUS_XATTR_NAME);
-      Inode.MetaStatus previousStatus;
-      if(bVal == null) {
-        previousStatus = Inode.MetaStatus.DISABLED;
-      } else {
-        previousStatus = Inode.MetaStatus.valueOf(new String(bVal));
-      }
-      
-      if(newStatus.equals(previousStatus)) {
-        return;
-      }
-      if(Inode.MetaStatus.DISABLED.equals(previousStatus)) {
-        upgradeDatasetsMetaStatus(project, dfso);
-        dfso.insertXAttr(projectPath, PROJECT_PROVENANCE_STATUS_XATTR_NAME, newStatus.name().getBytes());
-      } else {
-        downgradeDatasetsMetaStatus(project, dfso);
-        dfso.removeXAttr(projectPath, PROJECT_PROVENANCE_STATUS_XATTR_NAME);
-      }
-    } catch (IOException e) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-        "project provenance xattr persistance exception");
-    } finally {
-      if (dfso != null) {
-        dfso.close();
-      }
-    }
-  }
-  
-  public List<ProvDatasetState> getDatasetsProvenanceStatus(Project project) {
-    List<ProvDatasetState> result = new ArrayList<>();
-    for (Dataset ds : project.getDatasetCollection()) {
-      ProvDatasetState dsState = new ProvDatasetState(ds.getName(), ds.getInode().getId(),
-        ds.getInode().getMetaStatus());
-      result.add(dsState);
-    }
-    return result;
-  }
   
   public FileStateDTO.PList provFileStateList(ProvFileStateParamBuilder params)
     throws GenericException, ServiceException {
@@ -245,9 +161,9 @@ public class ProvenanceController {
     if(params.hasPagination()) {
       fileOps =  elasticCtrl.provFileOpsBase(
         params.getFileOpsFilterBy(), params.getFilterScripts(), params.getFileOpsSortBy(),
-        params.getPagination().getValue0(), params.getPagination().getValue1());
+        params.getPagination().getValue0(), params.getPagination().getValue1(), false);
     } else {
-      fileOps =  elasticCtrl.provFileOpsScrolling(params.getFileOpsFilterBy(), params.getFilterScripts());
+      fileOps =  elasticCtrl.provFileOpsScrolling(params.getFileOpsFilterBy(), params.getFilterScripts(), false);
     }
   
     if (params.hasAppExpansion()) {
@@ -609,52 +525,6 @@ public class ProvenanceController {
     } else {
       return fileOp.getAppId();
     }
-  }
-  
-  private void upgradeDatasetsMetaStatus(Project project, DistributedFileSystemOps dfso) throws GenericException {
-    try {
-      for (Dataset ds : project.getDatasetCollection()) {
-        if(isHive(ds) || isFeatureStore(ds)) {
-          //TODO - bug?
-          continue;
-        }
-        if (Inode.MetaStatus.META_ENABLED.equals(ds.getInode().getMetaStatus())) {
-          String datasetPath = Utils.getDatasetPath(project.getName(), ds.getName());
-          dfso.setProvenanceEnabled(datasetPath);
-        }
-      }
-    } catch (IOException e) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-        "dataset provenance persistance exception");
-    }
-  }
-  
-  private void downgradeDatasetsMetaStatus(Project project, DistributedFileSystemOps dfso) throws GenericException {
-    try {
-      for (Dataset ds : project.getDatasetCollection()) {
-        if(isHive(ds) || isFeatureStore(ds)) {
-          //TODO - bug?
-          continue;
-        }
-        if (Inode.MetaStatus.PROVENANCE_ENABLED.equals(ds.getInode().getMetaStatus())) {
-          String datasetPath = Utils.getDatasetPath(project.getName(), ds.getName());
-          dfso.setMetaEnabled(datasetPath);
-        }
-      }
-    } catch (IOException e) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-        "dataset provenance persistance exception");
-    }
-  }
-  
-  private boolean isHive(Dataset ds) {
-    String hiveDB = ds.getProject().getName() + ".db";
-    return hiveDB.equals(ds.getName());
-  }
-  
-  private boolean isFeatureStore(Dataset ds) {
-    String hiveDB = ds.getProject().getName() + "_featurestore.db";
-    return hiveDB.equals(ds.getName());
   }
   
   public interface BasicFileState {

@@ -39,6 +39,7 @@
 
 package io.hops.hopsworks.common.hdfs;
 
+import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.metadata.hdfs.entity.EncodingPolicy;
 import io.hops.metadata.hdfs.entity.EncodingStatus;
@@ -53,6 +54,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.hops.metadata.hdfs.entity.MetaStatus;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -738,24 +740,35 @@ public class DistributedFileSystemOps {
   }
   
   /**
-   * Set Provenance enabled flag on a given path
+   * Set Meta Status
    * <p/>
-   * @param path
    * @throws IOException
    */
-  public void setProvenanceEnabled(Path path) throws IOException {
-    this.dfs.setProvenanceEnabled(path);
+  public void setMetaStatus(Path path, Inode.MetaStatus status) throws IOException {
+    switch(status) {
+      case DISABLED:
+        dfs.setMetaStatus(path, MetaStatus.DISABLED);
+        break;
+      case META_ENABLED:
+        dfs.setMetaStatus(path, MetaStatus.META_ENABLED);
+        break;
+      case MIN_PROV_ENABLED:
+        dfs.setMetaStatus(path, MetaStatus.MIN_PROV_ENABLED);
+        break;
+      case FULL_PROV_ENABLED:
+        dfs.setMetaStatus(path, MetaStatus.FULL_PROV_ENABLED);
+        break;
+    }
   }
   
   /**
    * Set Provenance enabled flag on a given path
    * <p/>
-   * @param path
    * @throws IOException
    */
-  public void setProvenanceEnabled(String location) throws IOException {
+  public void setMetaStatus(String location, Inode.MetaStatus status) throws IOException {
     Path path = new Path(location);
-    setProvenanceEnabled(path);
+    setMetaStatus(path, status);
   }
   
   /**

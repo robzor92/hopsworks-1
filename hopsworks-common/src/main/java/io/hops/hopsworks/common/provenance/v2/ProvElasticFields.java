@@ -29,10 +29,13 @@ public class ProvElasticFields {
   
   public enum FileBase implements Field {
     PROJECT_I_ID,
+    DATASET_I_ID,
+    PARENT_I_ID,
     INODE_ID,
     INODE_NAME,
     USER_ID,
-    APP_ID;
+    APP_ID,
+    ENTRY_TYPE;
   
     @Override
     public String toString() {
@@ -41,10 +44,7 @@ public class ProvElasticFields {
   }
   
   public enum FileAux implements Field {
-    DATASET_I_ID,
-    PARENT_I_ID,
     PARTITION_ID,
-    ENTRY_TYPE,
     PROJECT_NAME;
   
     @Override

@@ -461,7 +461,9 @@ public class ProjectService {
       for (String s : projectDTO.getServices()) {
         ProjectServiceEnum se = null;
         se = ProjectServiceEnum.valueOf(s.toUpperCase());
-        List<Future<?>> serviceFutureList = projectController.addService(project, se, user, dfso, udfso);
+        Inode.MetaStatus projectMetaStatus = projectController.getProvenanceStatus(project, dfso);
+        List<Future<?>> serviceFutureList
+          = projectController.addService(project, se, user, dfso, udfso, projectMetaStatus);
         if (serviceFutureList != null) {
           // Wait for the futures
           for (Future f : serviceFutureList) {
@@ -564,7 +566,8 @@ public class ProjectService {
       dfso = dfs.getDfsOps();
       username = hdfsUsersBean.getHdfsUserName(project, user);
       udfso = dfs.getDfsOps(username);
-      projectController.addTourFilesToProject(user.getEmail(), project, dfso, dfso, demoType);
+      Inode.MetaStatus projectMetaStatus = projectController.getProvenanceStatus(project, dfso);
+      projectController.addTourFilesToProject(user.getEmail(), project, dfso, dfso, demoType, projectMetaStatus);
       //TestJob dataset
       datasetController.generateReadme(udfso, "TestJob", readMeMessage, project.getName());
     } catch (Exception ex) {

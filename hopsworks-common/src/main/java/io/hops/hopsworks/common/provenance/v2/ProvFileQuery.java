@@ -50,6 +50,7 @@ public class ProvFileQuery {
   
   public enum FileState implements Field {
     PROJECT_I_ID(ProvElasticFields.FileBase.PROJECT_I_ID, new LongValParser()),
+    DATASET_I_ID(ProvElasticFields.FileBase.DATASET_I_ID, new LongValParser()),
     FILE_I_ID(ProvElasticFields.FileBase.INODE_ID, new LongValParser()),
     FILE_NAME(ProvElasticFields.FileBase.INODE_NAME, new StringValParser()),
     USER_ID(ProvElasticFields.FileBase.USER_ID, new IntValParser()),
@@ -126,6 +127,7 @@ public class ProvFileQuery {
   
   public enum FileOps implements Field {
     PROJECT_I_ID(ProvElasticFields.FileBase.PROJECT_I_ID, new LongValParser()),
+    DATASET_I_ID(ProvElasticFields.FileBase.DATASET_I_ID, new LongValParser()),
     FILE_I_ID(ProvElasticFields.FileBase.INODE_ID, new LongValParser()),
     FILE_NAME(ProvElasticFields.FileBase.INODE_NAME, new StringValParser()),
     USER_ID(ProvElasticFields.FileBase.USER_ID, new IntValParser()),

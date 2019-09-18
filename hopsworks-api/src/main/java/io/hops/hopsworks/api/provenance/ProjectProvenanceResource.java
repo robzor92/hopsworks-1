@@ -52,6 +52,7 @@ import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
+import io.hops.hopsworks.common.project.ProjectController;
 import io.hops.hopsworks.common.provenance.AppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvDatasetState;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
@@ -107,6 +108,8 @@ public class ProjectProvenanceResource {
   private DatasetFacade datasetFacade;
   @EJB
   private DistributedFsService dfs;
+  @EJB
+  private ProjectController projectCtrl;
   
   private Project project;
 
@@ -121,8 +124,8 @@ public class ProjectProvenanceResource {
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response getProvenanceStatus()
     throws GenericException {
-    Inode.MetaStatus status = provenanceCtrl.getProjectProvenanceStatus(project);
-    return Response.ok().entity(new SimpleResult(status.name())).build();
+    Inode.MetaStatus status = projectCtrl.getProvenanceStatus(project);
+    return Response.ok().entity(new SimpleResult<>(status.name())).build();
   }
   
   @POST
@@ -133,7 +136,7 @@ public class ProjectProvenanceResource {
   public Response changeProvenanceStatus(
     @PathParam("status") Inode.MetaStatus status)
     throws GenericException {
-    provenanceCtrl.changeProjectProvenanceStatus(project, status);
+    projectCtrl.updateProvenanceStatus(project, status);
     return Response.ok().build();
   }
   
@@ -144,7 +147,7 @@ public class ProjectProvenanceResource {
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response content() {
     GenericEntity<List<ProvDatasetState>> result
-      = new GenericEntity<List<ProvDatasetState>>(provenanceCtrl.getDatasetsProvenanceStatus(project)) {};
+      = new GenericEntity<List<ProvDatasetState>>(projectCtrl.getDatasetsProvenanceStatus(project)) {};
     return Response.ok().entity(result).build();
   }
   
