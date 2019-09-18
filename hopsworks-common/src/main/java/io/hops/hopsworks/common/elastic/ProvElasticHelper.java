@@ -470,7 +470,7 @@ public class ProvElasticHelper {
               throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.WARNING,
                 "cannot have two create ops on the same inode");
             }
-            FileOp createOp = FileOp.instance(createOpHits.getHits().getAt(0));
+            FileOp createOp = FileOp.instance(createOpHits.getHits().getAt(0), false);
             file.addCreate(createOp);
             base = extractBaseIfNotExists(base, createOp);
           }
@@ -483,7 +483,7 @@ public class ProvElasticHelper {
               throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.WARNING,
                 "cannot have two delete ops on the same inode");
             }
-            FileOp deleteOp = FileOp.instance(deleteOpHits.getHits().getAt(0));
+            FileOp deleteOp = FileOp.instance(deleteOpHits.getHits().getAt(0), false);
             file.addDelete(deleteOp);
             base = extractBaseIfNotExists(base, deleteOp);
           }
@@ -492,7 +492,7 @@ public class ProvElasticHelper {
           Filter readFilter = fileBucket.getAggregations().get("read");
           if(readFilter != null) {
             TopHits readOpHits = readFilter.getAggregations().get("first_read");
-            FileOp readOp = FileOp.instance(readOpHits.getHits().getAt(0));
+            FileOp readOp = FileOp.instance(readOpHits.getHits().getAt(0), false);
             file.addFirstRead(readOp, readOpHits.getHits().getTotalHits());
             base = extractBaseIfNotExists(base, readOp);
           }
@@ -501,7 +501,7 @@ public class ProvElasticHelper {
           Filter appendFilter = fileBucket.getAggregations().get("append");
           if(appendFilter != null) {
             TopHits appendOpHits = appendFilter.getAggregations().get("first_append");
-            FileOp appendOp = FileOp.instance(appendOpHits.getHits().getAt(0));
+            FileOp appendOp = FileOp.instance(appendOpHits.getHits().getAt(0), false);
             file.addFirstAppend(appendOp, appendOpHits.getHits().getTotalHits());
             base = extractBaseIfNotExists(base, appendOp);
           }

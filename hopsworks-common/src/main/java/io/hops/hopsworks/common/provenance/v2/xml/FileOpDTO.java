@@ -281,7 +281,7 @@ public class FileOpDTO {
     }
     
     public void addOp(Base op) throws GenericException {
-      if(op.getInodeId() != this.inodeId) {
+      if(!op.getInodeId().equals(this.inodeId)) {
         throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
           "op mismatch - inodeId");
       }
@@ -289,7 +289,7 @@ public class FileOpDTO {
     }
   
     public void addOp(FileOp op) throws GenericException {
-      if(op.getInodeId() != this.inodeId) {
+      if(!op.getInodeId().equals(this.inodeId)) {
         throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
           "op mismatch - inodeId");
       }

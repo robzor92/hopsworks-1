@@ -76,6 +76,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.javatuples.Pair;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
@@ -143,7 +144,7 @@ public class ProvElasticController {
     Map<String, ProvFileQuery.FilterVal> fileOpsFilters,
     List<Script> scriptFilter,
     List<Pair<ProvFileQuery.Field, SortOrder>> fileOpsSortBy,
-    Integer offset, Integer limit)
+    Integer offset, Integer limit, boolean soft)
     throws GenericException, ServiceException {
     CheckedSupplier<SearchRequest, GenericException> srF =
       baseSearchRequest(
@@ -154,13 +155,13 @@ public class ProvElasticController {
         .andThen(withPagination(offset, limit));
     SearchRequest request = srF.get();
     Pair<List<FileOp>, Long> searchResult
-      = ProvElasticHelper.searchBasic(heClient, request, fileOpsParser());
+      = ProvElasticHelper.searchBasic(heClient, request, fileOpsParser(soft));
     return new FileOpDTO.PList(searchResult.getValue0(), searchResult.getValue1());
   }
   
   public FileOpDTO.PList provFileOpsScrolling(
     Map<String, ProvFileQuery.FilterVal> fileOpsFilters,
-    List<Script> filterScripts)
+    List<Script> filterScripts, boolean soft)
     throws GenericException, ServiceException {
     CheckedSupplier<SearchRequest, GenericException> srF =
       scrollingSearchRequest(
@@ -170,7 +171,7 @@ public class ProvElasticController {
         .andThen(filterByOpsParams(fileOpsFilters, filterScripts));
     SearchRequest request = srF.get();
     Pair<List<FileOp>, Long> searchResult
-      = ProvElasticHelper.searchScrollingWithBasicAction(heClient, request, fileOpsParser());
+      = ProvElasticHelper.searchScrollingWithBasicAction(heClient, request, fileOpsParser(soft));
     return new FileOpDTO.PList(searchResult.getValue0(), searchResult.getValue1());
   }
   
@@ -353,7 +354,7 @@ public class ProvElasticController {
       if(hits.length > 0) {
         try {
           for(SearchHit hit : hits) {
-            acc.store.addOp(FileOp.instance(hit));
+            acc.store.addOp(FileOp.instance(hit, true));
           }
           Long line = acc.store.save();
           if(acc.baseDoc.isPresent()) {
@@ -397,7 +398,11 @@ public class ProvElasticController {
   
   public Long provCleanupFilePrefix(String docId, boolean skipDoc)
     throws ServiceException, GenericException {
-    FileOp doc = getFileOp(docId);
+    FileOp doc = getFileOp(docId, true);
+    if(doc.getInodeId() == null) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "problem parsing field: file inode id");
+    }
     Optional<String> skipDocO = skipDoc ? Optional.of(docId) : Optional.empty();
     return provCleanupFilePrefix(doc.getInodeId(), Optional.of(doc.getTimestamp()), skipDocO);
   }
@@ -414,9 +419,9 @@ public class ProvElasticController {
   }
   
   public void provArchiveProject(String docId, boolean skipDoc) throws ServiceException, GenericException {
-    FileOp doc = getFileOp(docId);
+    FileOp doc = getFileOp(docId, true);
     Optional<String> skipDocO = skipDoc ? Optional.of(docId) : Optional.empty();
-    
+    throw new NotImplementedException();
   }
   
   private Long provArchiveFilePrefix(Archival archival, Map<String, ProvFileQuery.FilterVal> fileOpsFilters,
@@ -471,7 +476,7 @@ public class ProvElasticController {
         archiveId(inodeId));
       Map<String, Object> docMap = new HashMap<>();
       docMap.put(ProvElasticFields.FileBase.INODE_ID.toString(), inodeId);
-      docMap.put(ProvElasticFields.FileAux.ENTRY_TYPE.toString(),
+      docMap.put(ProvElasticFields.FileBase.ENTRY_TYPE.toString(),
         ProvElasticFields.EntryType.ARCHIVE.toString().toLowerCase());
       indexBase.source(docMap);
       ProvElasticHelper.indexDoc(heClient, indexBase);
@@ -491,9 +496,9 @@ public class ProvElasticController {
   }
   //****
   
-  public FileOp getFileOp(String docId) throws ServiceException, GenericException {
+  public FileOp getFileOp(String docId, boolean soft) throws ServiceException, GenericException {
     CheckedFunction<Map<String, Object>, FileOp, GenericException> opParser
-      = sourceMap -> FileOp.instance(docId, sourceMap);
+      = sourceMap -> FileOp.instance(docId, sourceMap, soft);
     GetRequest request = new GetRequest(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
       Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, docId);
     return ProvElasticHelper.getFileDoc(heClient, request, opParser);
@@ -596,11 +601,11 @@ public class ProvElasticController {
       });
   }
   
-  private ProvElasticHelper.ElasticBasicResultProcessor<List<FileOp>> fileOpsParser() {
+  private ProvElasticHelper.ElasticBasicResultProcessor<List<FileOp>> fileOpsParser(boolean soft) {
     return new ProvElasticHelper.ElasticBasicResultProcessor<>(new LinkedList<>(),
       (SearchHit[] hits,  List<FileOp> acc) -> {
         for (SearchHit rawHit : hits) {
-          FileOp hit = FileOp.instance(rawHit);
+          FileOp hit = FileOp.instance(rawHit, soft);
           acc.add(hit);
         }
       });
@@ -627,7 +632,7 @@ public class ProvElasticController {
     Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters) {
     return (SearchRequest sr) -> {
       BoolQueryBuilder query = boolQuery()
-        .must(termQuery(ProvElasticFields.FileAux.ENTRY_TYPE.toString().toLowerCase(),
+        .must(termQuery(ProvElasticFields.FileBase.ENTRY_TYPE.toString().toLowerCase(),
           ProvElasticFields.EntryType.STATE.toString().toLowerCase()));
       query = filterByBasicFields(query, fileStateFilters);
       for (Map.Entry<String, String> filter : xAttrsFilters.entrySet()) {
@@ -645,7 +650,7 @@ public class ProvElasticController {
     Map<String, ProvFileQuery.FilterVal> fileOpsFilters, List<Script> scriptFilters) {
     return (SearchRequest sr) -> {
       BoolQueryBuilder query = boolQuery()
-        .must(termQuery(ProvElasticFields.FileAux.ENTRY_TYPE.toString().toLowerCase(),
+        .must(termQuery(ProvElasticFields.FileBase.ENTRY_TYPE.toString().toLowerCase(),
           ProvElasticFields.EntryType.OPERATION.toString().toLowerCase()));
       query = filterByBasicFields(query, fileOpsFilters);
       query = filterByScripts(query, scriptFilters);
@@ -658,7 +663,7 @@ public class ProvElasticController {
     Map<String, ProvFileQuery.FilterVal> fileOpsFilters, Optional<String> skipDoc) {
     return (SearchRequest sr) -> {
       BoolQueryBuilder query = boolQuery()
-        .must(termQuery(ProvElasticFields.FileAux.ENTRY_TYPE.toString().toLowerCase(),
+        .must(termQuery(ProvElasticFields.FileBase.ENTRY_TYPE.toString().toLowerCase(),
           ProvElasticFields.EntryType.OPERATION.toString().toLowerCase()));
       query = filterByBasicFields(query, fileOpsFilters);
       if(skipDoc.isPresent()) {

@@ -89,9 +89,9 @@ public class FileState implements Comparator<FileState>, ProvenanceController.Ba
     result.mlId = ProvElasticFields.extractField(auxMap,
       ProvElasticFields.FileStateBase.ML_ID, ProvHelper.asString(false));
     result.datasetInodeId = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileAux.DATASET_I_ID, ProvHelper.asLong(false));
+      ProvElasticFields.FileBase.DATASET_I_ID, ProvHelper.asLong(false));
     result.parentInodeId = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileAux.PARENT_I_ID, ProvHelper.asLong(false));
+      ProvElasticFields.FileBase.PARENT_I_ID, ProvHelper.asLong(false));
     result.partitionId = ProvElasticFields.extractField(auxMap,
       ProvElasticFields.FileAux.PARTITION_ID, ProvHelper.asLong(false));
     result.projectName = ProvElasticFields.extractField(auxMap,
@@ -99,7 +99,7 @@ public class FileState implements Comparator<FileState>, ProvenanceController.Ba
     result.readableCreateTime = ProvElasticFields.extractField(auxMap,
       ProvElasticFields.FileStateAux.R_CREATE_TIMESTAMP, ProvHelper.asString(false));
     ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileAux.ENTRY_TYPE, ProvHelper.asString(false));
+      ProvElasticFields.FileBase.ENTRY_TYPE, ProvHelper.asString(false));
     for (Map.Entry<String, Object> entry : auxMap.entrySet()) {
       String xattrKey = entry.getKey();
       String xattrVal;

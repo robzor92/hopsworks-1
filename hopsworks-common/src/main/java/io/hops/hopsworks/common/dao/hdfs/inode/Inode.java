@@ -444,6 +444,7 @@ public class Inode implements Serializable {
   public enum MetaStatus {
     DISABLED,
     META_ENABLED,
-    PROVENANCE_ENABLED;
+    MIN_PROV_ENABLED,
+    FULL_PROV_ENABLED;
   }
 }

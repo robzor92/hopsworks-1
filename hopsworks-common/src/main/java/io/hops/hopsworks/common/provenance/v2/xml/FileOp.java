@@ -38,15 +38,15 @@ public class FileOp implements Comparator<FileOp>  {
   private float score;
   private Map<String, Object> map;
   
-  private long inodeId;
+  private Long inodeId;
   private String inodeOperation;
   private String appId;
   private Integer userId;
   private Long parentInodeId;
   private Long projectInodeId;
   private Long datasetInodeId;
-  private int logicalTime;
-  private long timestamp;
+  private Integer logicalTime;
+  private Long timestamp;
   private String readableTimestamp;
   private String inodeName;
   private String xattrName;
@@ -59,55 +59,55 @@ public class FileOp implements Comparator<FileOp>  {
   
   public FileOp() {}
   
-  public static FileOp instance(SearchHit hit) throws GenericException {
+  public static FileOp instance(SearchHit hit, boolean soft) throws GenericException {
     FileOp result = new FileOp();
     result.id = hit.getId();
     result.score = Float.isNaN(hit.getScore()) ? 0 : hit.getScore();
-    return instance(result, hit.getSourceAsMap());
+    return instance(result, hit.getSourceAsMap(), soft);
   }
   
-  public static FileOp instance(String id, Map<String, Object> sourceMap) throws GenericException {
+  public static FileOp instance(String id, Map<String, Object> sourceMap, boolean soft) throws GenericException {
     FileOp result = new FileOp();
     result.id = id;
     result.score = 0;
-    return instance(result, sourceMap);
+    return instance(result, sourceMap, soft);
   }
   
-  private static FileOp instance(FileOp result, Map<String, Object> sourceMap) throws GenericException {
+  private static FileOp instance(FileOp result, Map<String, Object> sourceMap, boolean soft) throws GenericException {
     result.map = sourceMap;
     Map<String, Object> auxMap = new HashMap<>(sourceMap);
     result.projectInodeId = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileBase.PROJECT_I_ID, ProvHelper.asLong(false));
+      ProvElasticFields.FileBase.PROJECT_I_ID, ProvHelper.asLong(soft));
     result.datasetInodeId = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileAux.DATASET_I_ID, ProvHelper.asLong(false));
+      ProvElasticFields.FileBase.DATASET_I_ID, ProvHelper.asLong(soft));
     result.inodeId = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileBase.INODE_ID, ProvHelper.asLong(false));
+      ProvElasticFields.FileBase.INODE_ID, ProvHelper.asLong(soft));
     result.appId = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileBase.APP_ID, ProvHelper.asString(false));
+      ProvElasticFields.FileBase.APP_ID, ProvHelper.asString(soft));
     result.userId = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileBase.USER_ID, ProvHelper.asInt(false));
+      ProvElasticFields.FileBase.USER_ID, ProvHelper.asInt(soft));
     result.inodeName = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileBase.INODE_NAME, ProvHelper.asString(false));
+      ProvElasticFields.FileBase.INODE_NAME, ProvHelper.asString(soft));
     result.inodeOperation = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileOpsBase.INODE_OPERATION, ProvHelper.asString(false));
+      ProvElasticFields.FileOpsBase.INODE_OPERATION, ProvHelper.asString(soft));
     result.timestamp = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileOpsBase.TIMESTAMP, ProvHelper.asLong(false));
+      ProvElasticFields.FileOpsBase.TIMESTAMP, ProvHelper.asLong(soft));
     result.parentInodeId = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileAux.PARENT_I_ID, ProvHelper.asLong(false));
+      ProvElasticFields.FileBase.PARENT_I_ID, ProvHelper.asLong(soft));
     result.partitionId = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileAux.PARTITION_ID, ProvHelper.asLong(false));
+      ProvElasticFields.FileAux.PARTITION_ID, ProvHelper.asLong(soft));
     result.projectName = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileAux.PROJECT_NAME, ProvHelper.asString(false));
+      ProvElasticFields.FileAux.PROJECT_NAME, ProvHelper.asString(soft));
     result.mlId = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileOpsAux.ML_ID, ProvHelper.asString(false));
+      ProvElasticFields.FileOpsAux.ML_ID, ProvHelper.asString(soft));
     result.mlType = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileOpsAux.ML_TYPE, ProvHelper.asString(false));
+      ProvElasticFields.FileOpsAux.ML_TYPE, ProvHelper.asString(soft));
     result.logicalTime =ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileOpsAux.LOGICAL_TIME, ProvHelper.asInt(false));
+      ProvElasticFields.FileOpsAux.LOGICAL_TIME, ProvHelper.asInt(soft));
     result.readableTimestamp = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileOpsAux.R_TIMESTAMP, ProvHelper.asString(false));
+      ProvElasticFields.FileOpsAux.R_TIMESTAMP, ProvHelper.asString(soft));
     ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileAux.ENTRY_TYPE, ProvHelper.asString(false));
+      ProvElasticFields.FileBase.ENTRY_TYPE, ProvHelper.asString(soft));
     result.xattrName = ProvElasticFields.extractField(auxMap,
       ProvElasticFields.FileOpsAux.XATTR, ProvHelper.asString(true));
     
@@ -156,11 +156,11 @@ public class FileOp implements Comparator<FileOp>  {
   }
   
   
-  public long getInodeId() {
+  public Long getInodeId() {
     return inodeId;
   }
   
-  public void setInodeId(long inodeId) {
+  public void setInodeId(Long inodeId) {
     this.inodeId = inodeId;
   }
   
@@ -180,19 +180,19 @@ public class FileOp implements Comparator<FileOp>  {
     this.appId = appId;
   }
   
-  public int getLogicalTime() {
+  public Integer getLogicalTime() {
     return logicalTime;
   }
   
-  public void setLogicalTime(int logicalTime) {
+  public void setLogicalTime(Integer logicalTime) {
     this.logicalTime = logicalTime;
   }
   
-  public long getTimestamp() {
+  public Long getTimestamp() {
     return timestamp;
   }
   
-  public void setTimestamp(long timestamp) {
+  public void setTimestamp(Long timestamp) {
     this.timestamp = timestamp;
   }
   

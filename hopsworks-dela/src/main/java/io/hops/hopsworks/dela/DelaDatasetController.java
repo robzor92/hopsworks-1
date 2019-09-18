@@ -42,11 +42,14 @@ package io.hops.hopsworks.dela;
 import io.hops.hopsworks.common.dao.dataset.Dataset;
 import io.hops.hopsworks.common.dao.dataset.DatasetFacade;
 import io.hops.hopsworks.common.dao.dataset.DatasetPermissions;
+import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
 import io.hops.hopsworks.common.dao.log.operation.OperationType;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.dataset.DatasetController;
 import io.hops.hopsworks.common.dataset.FilePreviewDTO;
+import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
+import io.hops.hopsworks.common.project.ProjectController;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.HopsSecurityException;
@@ -83,6 +86,8 @@ public class DelaDatasetController {
   private HdfsUsersController hdfsUsersBean;
   @EJB
   private DistributedFsService dfs;
+  @EJB
+  private ProjectController projectController;
 
   public Dataset uploadToHops(Dataset dataset, String publicDSId) {
     dataset.setPublicDsState(Dataset.SharedState.HOPS);
@@ -147,10 +152,17 @@ public class DelaDatasetController {
 
   public Dataset createDataset(Users user, Project project, String name, String description)
     throws DatasetException, HopsSecurityException, GenericException {
-
-    datasetCtrl.createDataset(user, project, name, description, -1, true, false, false,
-      dfs.getDfsOps());
-    return datasetController.getByProjectAndDsName(project, null, name);
+    DistributedFileSystemOps dfso = null;
+    try {
+      Inode.MetaStatus projectMetaStatus = projectController.getProvenanceStatus(project, dfso);
+      datasetCtrl.createDataset(user, project, name, description, -1, projectMetaStatus,
+        false, false, dfso);
+      return datasetController.getByProjectAndDsName(project, null, name);
+    } finally {
+      if(dfso != null) {
+        dfso.close();
+      }
+    }
   }
   
   public List<Dataset> getLocalPublicDatasets() {
