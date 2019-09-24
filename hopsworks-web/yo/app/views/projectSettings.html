@@ -387,14 +387,17 @@
                           <table st-table="rowCollection" class="table table-striped">
                             <thead>
                             <tr>
+                              <th style="width:20%">None/Meta/Min/Full</th>
+                              <th></th>
+                            </tr>
+                            <tr>
                                 <th style="width:20%">
                                   <div style="margin-bottom: 10px;">
-                                    <md-radio-group ng-model="provenanceCtrl.projectProvenanceEnabled"
+                                    <md-radio-group ng-model="provenanceCtrl.projectProvenanceStatus"
                                                     class="md-primary pull-right" layout="row">
-                                      <md-radio-button ng-repeat="m in provenanceCtrl.projectProv" ng-value="m.id"
+                                      <md-radio-button ng-repeat="m in provenanceCtrl.provStatus" ng-value="m.id"
                                                        uib-tooltip="{{m.label}}" aria-label="{{m.label}}"
-                                                       ng-click="provenanceCtrl.setProvenanceStatus()"
-                                                       ng-disabled="provenanceCtrl.isWorking()"/>
+                                                       ng-disabled="true"/>
                                     </md-radio-group>
                                   </div>
                                 </th>
@@ -404,20 +407,20 @@
                         </fieldset>
                         <fieldset>
                           <table st-table="rowCollection" class="table table-striped"
-                                 ng-show="provenanceCtrl.datasetProvenanceStatus.length > 0">
+                                 ng-show="provenanceCtrl.datasetsProvenanceStatus.length > 0">
                             <thead>
                             <tr>
-                              <th style="width:20%">None/Meta/Prov</th>
-                              <th style="width:80%">Dataset</th>
+                              <th></th>
+                              <th style="width:80%">Datasets</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr ng-repeat="dataset in provenanceCtrl.datasetProvenanceStatus">
+                            <tr ng-repeat="dataset in provenanceCtrl.datasetsProvenanceStatus">
                               <td>
                                 <div style="margin-top: 10px;">
-                                  <md-radio-group ng-model="dataset.metaStatus" class="md-primary pull-right"
+                                  <md-radio-group ng-model="dataset.status" class="md-primary pull-right"
                                                   layout="row" layout-align="start center">
-                                    <md-radio-button ng-repeat="m in provenanceCtrl.metaStatus" ng-value="m.id"
+                                    <md-radio-button ng-repeat="m in provenanceCtrl.provStatus" ng-value="m.id"
                                                      uib-tooltip="{{m.label}}" ng-disabled="true"
                                                      aria-label="{{m.id}}"/>
                                   </md-radio-group>
@@ -438,8 +441,20 @@
                             </thead>
                             <tbody>
                             <tr>
-                              <td><b>ML Artifacts</b></td>
-                              <td><b>{{provenanceCtrl.provStatesSize}}</b></td>
+                              <td><b>FS Datasets</b></td>
+                              <td><b>{{provenanceCtrl.provFSDatasetsSize}}</b></td>
+                            </tr>
+                            <tr>
+                              <td><b>Experiments</b></td>
+                              <td><b>{{provenanceCtrl.provExperimentsSize}}</b></td>
+                            </tr>
+                            <tr>
+                              <td><b>Models</b></td>
+                              <td><b>{{provenanceCtrl.provModelsSize}}</b></td>
+                            </tr>
+                            <tr>
+                              <td><b>Training Datasets</b></td>
+                              <td><b>{{provenanceCtrl.provTrainingDatasetsSize}}</b></td>
                             </tr>
                             <tr>
                               <td><b>File operations</b></div>

@@ -159,7 +159,7 @@ public class ProvFileOpsParamBuilder {
         "allowed fields - FileOps and fileOpsAux");
     }
     Object v = field.filterValParser().parse(val);
-    ProvParamBuilder.addToFilters(fileOpsFilterBy, Pair.with(field, val));
+    ProvParamBuilder.addToFilters(fileOpsFilterBy, Pair.with(field, v));
     return this;
   }
   public Map<String, ProvFileQuery.FilterVal> getFileOpsFilterBy() {

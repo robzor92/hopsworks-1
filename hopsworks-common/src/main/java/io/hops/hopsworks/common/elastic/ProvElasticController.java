@@ -60,6 +60,13 @@ import io.hops.hopsworks.restutils.RESTCodes;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
+import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
+import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
@@ -71,6 +78,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.ScriptQueryBuilder;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -105,8 +113,120 @@ public class ProvElasticController {
   private HopsworksElasticClient heClient;
   @EJB
   private DistributedFsService dfs;
+  @EJB
+  private Settings settings;
   
-  public FileStateDTO.PList provFileState(
+  public String[] getAllIndices() throws ServiceException {
+    String indexRegex = "*" + Settings.PROV_FILE_INDEX_SUFFIX;
+    GetIndexRequest request = new GetIndexRequest().indices(indexRegex);
+    GetIndexResponse response = ProvElasticHelper.mngIndexGet(heClient, request);
+    return response.indices();
+  }
+  
+  public void createProvIndex(Long projectIId) throws ServiceException, GenericException {
+    String indexName = settings.getProvFileIndex(projectIId);
+    CreateIndexRequest request = new CreateIndexRequest(indexName);
+    CreateIndexResponse response = ProvElasticHelper.mngIndexCreate(heClient, request);
+  }
+//
+//  private XContentBuilder fileProvenanceMapping() throws GenericException {
+//    try {
+//      return XContentFactory.jsonBuilder().startObject().startObject(Settings.PROV_FILE_DOC_TYPE).startObject(
+//        "properties")
+//        .startObject(ProvElasticFields.FileBase.INODE_ID.toString())
+//          .field("type", "long").endObject()
+//        .startObject(ProvElasticFields.FileBase.INODE_NAME.toString())
+//          .field("type", "text").endObject()
+//        .startObject(ProvElasticFields.FileBase.USER_ID.toString())
+//          .field("type", "integer").endObject()
+//        .startObject(ProvElasticFields.FileBase.APP_ID.toString())
+//          .field("type", "keyword").endObject()
+//        .startObject(ProvElasticFields.FileBase.PROJECT_I_ID.toString())
+//          .field("type", "long").endObject()
+//        .startObject(ProvElasticFields.FileBase.DATASET_I_ID.toString())
+//          .field("type", "long").endObject()
+//        .startObject(ProvElasticFields.FileBase.PARENT_I_ID.toString())
+//          .field("type", "long").endObject()
+//        .startObject(ProvElasticFields.FileBase.ENTRY_TYPE.toString())
+//          .field("type", "keyword").endObject()
+//
+//        .startObject(ProvElasticFields.FileAux.PROJECT_NAME.toString())
+//          .field("type", "text").endObject()
+//        .startObject(ProvElasticFields.FileAux.PARTITION_ID.toString())
+//          .field("type", "long").endObject()
+//
+//        .startObject(ProvElasticFields.FileStateBase.CREATE_TIMESTAMP.toString())
+//          .field("type", "long").endObject()
+//        .startObject(ProvElasticFields.FileStateBase.ML_TYPE.toString())
+//          .field("type", "keyword").endObject()
+//        .startObject(ProvElasticFields.FileStateBase.ML_ID.toString())
+//          .field("type", "keyword").endObject()
+//        .startObject(ProvElasticFields.FileStateAux.R_CREATE_TIMESTAMP.toString())
+//          .field("type", "text").endObject()
+//
+//        .startObject(ProvElasticFields.FileOpsBase.INODE_OPERATION.toString())
+//          .field("type", "keyword").endObject()
+//        .startObject(ProvElasticFields.FileOpsBase.TIMESTAMP.toString())
+//          .field("type", "long").endObject()
+//        .startObject(ProvElasticFields.FileOpsAux.LOGICAL_TIME.toString())
+//          .field("type", "integer").endObject()
+//        .startObject(ProvElasticFields.FileOpsAux.R_TIMESTAMP.toString())
+//          .field("type", "text").endObject()
+//        .endObject().endObject().endObject();
+//    } catch (IOException e) {
+//      String msg = "error creating mapping for project";
+//      LOG.log(Level.WARNING, msg, e);
+//      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.SEVERE, msg, msg, e);
+//    }
+    //    Map<String, Object> wrapper = new HashMap<>();
+//    Map<String, Object> mapping = new HashMap<>();
+//    mapping.put(ProvElasticFields.FileBase.INODE_ID.toString(), "long");
+//    mapping.put(ProvElasticFields.FileBase.INODE_NAME.toString(), "text");
+//    mapping.put(ProvElasticFields.FileBase.USER_ID.toString(), "integer");
+//    mapping.put(ProvElasticFields.FileBase.APP_ID.toString(), "keyword");
+//    mapping.put(ProvElasticFields.FileBase.PROJECT_I_ID.toString(), "long");
+//    mapping.put(ProvElasticFields.FileBase.DATASET_I_ID.toString(), "long");
+//    mapping.put(ProvElasticFields.FileBase.PARENT_I_ID.toString(), "long");
+//    mapping.put(ProvElasticFields.FileBase.ENTRY_TYPE.toString(), "keyword");
+//
+//    mapping.put(ProvElasticFields.FileAux.PROJECT_NAME.toString(), "text");
+//    mapping.put(ProvElasticFields.FileAux.PARTITION_ID.toString(), "long");
+//
+//    mapping.put(ProvElasticFields.FileStateBase.CREATE_TIMESTAMP.toString(), "long");
+//    mapping.put(ProvElasticFields.FileStateBase.ML_TYPE.toString(), "keyword");
+//    mapping.put(ProvElasticFields.FileStateBase.ML_ID.toString(), "keyword");
+//    mapping.put(ProvElasticFields.FileStateAux.R_CREATE_TIMESTAMP.toString(), "text");
+//
+//    mapping.put(ProvElasticFields.FileOpsBase.INODE_OPERATION.toString(), "keyword");
+//    mapping.put(ProvElasticFields.FileOpsBase.TIMESTAMP.toString(), "long");
+//    mapping.put(ProvElasticFields.FileOpsAux.LOGICAL_TIME.toString(), "integer");
+//    mapping.put(ProvElasticFields.FileOpsAux.R_TIMESTAMP.toString(), "text");
+//    wrapper.put("properties", mapping);
+//    return wrapper;
+//  }
+//
+  public void deleteProvIndex(Long projectIId) throws ServiceException {
+    String indexName = settings.getProvFileIndex(projectIId);
+    deleteProvIndex(indexName);
+  }
+  
+  public void deleteProvIndex(String indexName) throws ServiceException {
+    DeleteIndexRequest request = new DeleteIndexRequest(indexName);
+    try {
+      DeleteIndexResponse response = ProvElasticHelper.mngIndexDelete(heClient, request);
+    } catch (ServiceException e) {
+      if(e.getCause() instanceof ElasticsearchException) {
+        ElasticsearchException ex = (ElasticsearchException)e.getCause();
+        if(ex.status() == RestStatus.NOT_FOUND) {
+          LOG.log(Level.INFO, "trying to delete index:{0} - does not exist", indexName);
+          return;
+        }
+      }
+      throw e;
+    }
+  }
+  
+  public FileStateDTO.PList provFileState(Long projectIId,
     Map<String, ProvFileQuery.FilterVal> fileStateFilters,
     List<Pair<ProvFileQuery.Field, SortOrder>> fileStateSortBy,
     Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters,
@@ -115,8 +235,8 @@ public class ProvElasticController {
     throws GenericException, ServiceException {
     CheckedSupplier<SearchRequest, GenericException> srF =
       baseSearchRequest(
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE)
+        settings.getProvFileIndex(projectIId),
+        Settings.PROV_FILE_DOC_TYPE)
         .andThen(filterByStateParams(fileStateFilters, xAttrsFilters, likeXAttrsFilters))
         .andThen(withFileStateOrder(fileStateSortBy, xattrSortBy))
         .andThen(withPagination(offset, limit));
@@ -126,21 +246,21 @@ public class ProvElasticController {
     return new FileStateDTO.PList(searchResult.getValue0(), searchResult.getValue1());
   }
   
-  public Long provFileStateCount(
+  public Long provFileStateCount(Long projectIId,
     Map<String, ProvFileQuery.FilterVal> fileStateFilters,
     Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters)
     throws GenericException, ServiceException {
     CheckedSupplier<SearchRequest, GenericException> srF =
       countSearchRequest(
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE)
+        settings.getProvFileIndex(projectIId),
+        Settings.PROV_FILE_DOC_TYPE)
         .andThen(filterByStateParams(fileStateFilters, xAttrsFilters, likeXAttrsFilters));
     SearchRequest request = srF.get();
     Long searchResult = ProvElasticHelper.searchCount(heClient, request,Collections.emptyList()).getValue0();
     return searchResult;
   }
   
-  public FileOpDTO.PList provFileOpsBase(
+  public FileOpDTO.PList provFileOpsBase(Long projectIId,
     Map<String, ProvFileQuery.FilterVal> fileOpsFilters,
     List<Script> scriptFilter,
     List<Pair<ProvFileQuery.Field, SortOrder>> fileOpsSortBy,
@@ -148,8 +268,8 @@ public class ProvElasticController {
     throws GenericException, ServiceException {
     CheckedSupplier<SearchRequest, GenericException> srF =
       baseSearchRequest(
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE)
+        settings.getProvFileIndex(projectIId),
+        Settings.PROV_FILE_DOC_TYPE)
         .andThen(filterByOpsParams(fileOpsFilters, scriptFilter))
         .andThen(withFileOpsOrder(fileOpsSortBy))
         .andThen(withPagination(offset, limit));
@@ -159,14 +279,14 @@ public class ProvElasticController {
     return new FileOpDTO.PList(searchResult.getValue0(), searchResult.getValue1());
   }
   
-  public FileOpDTO.PList provFileOpsScrolling(
+  public FileOpDTO.PList provFileOpsScrolling(Long projectIId,
     Map<String, ProvFileQuery.FilterVal> fileOpsFilters,
     List<Script> filterScripts, boolean soft)
     throws GenericException, ServiceException {
     CheckedSupplier<SearchRequest, GenericException> srF =
       scrollingSearchRequest(
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE,
+        settings.getProvFileIndex(projectIId),
+        Settings.PROV_FILE_DOC_TYPE,
         HopsworksElasticClient.DEFAULT_PAGE_SIZE)
         .andThen(filterByOpsParams(fileOpsFilters, filterScripts));
     SearchRequest request = srF.get();
@@ -175,15 +295,15 @@ public class ProvElasticController {
     return new FileOpDTO.PList(searchResult.getValue0(), searchResult.getValue1());
   }
   
-  public FileOpDTO.Count provFileOpsCount(
+  public FileOpDTO.Count provFileOpsCount(Long projectIId,
     Map<String, ProvFileQuery.FilterVal> fileOpsFilters,
     List<Script> filterScripts,
     List<ProvElasticHelper.ProvAggregations> aggregations)
     throws ServiceException, GenericException {
     CheckedSupplier<SearchRequest, GenericException> srF =
       countSearchRequest(
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE)
+        settings.getProvFileIndex(projectIId),
+        Settings.PROV_FILE_DOC_TYPE)
         .andThen(filterByOpsParams(fileOpsFilters, filterScripts))
         .andThen(withAggregations(aggregations));
     SearchRequest request = srF.get();
@@ -209,11 +329,13 @@ public class ProvElasticController {
   
   //*** Archival
   private static class Archival {
+    Long projectIId;
     Long counter = 0l;
     Store store;
     Optional<Long> baseDoc;
     
-    public Archival(Store store, Optional<Long> baseArchiveDoc) {
+    public Archival(Long projectIId, Store store, Optional<Long> baseArchiveDoc) {
+      this.projectIId = projectIId;
       this.store = store;
       this.baseDoc = baseArchiveDoc;
     }
@@ -358,13 +480,13 @@ public class ProvElasticController {
           }
           Long line = acc.store.save();
           if(acc.baseDoc.isPresent()) {
-            updateArchive(acc.baseDoc.get(), acc.store.getLocation(), line);
+            updateArchive(acc.projectIId, acc.baseDoc.get(), acc.store.getLocation(), line);
           }
           
           BulkRequest bulkDelete = new BulkRequest();
           for (SearchHit hit : hits) {
-            bulkDelete.add(new DeleteRequest(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-              Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, hit.getId()));
+            bulkDelete.add(new DeleteRequest(settings.getProvFileIndex(acc.projectIId), Settings.PROV_FILE_DOC_TYPE,
+              hit.getId()));
           }
           ProvElasticHelper.bulkDelete(heClient, bulkDelete);
           acc.incBy(hits.length);
@@ -376,9 +498,10 @@ public class ProvElasticController {
       }
     };
   
-  public Long provArchiveFilePrefix(Long inodeId, Optional<Long> timestamp, String withArchiveProject)
+  public Long provArchiveFilePrefix(Long projectIId, Long inodeId, Optional<Long> timestamp,
+    String withArchiveProject)
     throws GenericException, ServiceException {
-    createArchive(inodeId);
+    createArchive(projectIId, inodeId);
     Map<String, ProvFileQuery.FilterVal> fileOpsFilters = new HashMap<>();
     ProvParamBuilder.addToFilters(fileOpsFilters, Pair.with(ProvFileQuery.FileOps.FILE_I_ID, inodeId));
     if(timestamp.isPresent()) {
@@ -387,39 +510,41 @@ public class ProvElasticController {
     DistributedFileSystemOps dfso = dfs.getDfsOps();
     Store store = new Hops(withArchiveProject, dfso);
     store.init();
-    Archival archival = new Archival(store, Optional.of(inodeId));
+    Archival archival = new Archival(projectIId, store, Optional.of(inodeId));
     return provArchiveFilePrefix(archival, fileOpsFilters, Optional.empty());
   }
   
-  public Long provCleanupFilePrefix(Long inodeId, Optional<Long> timestamp)
+  public Long provCleanupFilePrefix(Long projectIId, Long inodeId, Optional<Long> timestamp)
     throws GenericException, ServiceException {
-    return provCleanupFilePrefix(inodeId, timestamp, Optional.empty());
+    return provCleanupFilePrefix(projectIId, inodeId, timestamp, Optional.empty());
   }
   
-  public Long provCleanupFilePrefix(String docId, boolean skipDoc)
+  public Long provCleanupFilePrefix(Long projectIId, String docId, boolean skipDoc)
     throws ServiceException, GenericException {
-    FileOp doc = getFileOp(docId, true);
+    FileOp doc = getFileOp(projectIId, docId, true);
     if(doc.getInodeId() == null) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
         "problem parsing field: file inode id");
     }
     Optional<String> skipDocO = skipDoc ? Optional.of(docId) : Optional.empty();
-    return provCleanupFilePrefix(doc.getInodeId(), Optional.of(doc.getTimestamp()), skipDocO);
+    return provCleanupFilePrefix(projectIId, doc.getInodeId(), Optional.of(doc.getTimestamp()), skipDocO);
   }
   
-  private Long provCleanupFilePrefix(Long inodeId, Optional<Long> timestamp, Optional<String> skipDocO)
+  private Long provCleanupFilePrefix(Long projectIId, Long inodeId, Optional<Long> timestamp,
+    Optional<String> skipDocO)
     throws GenericException, ServiceException {
     Map<String, ProvFileQuery.FilterVal> fileOpsFilters = new HashMap<>();
     ProvParamBuilder.addToFilters(fileOpsFilters, Pair.with(ProvFileQuery.FileOps.FILE_I_ID, inodeId));
     if(timestamp.isPresent()) {
       ProvParamBuilder.addToFilters(fileOpsFilters, Pair.with(ProvFileQuery.FileOpsAux.TIMESTAMP_LTE, timestamp.get()));
     }
-    Archival archival = new Archival(new NoStore(), Optional.empty());
+    Archival archival = new Archival(projectIId, new NoStore(), Optional.empty());
     return provArchiveFilePrefix(archival, fileOpsFilters, skipDocO);
   }
   
-  public void provArchiveProject(String docId, boolean skipDoc) throws ServiceException, GenericException {
-    FileOp doc = getFileOp(docId, true);
+  public void provArchiveProject(Long projectIId, String docId, boolean skipDoc) throws ServiceException,
+    GenericException {
+    FileOp doc = getFileOp(projectIId, docId, true);
     Optional<String> skipDocO = skipDoc ? Optional.of(docId) : Optional.empty();
     throw new NotImplementedException();
   }
@@ -427,20 +552,20 @@ public class ProvElasticController {
   private Long provArchiveFilePrefix(Archival archival, Map<String, ProvFileQuery.FilterVal> fileOpsFilters,
     Optional<String> skipDocO)
     throws ServiceException, GenericException {
-    SearchRequest archivalRequest = archivalScrollingRequest(fileOpsFilters, skipDocO);
+    SearchRequest archivalRequest = archivalScrollingRequest(archival.projectIId, fileOpsFilters, skipDocO);
     ProvElasticHelper.ElasticComplexResultProcessor<Archival> processor =
       new ProvElasticHelper.ElasticComplexResultProcessor<>(archival, archivalConsumer);
     ProvElasticHelper.searchScrollingWithComplexAction(heClient, archivalRequest, processor);
     return archival.counter;
   }
   
-  private SearchRequest archivalScrollingRequest(Map<String, ProvFileQuery.FilterVal> fileOpsFilters,
-    Optional<String> skipDoc)
+  private SearchRequest archivalScrollingRequest(Long projectIId,
+    Map<String, ProvFileQuery.FilterVal> fileOpsFilters, Optional<String> skipDoc)
     throws GenericException {
     CheckedSupplier<SearchRequest, GenericException> srF =
       scrollingSearchRequest(
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE,
+        settings.getProvFileIndex(projectIId),
+        Settings.PROV_FILE_DOC_TYPE,
         HopsworksElasticClient.ARCHIVAL_PAGE_SIZE)
       .andThen(filterByArchival(fileOpsFilters, skipDoc))
       .andThen(sortByTimestamp());
@@ -451,10 +576,10 @@ public class ProvElasticController {
     return inodeId + "-archive";
   }
   
-  public ArchiveDTO.Base getArchive(Long inodeId) throws ServiceException, GenericException {
+  public ArchiveDTO.Base getArchive(Long projectIId, Long inodeId) throws ServiceException, GenericException {
     GetRequest request = new GetRequest(
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE,
+      settings.getProvFileIndex(projectIId),
+      Settings.PROV_FILE_DOC_TYPE,
       archiveId(inodeId));
     ArchiveDTO.Base result = ProvElasticHelper.getFileDoc(heClient, request, ArchiveDTO.Base::instance);
     if(result == null) {
@@ -464,15 +589,17 @@ public class ProvElasticController {
     return result;
   }
   
-  private void createArchive(Long inodeId)
+  private void createArchive(Long projectIId, Long inodeId)
     throws GenericException, ServiceException {
-    GetRequest getBase = new GetRequest(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE,
+    GetRequest getBase = new GetRequest(
+      settings.getProvFileIndex(projectIId),
+      Settings.PROV_FILE_DOC_TYPE,
       archiveId(inodeId));
     ArchiveDTO.Base baseArchival = ProvElasticHelper.getFileDoc(heClient, getBase, ArchiveDTO.Base::instance);
     if(baseArchival == null) {
-      IndexRequest indexBase = new IndexRequest(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-        Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE,
+      IndexRequest indexBase = new IndexRequest(
+        settings.getProvFileIndex(projectIId),
+        Settings.PROV_FILE_DOC_TYPE,
         archiveId(inodeId));
       Map<String, Object> docMap = new HashMap<>();
       docMap.put(ProvElasticFields.FileBase.INODE_ID.toString(), inodeId);
@@ -483,11 +610,11 @@ public class ProvElasticController {
     }
   }
   
-  private void updateArchive(Long inodeId, String location, Long line)
+  private void updateArchive(Long projectIId, Long inodeId, String location, Long line)
     throws ServiceException {
     UpdateRequest updateBase = new UpdateRequest(
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE,
+      settings.getProvFileIndex(projectIId),
+      Settings.PROV_FILE_DOC_TYPE,
       archiveId(inodeId));
     Map<String, Object> updateMap = new HashMap<>();
     updateMap.put(ProvElasticFields.FileOpsBase.ARCHIVE_LOC.toString(), new String[]{location + ":" + line});
@@ -496,11 +623,13 @@ public class ProvElasticController {
   }
   //****
   
-  public FileOp getFileOp(String docId, boolean soft) throws ServiceException, GenericException {
+  public FileOp getFileOp(Long projectIId, String docId, boolean soft) throws ServiceException, GenericException {
     CheckedFunction<Map<String, Object>, FileOp, GenericException> opParser
       = sourceMap -> FileOp.instance(docId, sourceMap, soft);
-    GetRequest request = new GetRequest(Settings.ELASTIC_INDEX_FILE_PROVENANCE,
-      Settings.ELASTIC_INDEX_FILE_PROVENANCE_DEFAULT_TYPE, docId);
+    GetRequest request = new GetRequest(
+      settings.getProvFileIndex(projectIId),
+      Settings.PROV_FILE_DOC_TYPE,
+      docId);
     return ProvElasticHelper.getFileDoc(heClient, request, opParser);
   }
   

@@ -175,7 +175,7 @@ public class LibraryFacade extends AbstractFacade<PythonDep> {
   public enum Sorts {
     ID("ID", "p.id ", "ASC"),
     DEPENDENCY("DEPENDENCY", "p.dependency ", "ASC"),
-    STATUS("STATUS", "p.status ", "ASC");
+    STATUS("PROV_TYPE", "p.status ", "ASC");
 
     private final String value;
     private final String sql;
@@ -212,7 +212,7 @@ public class LibraryFacade extends AbstractFacade<PythonDep> {
 
   public enum Filters {
     PREINSTALLED("PREINSTALLED", "p.preinstalled = :preinstalled ", "preinstalled", "1"),
-    STATUS("STATUS", "p.status IN :status ", "status", "NEW"),
+    STATUS("PROV_TYPE", "p.status IN :status ", "status", "NEW"),
     STATUS_NEQ("STATUS_NEQ", "p.status NOT IN :status_neq ", "status_neq", "NEW"),
     MACHINE_TYPE("MACHINE_TYPE", "p.machineType IN :machineType ", "machineType", "ALL"),
     MACHINE_TYPE_NEQ("MACHINE_TYPE_NEQ", "p.machineType NOT IN :machineType_neq ", "machineType_neq", "CPU");

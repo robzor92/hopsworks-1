@@ -20,6 +20,12 @@ import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.action.ActionFuture;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
+import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
+import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetRequest;
@@ -147,6 +153,18 @@ public class HopsworksElasticClient {
       }
     }
     return addr;
+  }
+  
+  public ActionFuture<GetIndexResponse> mngIndexGet(GetIndexRequest request) throws ServiceException {
+    return getClient().admin().indices().getIndex(request);
+  }
+  
+  public ActionFuture<CreateIndexResponse> mngIndexCreate(CreateIndexRequest request) throws ServiceException {
+    return getClient().admin().indices().create(request);
+  }
+  
+  public ActionFuture<DeleteIndexResponse> mngIndexDelete(DeleteIndexRequest request) throws ServiceException {
+    return getClient().admin().indices().delete(request);
   }
   
   public ActionFuture<GetResponse> get(GetRequest request) throws ServiceException {

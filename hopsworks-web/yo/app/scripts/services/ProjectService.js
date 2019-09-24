@@ -44,7 +44,7 @@ angular.module('hopsWorksApp')
             return $resource(
                     "/api/project/:id",
                     {id: "@id", projectName: "@projectName", inodeId: "@inodeId", type: "@type",
-                      provenanceStatus:"@provenanceStatus"},
+                      provStateType: "@provStateType"},
             {
               "save": {
                 method: "POST",
@@ -123,28 +123,24 @@ angular.module('hopsWorksApp')
               },
               "getProjectProvenanceStatus": {
                 url: '/api/project/:id/provenance/status',
-                'method': 'GET'
-              },
-              "setProjectProvenanceStatus": {
-                url: '/api/project/:id/provenance/status/:provenanceStatus',
-                'method': 'POST'
+                method: 'GET'
               },
               "getDatasetsProvenanceStatus": {
                 url: '/api/project/:id/provenance/content',
-                'method': 'GET',
+                method: 'GET',
                 isArray: true
               },
               "provStates": {
-                url: '/api/project/:id/provenance/file/state/size',
-                'method': 'GET'
+                url: '/api/project/:id/provenance/file/state/:provStateType/size',
+                method: 'GET'
               },
               "provOps": {
                 url: '/api/project/:id/provenance/file/ops/size',
-                'method': 'GET'
+                method: 'GET'
               },
               "provCleanup": {
                 url: '/api/project/:id/provenance/file/ops/cleanupsize',
-                'method': 'GET'
+                method: 'GET'
               }
             }
             );

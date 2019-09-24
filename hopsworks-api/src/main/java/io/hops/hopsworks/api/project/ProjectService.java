@@ -91,6 +91,7 @@ import io.hops.hopsworks.common.project.ProjectController;
 import io.hops.hopsworks.common.project.ProjectDTO;
 import io.hops.hopsworks.common.project.QuotasDTO;
 import io.hops.hopsworks.common.project.TourProjectType;
+import io.hops.hopsworks.common.provenance.v2.xml.ProvTypeDTO;
 import io.hops.hopsworks.common.user.AuthController;
 import io.hops.hopsworks.common.user.UsersController;
 import io.hops.hopsworks.common.util.Settings;
@@ -470,7 +471,7 @@ public class ProjectService {
       for (String s : projectDTO.getServices()) {
         ProjectServiceEnum se = null;
         se = ProjectServiceEnum.valueOf(s.toUpperCase());
-        Inode.MetaStatus projectMetaStatus = projectController.getProvenanceStatus(project, dfso);
+        ProvTypeDTO.ProvType projectMetaStatus = projectController.getProvenanceStatus(project, dfso);
         List<Future<?>> serviceFutureList
           = projectController.addService(project, se, user, dfso, udfso, projectMetaStatus);
         if (serviceFutureList != null) {
@@ -575,7 +576,7 @@ public class ProjectService {
       dfso = dfs.getDfsOps();
       username = hdfsUsersBean.getHdfsUserName(project, user);
       udfso = dfs.getDfsOps(username);
-      Inode.MetaStatus projectMetaStatus = projectController.getProvenanceStatus(project, dfso);
+      ProvTypeDTO.ProvType projectMetaStatus = projectController.getProvenanceStatus(project, dfso);
       projectController.addTourFilesToProject(user.getEmail(), project, dfso, dfso, demoType, projectMetaStatus);
       //TestJob dataset
       datasetController.generateReadme(udfso, "TestJob", readMeMessage, project.getName());

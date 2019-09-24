@@ -251,6 +251,16 @@ public class ProvFileStateParamBuilder {
     return this;
   }
   
+  public ProvFileStateParamBuilder filterByStateField(ProvFileQuery.Field field, String val) throws GenericException {
+    if(!(field instanceof ProvFileQuery.FileState
+      || field instanceof ProvFileQuery.FileStateAux)) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "allowed fields - FileState and fileStateAux");
+    }
+    Object v = field.filterValParser().parse(val);
+    ProvParamBuilder.addToFilters(fileStateFilter, Pair.with(field, v));
+    return this;
+  }
   public boolean hasAppExpansion() {
     return expansions.contains(ProvFileQuery.FileExpansions.APP);
   }

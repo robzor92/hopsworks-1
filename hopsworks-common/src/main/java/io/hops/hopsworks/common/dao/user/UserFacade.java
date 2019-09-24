@@ -239,7 +239,7 @@ public class UserFacade extends AbstractFacade<Users> {
     ROLE("ROLE", "u.bbcGroupCollection IN :roles ", "roles", "HOPS_ADMIN,HOPS_USER"),
     ROLE_NEQ("ROLE_NEQ", "u.bbcGroupCollection NOT IN :roles_neq ", "roles_neq", "AGENT,AUDITOR"),
     TYPE("TYPE", "u.mode = :mode ", "mode", "0"),
-    STATUS("STATUS", "u.status = :status ", "status", "2"),
+    STATUS("PROV_TYPE", "u.status = :status ", "status", "2"),
     STATUS_LT("STATUS_LT", "u.status < :status_lt ", "status_lt", "2"),
     STATUS_GT("STATUS_GT", "u.status > :status_gt ", "status_gt", "2"),
     IS_ONLINE("IS_ONLINE", "u.isonline = :isonline ", "isonline", "1"),
@@ -358,7 +358,7 @@ public class UserFacade extends AbstractFacade<Users> {
   }
 
   /**
-   * Get all users with STATUS = status.
+   * Get all users with PROV_TYPE = status.
    *
    * @param status
    * @return

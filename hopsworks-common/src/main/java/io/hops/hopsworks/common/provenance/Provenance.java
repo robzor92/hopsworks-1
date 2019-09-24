@@ -44,6 +44,7 @@ public class Provenance {
     TRAINING_DATASET,
     MODEL,
     EXPERIMENT,
+    DATASET,
     NONE
   }
   public enum AppState {

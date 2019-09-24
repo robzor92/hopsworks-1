@@ -39,5 +39,5 @@
 package io.hops.hopsworks.common.provenance.v2;
 
 public class ProvXAttrs {
-  public static final String STATUS = "provenance.prov_status";
+  public static final String PROV_TYPE = "provenance.prov_type";
 }

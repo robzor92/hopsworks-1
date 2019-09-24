@@ -15,7 +15,7 @@
  */
 package io.hops.hopsworks.common.provenance;
 
-import io.hops.hopsworks.common.dao.hdfs.inode.Inode;
+import io.hops.hopsworks.common.provenance.v2.xml.ProvTypeDTO;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -23,14 +23,14 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class ProvDatasetState {
   private String name;
   private long inodeId;
-  private Inode.MetaStatus metaStatus;
+  private ProvTypeDTO status;
   
   public ProvDatasetState() {}
   
-  public ProvDatasetState(String name, long inodeId, Inode.MetaStatus metaStatus) {
+  public ProvDatasetState(String name, long inodeId, ProvTypeDTO status) {
     this.name = name;
     this.inodeId = inodeId;
-    this.metaStatus = metaStatus;
+    this.status = status;
   }
   
   public String getName() {
@@ -49,11 +49,11 @@ public class ProvDatasetState {
     this.inodeId = inodeId;
   }
   
-  public Inode.MetaStatus getMetaStatus() {
-    return metaStatus;
+  public ProvTypeDTO getStatus() {
+    return status;
   }
   
-  public void setMetaStatus(Inode.MetaStatus metaStatus) {
-    this.metaStatus = metaStatus;
+  public void setStatus(ProvTypeDTO status) {
+    this.status = status;
   }
 }

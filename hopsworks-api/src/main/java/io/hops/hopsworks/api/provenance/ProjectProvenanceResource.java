@@ -55,10 +55,12 @@ import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.project.ProjectController;
 import io.hops.hopsworks.common.provenance.AppFootprintType;
 import io.hops.hopsworks.common.provenance.ProvDatasetState;
+import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
+import io.hops.hopsworks.common.provenance.v2.ProvFileQuery;
 import io.hops.hopsworks.common.provenance.v2.xml.ArchiveDTO;
 import io.hops.hopsworks.common.provenance.v2.xml.FileOpDTO;
-import io.hops.hopsworks.common.provenance.v2.xml.SimpleResult;
+import io.hops.hopsworks.common.provenance.v2.xml.ProvTypeDTO;
 import io.hops.hopsworks.common.provenance.v2.ProvFileOpsParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.exceptions.GenericException;
@@ -124,19 +126,23 @@ public class ProjectProvenanceResource {
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response getProvenanceStatus()
     throws GenericException {
-    Inode.MetaStatus status = projectCtrl.getProvenanceStatus(project);
-    return Response.ok().entity(new SimpleResult<>(status.name())).build();
+    ProvTypeDTO status = projectCtrl.getProvenanceStatus(project).dto;
+    return Response.ok().entity(status).build();
   }
   
   @POST
-  @Path("/status/{status}")
+  @Path("/prov/{type}")
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.ANYONE})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response changeProvenanceStatus(
-    @PathParam("status") Inode.MetaStatus status)
-    throws GenericException {
-    projectCtrl.updateProvenanceStatus(project, status);
+  public Response changeProvenanceType(
+    @PathParam("type") String type)
+    throws GenericException, ServiceException {
+    if(type == null) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "malformed status");
+    }
+    projectCtrl.updateProvenanceStatus(project, ProvTypeDTO.provTypeFromString(type));
     return Response.ok().build();
   }
   
@@ -145,7 +151,7 @@ public class ProjectProvenanceResource {
   @Produces(MediaType.APPLICATION_JSON)
   @AllowedProjectRoles({AllowedProjectRoles.ANYONE})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response content() {
+  public Response content() throws GenericException {
     GenericEntity<List<ProvDatasetState>> result
       = new GenericEntity<List<ProvDatasetState>>(projectCtrl.getDatasetsProvenanceStatus(project)) {};
     return Response.ok().entity(result).build();
@@ -159,7 +165,7 @@ public class ProjectProvenanceResource {
   public Response getFileOpsSize() throws ServiceException, GenericException {
     ProvFileOpsParamBuilder paramBuilder = new ProvFileOpsParamBuilder()
       .withProjectInodeId(project.getInode().getId());
-    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder,
+    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, project, paramBuilder,
       FileOpsCompactionType.NONE, FileStructReturnType.COUNT);
   }
   
@@ -169,7 +175,7 @@ public class ProjectProvenanceResource {
   @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
   @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response getFileOpsCleanupSize() throws ServiceException, GenericException {
-    FileOpDTO.Count result = provenanceCtrl.cleanupSize(project.getInode().getId());
+    FileOpDTO.Count result = provenanceCtrl.cleanupSize(project);
     return Response.ok().entity(result).build();
   }
   
@@ -192,7 +198,7 @@ public class ProjectProvenanceResource {
       .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
-    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder,
+    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, project, paramBuilder,
       params.getOpsCompaction(), params.getReturnType());
   }
   
@@ -217,19 +223,8 @@ public class ProjectProvenanceResource {
       .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
-    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, paramBuilder, params.getOpsCompaction(),
+    return ProvenanceResourceHelper.getFileOps(provenanceCtrl, project, paramBuilder, params.getOpsCompaction(),
       params.getReturnType());
-  }
-  
-  @GET
-  @Path("file/state/size")
-  @Produces(MediaType.APPLICATION_JSON)
-  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
-  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
-  public Response getFileStatesSize() throws ServiceException, GenericException {
-    ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
-      .withProjectInodeId(project.getInode().getId());
-    return ProvenanceResourceHelper.getFileStates(provenanceCtrl, paramBuilder,FileStructReturnType.COUNT);
   }
   
   @GET
@@ -253,7 +248,21 @@ public class ProjectProvenanceResource {
       .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
-    return ProvenanceResourceHelper.getFileStates(provenanceCtrl, paramBuilder, params.getReturnType());
+    return ProvenanceResourceHelper.getFileStates(provenanceCtrl, project, paramBuilder, params.getReturnType());
+  }
+  
+  @GET
+  @Path("/file/state/{type}/size")
+  @Produces(MediaType.APPLICATION_JSON)
+  @AllowedProjectRoles({AllowedProjectRoles.DATA_SCIENTIST, AllowedProjectRoles.DATA_OWNER})
+  @JWTRequired(acceptedTokens = {Audience.API}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
+  public Response getDatasetStatesSize(
+    @PathParam("type") Provenance.MLType type)
+    throws ServiceException, GenericException {
+    ProvFileStateParamBuilder paramBuilder = new ProvFileStateParamBuilder()
+      .withProjectInodeId(project.getInode().getId())
+      .filterByStateField(ProvFileQuery.FileState.ML_TYPE, type.toString());
+    return ProvenanceResourceHelper.getFileStates(provenanceCtrl, project, paramBuilder,FileStructReturnType.COUNT);
   }
   
   @GET
@@ -279,9 +288,8 @@ public class ProjectProvenanceResource {
       .withPagination(pagination.getOffset(), pagination.getLimit());
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
-    return ProvenanceResourceHelper.getFileStates(provenanceCtrl, paramBuilder, params.getReturnType());
+    return ProvenanceResourceHelper.getFileStates(provenanceCtrl, project, paramBuilder, params.getReturnType());
   }
-  
   
   @GET
   @Path("app/{appId}/footprint/{type}")
@@ -304,7 +312,7 @@ public class ProjectProvenanceResource {
     logger.log(Level.INFO, "Local content path:{0} file state params:{1} ",
       new Object[]{req.getRequestURL().toString(), params});
     
-    return ProvenanceResourceHelper.getAppFootprint(provenanceCtrl, paramBuilder, footprintType,
+    return ProvenanceResourceHelper.getAppFootprint(provenanceCtrl, project, paramBuilder, footprintType,
       params.getReturnType());
   }
   
@@ -347,7 +355,7 @@ public class ProjectProvenanceResource {
   public Response testArchival(
     @PathParam("inodeId") Long inodeId)
     throws ServiceException, GenericException {
-    ArchiveDTO.Round result = provenanceCtrl.provCleanupFilePrefix(inodeId);
+    ArchiveDTO.Round result = provenanceCtrl.provCleanupFilePrefix(project, inodeId);
     return Response.ok().entity(result).build();
   }
   
@@ -360,7 +368,7 @@ public class ProjectProvenanceResource {
     @PathParam("inodeId") Long inodeId,
     @PathParam("timestamp") Long timestamp)
     throws ServiceException, GenericException {
-    ArchiveDTO.Round result = provenanceCtrl.provCleanupFilePrefix(inodeId, timestamp);
+    ArchiveDTO.Round result = provenanceCtrl.provCleanupFilePrefix(project, inodeId, timestamp);
     return Response.ok().entity(result).build();
   }
   

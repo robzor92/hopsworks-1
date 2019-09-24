@@ -19,8 +19,8 @@ import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.v2.xml.ArchiveDTO;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.GenericException;
-import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.ServiceException;
+import org.javatuples.Pair;
 
 import javax.ejb.EJB;
 import javax.ejb.Schedule;
@@ -41,18 +41,23 @@ public class ProvenanceCleaner {
   @EJB
   private Settings settings;
   
+  private String lastIndexChecked = "";
+  
   // Run once per hour
-  @Schedule(persistent = false, hour = "*", minute = "0")
+  @Schedule(persistent = false, hour = "*", minute = "*")
   public void execute(Timer timer) {
+    int cleanupSize = settings.getProvCleanupSize();
     int archiveSize = settings.getProvArchiveSize();
     if(archiveSize == 0) {
       return;
     }
     try {
-      ArchiveDTO.Round round = provenanceCtrl.archiveRound(archiveSize);
-      LOGGER.log(Level.INFO, "cleanup round - operations - archived:{0} cleaned:{1}",
-        new Object[]{round.getArchived(), round.getCleaned()});
-    } catch (GenericException | ServiceException | ProjectException e) {
+      Pair<ArchiveDTO.Round, String> round = provenanceCtrl.archiveRound(lastIndexChecked, cleanupSize, archiveSize);
+      LOGGER.log(Level.INFO, "cleanup round - operations archived:{0} idx cleaned:{1} from:{2} to:{3}",
+        new Object[]{round.getValue0().getArchived(), round.getValue0().getCleaned(), lastIndexChecked,
+          round.getValue1()});
+      lastIndexChecked = round.getValue1();
+    } catch (GenericException | ServiceException e) {
       LOGGER.log(Level.INFO, "cleanup round was not successful - error", e);
     }
   }

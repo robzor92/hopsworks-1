@@ -91,7 +91,7 @@ public final class YarnMonitor implements Closeable {
   }
 
   //---------------------------------------------------------------------------        
-  //--------------------------- STATUS QUERIES --------------------------------
+  //--------------------------- PROV_TYPE QUERIES --------------------------------
   //---------------------------------------------------------------------------
   public YarnApplicationState getApplicationState() throws YarnException,
           IOException {

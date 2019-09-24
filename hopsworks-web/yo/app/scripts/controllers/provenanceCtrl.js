@@ -47,30 +47,59 @@ angular.module('hopsWorksApp')
     function (ProjectService,  $routeParams, $location, growl) {
 
       var self = this;
-      self.metaStatus = [
-        {id:'DISABLED', label: 'No provenance'},
+      self.provStatus = [
+        {id: 'DISABLED', label: 'No provenance'},
         {id: 'META_ENABLED', label: 'Meta Enabled - Searchable'},
-        {id: 'PROVENANCE_ENABLED', label: 'Provenance Enabled - Operations and states are searchable'},
-      ]
-      self.projectProv = [
-        {id: false, label: 'Disabled'},
-        {id: true, label: 'Enabled'}
-      ]
+        {id: 'MIN_PROV_ENABLED', label: 'Minimum Provenance Enabled - Only states are saved' +
+            ' (dataset/experiment/model/training_dataset/features'},
+        {id: 'FULL_PROV_ENABLED', label: 'FULL Provenance Enabled - States and operations are saved' +
+            ' (dataset/experiment/model/training_dataset/features'}
+      ];
       self.projectId = $routeParams.projectID;
       self.pGetStatusWorking = false;
       self.dGetStatusWorking = false;
       self.setStatusWorking = false;
-      self.projectProvenanceEnabled = false;
-      self.provStatesSize = 0;
+      self.projectProvenanceStatus = "DISABLED";
+      self.datasetsProvenanceStatus = [];
+      self.provFSDatasetsSize = 0;
+      self.provExperimentsSize = 0;
+      self.provModelsSize = 0;
+      self.provTrainingDatasetsSize = 0;
       self.provOpsSize = 0;
       self.provCleanupSize = 0;
+
+      self.unmarshalProvStatus = function(response) {
+        var provenanceStatus;
+        switch(response.provStatus) {
+          case "NONE":
+            if(response.metaStatus === "DISABLED") {
+              provenanceStatus = "DISABLED";
+            } else if(response.metaStatus === "META_ENABLED") {
+              provenanceStatus = "META_ENABLED";
+            } break;
+          case "STATE": provenanceStatus = "MIN_PROV_ENABLED"; break;
+          case "ALL": provenanceStatus = "FULL_PROV_ENABLED"; break;
+        }
+        return provenanceStatus;
+      };
+
+      self.marshalProvStatus = function(status) {
+        var provenanceStatus;
+        switch(status) {
+          case "DISABLED": provenanceStatus = {metaStatus:"DISABLED", provStatus:"NONE"}; break;
+          case "META_ENABLED": provenanceStatus = {metaStatus:"META_ENABLED", provStatus:"NONE"}; break;
+          case "MIN_PROV_ENABLED": provenanceStatus = {metaStatus:"MIN_PROV_ENABLED", provStatus:"STATE"}; break;
+          case "FULL_PROV_ENABLED": provenanceStatus = {metaStatus:"FULL_PROV_ENABLED", provStatus:"ALL"}; break;
+        };
+        return provenanceStatus;
+      };
 
       self.getProjectProvenanceStatus = function () {
         self.pGetStatusWorking = true;
         ProjectService.getProjectProvenanceStatus({id: self.projectId})
           .$promise.then(
             function (response) {
-              self.projectProvenanceEnabled = (response.result.value === "PROVENANCE_ENABLED");
+              self.projectProvenanceStatus = self.unmarshalProvStatus(response);
               self.pGetStatusWorking = false;
             },
             function (error) {
@@ -85,38 +114,34 @@ angular.module('hopsWorksApp')
 
       self.getProjectProvenanceStatus();
 
-      self.setProvenanceStatus = function () {
-        self.projectProvenanceEnabled = !self.projectProvenanceEnabled;
-        self.setStatusWorking = true;
-        var provenanceStatus;
-        if (self.projectProvenanceEnabled === true) {
-          provenanceStatus = "PROVENANCE_ENABLED";
-        } else {
-          provenanceStatus = "DISABLED";
-        }
-        ProjectService.setProjectProvenanceStatus({id: self.projectId, provenanceStatus: provenanceStatus})
-          .$promise.then(
-          function (response) {
-            self.setStatusWorking = false;
-            self.getDatasetsProvenanceStatus();
-          },
-          function (error) {
-            if (typeof error.data.usrMsg !== 'undefined') {
-              growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 5000});
-            } else {
-              growl.error("", {title: error.data.errorMsg, ttl: 5000});
-            }
-            self.projectProvenanceEnabled = !self.projectProvenanceEnabled;
-            self.setStatusWorking = false;
-          });
-      };
+      // self.setProvenanceStatus = function () {
+      //   self.setStatusWorking = true;
+      //   var provenanceStatus = self.marshalProvStatus(self.projectProvenanceStatus);
+      //   ProjectService.setProjectProvenanceStatus({id: self.projectId, provenanceStatus: provenanceStatus})
+      //     .$promise.then(
+      //     function () {
+      //       self.getDatasetsProvenanceStatus();
+      //       self.setStatusWorking = false;
+      //     },
+      //     function (error) {
+      //       if (typeof error.data.usrMsg !== 'undefined') {
+      //         growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 5000});
+      //       } else {
+      //         growl.error("", {title: error.data.errorMsg, ttl: 5000});
+      //       }
+      //       self.getProjectProvenanceStatus()
+      //       self.setStatusWorking = false;
+      //     });
+      // };
 
       self.getDatasetsProvenanceStatus = function() {
         self.dGetStatusWorking = true;
         ProjectService.getDatasetsProvenanceStatus({id: self.projectId})
           .$promise.then(
           function (response) {
-            self.datasetProvenanceStatus = response;
+            for (var i = 0; i < response.length; i++) {
+              self.datasetsProvenanceStatus[i] = {name: response[i].name, inodeId: response[i].inodeId, status: self.unmarshalProvStatus(response[i].status)};
+            }
             self.dGetStatusWorking = false;
           },
           function (error) {
@@ -127,19 +152,55 @@ angular.module('hopsWorksApp')
             }
             self.dGetStatusWorking = false;
           });
-      }
+      };
 
       self.getDatasetsProvenanceStatus();
 
       self.isWorking = function() {
         return self.pGetStatusWorking || self.dGetStatusWorking || self.setStatusWorking;
-      }
+      };
 
       self.getSize = function() {
-        ProjectService.provStates({id: self.projectId})
+        ProjectService.provStates({id: self.projectId, provStateType: "DATASET"})
           .$promise.then(
           function (response) {
-            self.provStatesSize = response.result.value;
+            self.provFSDatasetsSize = response.result.value;
+          },
+          function (error) {
+            if (typeof error.data.usrMsg !== 'undefined') {
+              growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 5000});
+            } else {
+              growl.error("", {title: error.data.errorMsg, ttl: 5000});
+            }
+          });
+        ProjectService.provStates({id: self.projectId, provStateType: "EXPERIMENT"})
+          .$promise.then(
+          function (response) {
+            self.provExperimentsSize = response.result.value;
+          },
+          function (error) {
+            if (typeof error.data.usrMsg !== 'undefined') {
+              growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 5000});
+            } else {
+              growl.error("", {title: error.data.errorMsg, ttl: 5000});
+            }
+          });
+        ProjectService.provStates({id: self.projectId, provStateType: "MODEL"})
+          .$promise.then(
+          function (response) {
+            self.provModelsSize = response.result.value;
+          },
+          function (error) {
+            if (typeof error.data.usrMsg !== 'undefined') {
+              growl.error(error.data.usrMsg, {title: error.data.errorMsg, ttl: 5000});
+            } else {
+              growl.error("", {title: error.data.errorMsg, ttl: 5000});
+            }
+          });
+        ProjectService.provStates({id: self.projectId, provStateType: "TRAINING_DATASET"})
+          .$promise.then(
+          function (response) {
+            self.provTrainingDatasetsSize = response.result.value;
           },
           function (error) {
             if (typeof error.data.usrMsg !== 'undefined') {

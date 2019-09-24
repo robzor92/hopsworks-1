@@ -39,6 +39,7 @@
 
 package io.hops.hopsworks.common.dataset;
 
+import com.google.gson.Gson;
 import io.hops.common.Pair;
 import io.hops.hopsworks.common.constants.auth.AllowedRoles;
 import io.hops.hopsworks.common.dao.dataset.Dataset;
@@ -65,6 +66,7 @@ import io.hops.hopsworks.common.hdfs.HdfsUsersController;
 import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.v2.ProvXAttrs;
+import io.hops.hopsworks.common.provenance.v2.xml.ProvTypeDTO;
 import io.hops.hopsworks.common.util.HopsUtils;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.DatasetException;
@@ -145,7 +147,7 @@ public class DatasetController {
    */
   @TransactionAttribute(TransactionAttributeType.NEVER)
   public void createDataset(Users user, Project project, String dataSetName,
-      String datasetDescription, int templateId, Inode.MetaStatus metaStatus,
+      String datasetDescription, int templateId, ProvTypeDTO.ProvType metaStatus,
       boolean stickyBit, boolean defaultDataset, DistributedFileSystemOps dfso)
     throws DatasetException, HopsSecurityException, GenericException {
   
@@ -177,7 +179,7 @@ public class DatasetController {
         ds = inodes.findByInodePK(parent, dataSetName,
             HopsUtils.dataSetPartitionId(parent, dataSetName));
         Dataset newDS = new Dataset(ds, project);
-        newDS.setSearchable(isSearchable(metaStatus));
+        newDS.setSearchable(isSearchable(metaStatus.dto.getMetaStatus()));
 
         if (datasetDescription != null) {
           newDS.setDescription(datasetDescription);
@@ -591,12 +593,12 @@ public class DatasetController {
     return false;
   }
   
-  public void unsetMetaEnabledForAllDatasets(DistributedFileSystemOps dfso, Project project) throws IOException {
+  public void disableMetaForAllDatasets(DistributedFileSystemOps dfso, Project project) throws IOException {
     Collection<Dataset> datasets = project.getDatasetCollection();
     for (Dataset dataset : datasets) {
       if (dataset.isSearchable() && !dataset.isShared()) {
         Path dspath = getDatasetPath(dataset);
-        dfso.unsetMetaEnabled(dspath);
+        dfso.setMetaStatus(dspath, Inode.MetaStatus.DISABLED);
       }
     }
   }
@@ -654,24 +656,66 @@ public class DatasetController {
   }
   
   // PROVENANCE
-  public void updateProvenanceStatus(Dataset dataset, Inode.MetaStatus status, DistributedFileSystemOps dfso)
+  public ProvTypeDTO.ProvType getProvenanceStatus(Dataset dataset) throws GenericException {
+    DistributedFileSystemOps dfso = dfs.getDfsOps();
+    try {
+      if(isHive(dataset) || isFeatureStore(dataset)) {
+        return ProvTypeDTO.ProvType.DISABLED;
+      }
+      return getProvenanceStatus(dataset, dfso);
+    } finally {
+      if (dfso != null) {
+        dfso.close();
+      }
+    }
+  }
+  
+  public ProvTypeDTO.ProvType getProvenanceStatus(Dataset dataset, DistributedFileSystemOps dfso)
     throws GenericException {
-    Inode.MetaStatus previousStatus = dataset.getInode().getMetaStatus();
+    String datasetPath = Utils.getDatasetPath(dataset.getProject().getName(), dataset.getName());
+    try {
+      byte[] bVal = dfso.getXAttr(datasetPath, ProvXAttrs.PROV_TYPE);
+      ProvTypeDTO.ProvType status;
+      if(bVal == null) {
+        switch(dataset.getInode().getMetaStatus()) {
+          case DISABLED: status = ProvTypeDTO.ProvType.DISABLED; break;
+          case META_ENABLED: status = ProvTypeDTO.ProvType.META; break;
+          case MIN_PROV_ENABLED: status = ProvTypeDTO.ProvType.MIN; break;
+          case FULL_PROV_ENABLED: status = ProvTypeDTO.ProvType.FULL; break;
+          default: throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+            "provenance status - meta status not handled");
+        }
+      } else {
+        Gson gson = new Gson();
+        ProvTypeDTO aux = gson.fromJson(new String(bVal), ProvTypeDTO.class);
+        status = ProvTypeDTO.getProvType(aux);
+      }
+      return status;
+    } catch (IOException e) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "dataset provenance xattr persistance exception");
+    }
+  }
+  
+  public void updateProvenanceStatus(Dataset dataset, ProvTypeDTO.ProvType status, DistributedFileSystemOps dfso)
+    throws GenericException {
+    ProvTypeDTO.ProvType previousStatus = getProvenanceStatus(dataset, dfso);
     if(status.equals(previousStatus)) {
       return;
     }
     updateProvenanceStatusInt(dataset, status, dfso);
   }
   
-  public void updateProvenanceStatusInt(Dataset dataset, Inode.MetaStatus status, DistributedFileSystemOps dfso)
+  public void updateProvenanceStatusInt(Dataset dataset, ProvTypeDTO.ProvType status, DistributedFileSystemOps dfso)
     throws GenericException {
     try {
       String datasetPath = Utils.getDatasetPath(dataset.getProject().getName(), dataset.getName());
-      dfso.setMetaStatus(datasetPath, status);
+      dfso.setMetaStatus(datasetPath, status.dto.getMetaStatus());
       if(isHive(dataset) || isFeatureStore(dataset)) {
         return;
       }
-      dfso.upsertXAttr(datasetPath, ProvXAttrs.STATUS, status.name().getBytes());
+      Gson gson = new Gson();
+      dfso.upsertXAttr(datasetPath, ProvXAttrs.PROV_TYPE, gson.toJson(status.dto).getBytes());
     } catch (IOException e) {
       throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
         "dataset provenance persistance exception");

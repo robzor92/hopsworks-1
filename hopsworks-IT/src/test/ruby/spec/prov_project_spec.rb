@@ -104,7 +104,7 @@ describe "On #{ENV['OS']}" do
       pp "cleanup cycle"
       ops1 = cleanup_cycle(@project1)
       ops2 = cleanup_cycle(@project2)
-      
+
       if ops1["count"] != 0
         pp "secondary cleanup cycle(1)"
         sleep(1)
@@ -121,7 +121,7 @@ describe "On #{ENV['OS']}" do
       expect(ops2["count"]).to eq 0
     end
 
-    after :all do 
+    after :all do
       pp "delete projects"
       delete_project(@project1)
       @project1 = nil
@@ -258,8 +258,8 @@ describe "On #{ENV['OS']}" do
         pp "restart epipe"
         execute_remotely @hostname, "sudo systemctl restart epipe"
 
-        pp "check training dataset" 
-        prov_wait_for_epipe() 
+        pp "check training dataset"
+        prov_wait_for_epipe()
         get_ml_asset_by_xattr_count(@project1, "TRAINING_DATASET", "key", "val1", 2)
         get_ml_asset_by_xattr_count(@project1, "TRAINING_DATASET", "key", "val2", 1)
         get_ml_asset_by_xattr_count(@project2, "TRAINING_DATASET", "key", "val2", 1)
@@ -270,8 +270,8 @@ describe "On #{ENV['OS']}" do
         prov_delete_td(@project1, @td2_name, @td_version1)
         prov_delete_td(@project2, @td2_name, @td_version1)
 
-        pp "check hops cleanup" 
-        prov_wait_for_epipe() 
+        pp "check hops cleanup"
+        prov_wait_for_epipe()
         get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 0)
       end
 
@@ -333,9 +333,9 @@ describe "On #{ENV['OS']}" do
     after :each do
       pp "cleanup cycle"
       ops = cleanup_cycle(@project1)
-      
+
       #pp ops
-      if ops["count"] != 0 
+      if ops["count"] != 0
         pp "secondary cleanup cycle"
         sleep(1)
         ops = cleanup_cycle(@project1)
@@ -343,7 +343,7 @@ describe "On #{ENV['OS']}" do
       expect(ops["count"]).to eq 0
     end
 
-    after :all do 
+    after :all do
       pp "delete projects"
       delete_project(@project1)
       @project1 = nil
@@ -982,9 +982,9 @@ describe "On #{ENV['OS']}" do
 
       pp "restart epipe"
       execute_remotely @hostname, "sudo systemctl restart epipe"
-      prov_wait_for_epipe() 
+      prov_wait_for_epipe()
 
-      pp "check mock fileOperations" 
+      pp "check mock fileOperations"
       result = get_app_file_ops(@project1, @app_file_ops1, "NONE", "LIST")
       #pp result
       expect(result["items"].length).to eq 3
@@ -996,8 +996,8 @@ describe "On #{ENV['OS']}" do
       pp "cleanup hops"
       prov_delete_experiment(@project1, @experiment_file_ops)
 
-      pp "check hops cleanup" 
-      prov_wait_for_epipe() 
+      pp "check hops cleanup"
+      prov_wait_for_epipe()
       experiment_id1 = prov_experiment_id(@experiment_file_ops)
       check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false)
     end
@@ -1079,9 +1079,9 @@ describe "On #{ENV['OS']}" do
 
       pp "restart epipe"
       execute_remotely @hostname, "sudo systemctl restart epipe"
-      prov_wait_for_epipe() 
+      prov_wait_for_epipe()
 
-      pp "check mock app footprint" 
+      pp "check mock app footprint"
       result = get_app_footprint(@project1, @app_app_fprint, "ALL")
       # pp result
       expect(result.length).to eq 6
@@ -1105,8 +1105,8 @@ describe "On #{ENV['OS']}" do
       pp "cleanup hops"
       prov_delete_experiment(@project1, @experiment_app_fprint)
 
-      pp "check hops cleanup" 
-      prov_wait_for_epipe() 
+      pp "check hops cleanup"
+      prov_wait_for_epipe()
       experiment_id1 = prov_experiment_id(@experiment_app_fprint)
       check_no_ml_asset_by_id(@project1, "EXPERIMENT", experiment_id1, false)
     end

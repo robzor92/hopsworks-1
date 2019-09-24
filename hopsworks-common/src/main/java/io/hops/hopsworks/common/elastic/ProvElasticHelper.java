@@ -23,6 +23,13 @@ import io.hops.hopsworks.common.provenance.v2.xml.FileOpDTO;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
+import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
+import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetRequest;
@@ -37,6 +44,7 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -67,6 +75,86 @@ import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
 
 public class ProvElasticHelper {
   private static final Logger LOG = Logger.getLogger(HopsworksElasticClient.class.getName());
+  
+  public static GetIndexResponse mngIndexGet(HopsworksElasticClient heClient, GetIndexRequest request)
+    throws ServiceException {
+    GetIndexResponse response;
+    try {
+      LOG.log(Level.INFO, "request:{0}", request.toString());
+      response = heClient.mngIndexGet(request).get();
+    } catch (InterruptedException | ExecutionException e) {
+      String msg = "elastic index:" + request.indices() + "error during index get";
+      LOG.log(Level.INFO, msg, e);
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING, msg, msg, e);
+    } catch (ServiceException e) {
+      String msg = "elastic index:" + request.indices() + "error during index get";
+      LOG.log(Level.INFO, msg, e);
+      throw e;
+    }
+    return response;
+  }
+  
+  public static CreateIndexResponse mngIndexCreate(HopsworksElasticClient heClient, CreateIndexRequest request)
+    throws ServiceException {
+    if(request.index().length() > 255) {
+      String msg = "elastic index name is too long:" + request.index();
+      LOG.log(Level.INFO, msg);
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING, msg);
+    }
+    if(!request.index().equals(request.index().toLowerCase())) {
+      String msg = "elastic index names can only contain lower case:" + request.index();
+      LOG.log(Level.INFO, msg);
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING, msg);
+    }
+    CreateIndexResponse response;
+    try {
+      LOG.log(Level.INFO, "request:{0}", request.toString());
+      response = heClient.mngIndexCreate(request).get();
+    } catch (InterruptedException | ExecutionException e) {
+      String msg = "elastic index:" + request.index() + "error during index create";
+      LOG.log(Level.INFO, msg, e);
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING, msg, msg, e);
+    } catch (ServiceException e) {
+      String msg = "elastic index:" + request.index() + "error during index create";
+      LOG.log(Level.INFO, msg, e);
+      throw e;
+    }
+    if(response.isAcknowledged()) {
+      return response;
+    } else {
+      String msg = "elastic index:" + request.index() + "creation could not be acknowledged";
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_CREATION_ERROR, Level.WARNING, msg);
+    }
+  }
+  
+  public static DeleteIndexResponse mngIndexDelete(HopsworksElasticClient heClient, DeleteIndexRequest request)
+    throws ServiceException {
+    DeleteIndexResponse response;
+    try {
+      LOG.log(Level.INFO, "request:{0}", request.toString());
+      response = heClient.mngIndexDelete(request).get();
+    } catch (InterruptedException | ExecutionException e) {
+      String msg = "elastic index:" + request.indices()[0] + "error during index delete";
+      LOG.log(Level.INFO, msg, e);
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING, msg, msg, e);
+    } catch (ElasticsearchException e) {
+      if(e.status() == RestStatus.NOT_FOUND) {
+        //no retries maybe?
+      }
+      String msg = "elastic index:" + request.indices()[0] + "error during index delete";
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING, msg, msg, e);
+    } catch (ServiceException e) {
+      String msg = "elastic index:" + request.indices()[0] + "error during index delete";
+      LOG.log(Level.INFO, msg, e);
+      throw e;
+    }
+    if(response.isAcknowledged()) {
+      return response;
+    } else {
+      String msg = "elastic index:" + request.indices()[0] + "deletion could not be acknowledged";
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING, msg);
+    }
+  }
   
   public static <S> S getFileDoc(HopsworksElasticClient heClient, GetRequest request,
     CheckedFunction<Map<String, Object>, S, GenericException> resultParser) throws ServiceException, GenericException {
@@ -202,6 +290,7 @@ public class ProvElasticHelper {
     SearchResponse response;
     LOG.log(Level.INFO, "request:{0}", request.toString());
     response = searchBasicInt(heClient, request);
+    LOG.log(Level.INFO, "response:{0}", response.toString());
     if(aggregations.isEmpty()) {
       return Pair.with(response.getHits().getTotalHits(), Collections.emptyList());
     } else {
@@ -242,9 +331,10 @@ public class ProvElasticHelper {
     try {
       response = heClient.search(request).get();
     } catch (InterruptedException | ExecutionException e) {
-      LOG.log(Level.WARNING, "error querying elastic", e);
+      String msg = "error querying elastic index:" + request.indices()[0];
+      LOG.log(Level.WARNING, msg, e);
       ServiceException ex = new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_SERVER_NOT_FOUND, Level.WARNING,
-        "error querying elastic", "error querying elastic", e);
+        msg, e.getMessage(), e);
       heClient.processException(ex);
       throw ex;
     }
