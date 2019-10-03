@@ -38,7 +38,7 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 public class ProvFileQuery {
   
   public interface ValParser {
-    Object parse(String o) throws GenericException;
+    Object parse(Object o) throws GenericException;
   }
   
   public interface Field {
@@ -319,8 +319,6 @@ public class ProvFileQuery {
       "exception extracting SortBy param");
   }
   
-  
-  
   public static SortOrder extractSortOrder(String val) throws GenericException {
     try{
       return SortOrder.valueOf(val.toUpperCase());
@@ -434,9 +432,13 @@ public class ProvFileQuery {
   public static class IntValParser implements ValParser {
     
     @Override
-    public Integer parse(String o) throws IllegalArgumentException {
+    public Integer parse(Object o) throws IllegalArgumentException {
       try {
-        return Integer.valueOf(o);
+        if(o instanceof String) {
+          return Integer.valueOf((String)o);
+        } else {
+          throw new IllegalArgumentException("expected string-ified version of int");
+        }
       } catch (NumberFormatException e) {
         throw new IllegalArgumentException("expected int - found " + o, e);
       }
@@ -446,8 +448,12 @@ public class ProvFileQuery {
   public static class StringValParser implements ValParser {
     
     @Override
-    public String parse(String o) {
-      return o;
+    public String parse(Object o) {
+      if(o instanceof String) {
+        return (String)o;
+      } else {
+        throw new IllegalArgumentException("expected string");
+      }
     }
   
   }
@@ -455,18 +461,25 @@ public class ProvFileQuery {
   public static class BooleanValParser implements ValParser {
     
     @Override
-    public Boolean parse(String o) {
-      return Boolean.valueOf(o);
+    public Boolean parse(Object o) {
+      if(o instanceof String) {
+        return Boolean.valueOf((String)o);
+      } else {
+        throw new IllegalArgumentException("expected string-ified version of boolean");
+      }
     }
-    
   }
   
   public static class LongValParser implements ValParser {
     
     @Override
-    public Long parse(String o) throws IllegalArgumentException {
+    public Long parse(Object o) throws IllegalArgumentException {
       try {
-        return Long.valueOf(o);
+        if(o instanceof String) {
+          return Long.valueOf((String)o);
+        } else {
+          throw new IllegalArgumentException("expected string-ified version of long");
+        }
       } catch (NumberFormatException e) {
         throw new IllegalArgumentException("expected long - found " + o, e);
       }
@@ -475,9 +488,13 @@ public class ProvFileQuery {
   
   public static class MLTypeValParser implements ValParser {
     @Override
-    public String parse(String o) throws IllegalArgumentException {
+    public String parse(Object o) throws IllegalArgumentException {
       try {
-        return Provenance.MLType.valueOf(o).name();
+        if(o instanceof String) {
+          return Provenance.MLType.valueOf((String)o).name();
+        } else {
+          throw new IllegalArgumentException("expected string-ified version of MLType");
+        }
       } catch (NullPointerException | IllegalArgumentException e) {
         throw new IllegalArgumentException("expected:" + EnumSet.allOf(Provenance.MLType.class) + "found " + o, e);
       }
@@ -486,9 +503,13 @@ public class ProvFileQuery {
   
   public static class AppStateValParser implements ValParser {
     @Override
-    public String parse(String o) throws IllegalArgumentException {
+    public String parse(Object o) throws IllegalArgumentException {
       try {
-        return Provenance.AppState.valueOf(o).name();
+        if(o instanceof String) {
+          return Provenance.AppState.valueOf((String)o).name();
+        } else {
+          throw new IllegalArgumentException("expected string-ified version of AppState");
+        }
       } catch (NullPointerException | IllegalArgumentException e) {
         throw new IllegalArgumentException("expected:" + EnumSet.allOf(Provenance.AppState.class) + "found " + o, e);
       }
@@ -498,9 +519,13 @@ public class ProvFileQuery {
   public static class FileOpValParser implements ValParser {
     
     @Override
-    public String parse(String o) throws IllegalArgumentException {
+    public String parse(Object o) throws IllegalArgumentException {
       try {
-        return ProvFileOps.valueOf(o).name();
+        if(o instanceof String) {
+          return ProvFileOps.valueOf((String)o).name();
+        } else {
+          throw new IllegalArgumentException("expected string-ified version of FileOp");
+        }
       } catch (NullPointerException | IllegalArgumentException e) {
         throw new IllegalArgumentException("expected:" + EnumSet.allOf(ProvFileOps.class) + "found " + o, e);
       }

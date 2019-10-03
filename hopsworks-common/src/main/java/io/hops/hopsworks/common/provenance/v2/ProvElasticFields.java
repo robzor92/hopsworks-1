@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 public class ProvElasticFields {
+  public static final String XATTR = "xattr_prov";
   public interface Field {
   }
   
@@ -97,6 +98,14 @@ public class ProvElasticFields {
   public enum AppState implements Field {
     APP_STATE,
     APP_ID;
+    @Override
+    public String toString() {
+      return name().toLowerCase();
+    }
+  }
+  
+  public enum XAttr implements Field {
+    XATTR_PROV;
     @Override
     public String toString() {
       return name().toLowerCase();

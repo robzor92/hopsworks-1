@@ -724,7 +724,7 @@ public class ProvElasticController {
     return new ProvElasticHelper.ElasticBasicResultProcessor<>(new LinkedList<>(),
       (SearchHit[] hits,  List<FileState> acc) -> {
         for (SearchHit rawHit :hits) {
-          FileState hit = FileState.instance(rawHit);
+          FileState hit = FileState.instance(rawHit, settings.getHopsRpcTls());
           acc.add(hit);
         }
       });

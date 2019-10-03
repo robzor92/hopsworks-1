@@ -50,6 +50,7 @@ public class FileOp implements Comparator<FileOp>  {
   private String readableTimestamp;
   private String inodeName;
   private String xattrName;
+  private String xattrVal;
   private String inodePath;
   private Long partitionId;
   private String projectName;
@@ -108,9 +109,13 @@ public class FileOp implements Comparator<FileOp>  {
       ProvElasticFields.FileOpsAux.R_TIMESTAMP, ProvHelper.asString(soft));
     ProvElasticFields.extractField(auxMap,
       ProvElasticFields.FileBase.ENTRY_TYPE, ProvHelper.asString(soft));
-    result.xattrName = ProvElasticFields.extractField(auxMap,
-      ProvElasticFields.FileOpsAux.XATTR, ProvHelper.asString(true));
-    
+    Map<String, String> xattrs = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.XAttr.XATTR_PROV, ProvHelper.asXAttrMap(true));
+    if(xattrs != null && xattrs.size() == 1) {
+      Map.Entry<String, String> e = xattrs.entrySet().iterator().next();
+      result.xattrName = e.getKey();
+      result.xattrVal = e.getValue();
+    }
     return result;
   }
   
@@ -218,6 +223,14 @@ public class FileOp implements Comparator<FileOp>  {
   
   public void setXattrName(String xattrName) {
     this.xattrName = xattrName;
+  }
+  
+  public String getXattrVal() {
+    return xattrVal;
+  }
+  
+  public void setXattrVal(String xattrVal) {
+    this.xattrVal = xattrVal;
   }
   
   public String getInodePath() {

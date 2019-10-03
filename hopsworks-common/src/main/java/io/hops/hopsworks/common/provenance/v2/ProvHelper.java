@@ -42,6 +42,8 @@ import io.hops.hopsworks.common.provenance.util.CheckedFunction;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.restutils.RESTCodes;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 
 public class ProvHelper {
@@ -84,6 +86,53 @@ public class ProvHelper {
         }
       }
       return val.toString();
+    };
+  }
+  
+  public static CheckedFunction<Object, Map<String, String>, GenericException> asXAttrMap(boolean soft) {
+    return (Object o) -> {
+      if(o == null) {
+        if(soft) {
+          return null;
+        } else {
+          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+            "expected xattr map, found null");
+        }
+      }
+      Map<String, String> result = new HashMap<>();
+      Map<Object, Object> xattrsMap;
+      try {
+        xattrsMap = (Map) o;
+      } catch (ClassCastException e) {
+        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+          "prov xattr expected map object (1)", e.getMessage(), e);
+      }
+      for (Map.Entry<Object, Object> entry : xattrsMap.entrySet()) {
+        String xattrKey;
+        try {
+          xattrKey = (String) entry.getKey();
+        } catch (ClassCastException e) {
+          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+            "prov xattr expected map with string keys", e.getMessage(), e);
+        }
+        String xattrVal;
+        if (entry.getValue() instanceof Map) {
+          Map<String, Object> xaMap = (Map) entry.getValue();
+          if (xaMap.containsKey("raw")) {
+            xattrVal = (String) xaMap.get("raw");
+          } else {
+            throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+              "parsing prov xattr:" + entry.getKey());
+          }
+        } else if (entry.getValue() instanceof String) {
+          xattrVal = (String) entry.getValue();
+        } else {
+          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+            "prov xattr expected map or string");
+        }
+        result.put(xattrKey, xattrVal);
+      }
+      return result;
     };
   }
 }

@@ -55,21 +55,23 @@ public class FileState implements Comparator<FileState>, ProvenanceController.Ba
   private Long partitionId;
   private Long parentInodeId;
   
-  public static FileState instance(SearchHit hit) throws GenericException {
+  public static FileState instance(SearchHit hit, boolean tlsEnabled) throws GenericException {
     FileState result = new FileState();
     result.id = hit.getId();
     result.score = Float.isNaN(hit.getScore()) ? 0 : hit.getScore();
-    return instance(result, hit.getSourceAsMap());
+    return instance(result, hit.getSourceAsMap(), tlsEnabled);
   }
   
-  public static FileState instance(String id, Map<String, Object> sourceMap) throws GenericException {
+  public static FileState instance(String id, Map<String, Object> sourceMap, boolean tlsEnabled)
+    throws GenericException {
     FileState result = new FileState();
     result.id = id;
     result.score = 0;
-    return instance(result, sourceMap);
+    return instance(result, sourceMap, tlsEnabled);
   }
   
-  private static FileState instance(FileState result, Map<String, Object> sourceMap) throws GenericException {
+  private static FileState instance(FileState result, Map<String, Object> sourceMap, boolean tlsEnabled)
+    throws GenericException {
     result.map = sourceMap;
     Map<String, Object> auxMap = new HashMap<>(sourceMap);
     result.projectInodeId = ProvElasticFields.extractField(auxMap,
@@ -100,29 +102,17 @@ public class FileState implements Comparator<FileState>, ProvenanceController.Ba
       ProvElasticFields.FileStateAux.R_CREATE_TIMESTAMP, ProvHelper.asString(false));
     ProvElasticFields.extractField(auxMap,
       ProvElasticFields.FileBase.ENTRY_TYPE, ProvHelper.asString(false));
-    for (Map.Entry<String, Object> entry : auxMap.entrySet()) {
-      String xattrKey = entry.getKey();
-      String xattrVal;
-      if (entry.getValue() instanceof Map) {
-        try {
-          Map<String, Object> aux = (Map<String, Object>) entry.getValue();
-          if (aux.containsKey("raw")) {
-            xattrVal = (String) aux.get("raw");
-          } else {
-            throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-              "field:" + entry.getKey() + "not managed in file state return (1)");
-          }
-        } catch (ClassCastException e2) {
-          throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-            "field:" + entry.getKey() + "not managed in file state return (2)");
-        }
-      } else if (entry.getValue() instanceof String) {
-        xattrVal = (String) entry.getValue();
-      } else {
-        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-          "field:" + entry.getKey() + "not managed in file state return (3)");
+    result.xattrs = ProvElasticFields.extractField(auxMap,
+      ProvElasticFields.XAttr.XATTR_PROV, ProvHelper.asXAttrMap(true));
+    if(!tlsEnabled) {
+      if(result.xattrs != null && result.xattrs.containsKey(ProvElasticFields.FileBase.APP_ID.toString())) {
+        result.appId = ProvHelper.asString(false)
+          .apply(result.xattrs.get(ProvElasticFields.FileBase.APP_ID.toString()));
       }
-      result.xattrs.put(xattrKey, xattrVal);
+    }
+    for (Map.Entry<String, Object> entry : auxMap.entrySet()) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "field:" + entry.getKey() + "not managed in file state return");
     }
     return result;
   }
@@ -196,7 +186,15 @@ public class FileState implements Comparator<FileState>, ProvenanceController.Ba
   public void setProjectInodeId(Long projectInodeId) {
     this.projectInodeId = projectInodeId;
   }
-
+  
+  public Long getDatasetInodeId() {
+    return datasetInodeId;
+  }
+  
+  public void setDatasetInodeId(Long datasetInodeId) {
+    this.datasetInodeId = datasetInodeId;
+  }
+  
   @Override
   public String getInodeName() {
     return inodeName;
