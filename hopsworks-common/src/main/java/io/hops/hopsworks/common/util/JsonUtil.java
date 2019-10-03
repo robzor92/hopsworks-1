@@ -114,7 +114,7 @@ public class JsonUtil {
           raw.setMetadata(metalist);
         } else if (entry.getValue().getValueType() == JsonValue.ValueType.ARRAY) {
           /*
-           * parse a json array out of the string and then iterate through it
+           * build a json array out of the string and then iterate through it
            * to get the actual values
            */
           JsonArray array = Json.

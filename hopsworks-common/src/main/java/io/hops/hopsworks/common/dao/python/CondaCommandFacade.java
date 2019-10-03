@@ -265,7 +265,7 @@ public class CondaCommandFacade extends AbstractFacade<CondaCommands> {
   public enum Sorts {
     ID("ID", "c.id ", "ASC"),
     HOST("HOST", "c.hostId ", "ASC"),
-    STATUS("PROV_TYPE", "c.status ", "ASC"),
+    STATUS("STATUS", "c.status ", "ASC"),
     DATE_CREATED("DATE_CREATED", "c.created ", "ASC");
 
     private final String value;
@@ -304,7 +304,7 @@ public class CondaCommandFacade extends AbstractFacade<CondaCommands> {
   public enum Filters {
     OP("OP", "c.op IN :op ", "op", "CREATE"),
     OP_NEQ("OP_NEQ", "c.op NOT IN :op_neq ", "op_neq", "CREATE"),
-    STATUS("PROV_TYPE", "c.status IN :status ", "status", "NEW"),
+    STATUS("STATUS", "c.status IN :status ", "status", "NEW"),
     STATUS_NEQ("STATUS_NEQ", "c.status NOT IN :status_neq ", "status_neq", "NEW"),
     MACHINE_TYPE("MACHINE_TYPE", "c.machineType IN :machineType ", "machineType", "ALL"),
     MACHINE_TYPE_NEQ("MACHINE_TYPE_NEQ", "c.machineType NOT IN :machineType_neq ", "machineType_neq", "CPU"),

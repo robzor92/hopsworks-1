@@ -239,14 +239,14 @@ public class UserFacade extends AbstractFacade<Users> {
     ROLE("ROLE", "u.bbcGroupCollection IN :roles ", "roles", "HOPS_ADMIN,HOPS_USER"),
     ROLE_NEQ("ROLE_NEQ", "u.bbcGroupCollection NOT IN :roles_neq ", "roles_neq", "AGENT,AUDITOR"),
     TYPE("TYPE", "u.mode = :mode ", "mode", "0"),
-    STATUS("PROV_TYPE", "u.status = :status ", "status", "2"),
+    STATUS("STATUS", "u.status = :status ", "status", "2"),
     STATUS_LT("STATUS_LT", "u.status < :status_lt ", "status_lt", "2"),
     STATUS_GT("STATUS_GT", "u.status > :status_gt ", "status_gt", "2"),
     IS_ONLINE("IS_ONLINE", "u.isonline = :isonline ", "isonline", "1"),
     FALSE_LOGIN("FALSE_LOGIN", "u.falseLogin = :falseLogin ", "falseLogin", "20"),
     FALSE_LOGIN_GT("FALSE_LOGIN_GT", "u.falseLogin > :falseLogin_gt ", "falseLogin_gt", "20"),
     FALSE_LOGIN_LT("FALSE_LOGIN_LT", "u.falseLogin < :falseLogin_lt ", "falseLogin_lt", "20"),
-    USER_NAME("USER_ID", "UPPER(u.username) LIKE CONCAT(:username, '%') ", "username", " "),
+    USER_NAME("USER_NAME", "UPPER(u.username) LIKE CONCAT(:username, '%') ", "username", " "),
     USER_FIRST_NAME("USER_FIRST_NAME", "UPPER(u.fname) LIKE CONCAT(:fname, '%') ", "fname", " "),
     USER_LAST_NAME("USER_LAST_NAME", "UPPER(u.lname) LIKE CONCAT(:lname, '%') ", "lname", " "),
     USER_EMAIL("USER_EMAIL", "UPPER(u.email) LIKE CONCAT(:email, '%') ", "email", " "),
@@ -358,7 +358,7 @@ public class UserFacade extends AbstractFacade<Users> {
   }
 
   /**
-   * Get all users with PROV_TYPE = status.
+   * Get all users with STATUS = status.
    *
    * @param status
    * @return

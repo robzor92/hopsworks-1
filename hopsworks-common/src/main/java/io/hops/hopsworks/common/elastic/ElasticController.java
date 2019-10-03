@@ -167,7 +167,7 @@ public class ElasticController {
     srb = srb.setTypes(Settings.META_DEFAULT_TYPE);
     srb = srb.setQuery(this.globalSearchQuery(searchTerm.toLowerCase()));
     srb = srb.highlighter(new HighlightBuilder().field("name"));
-    LOG.log(Level.INFO, "Global searchBasic Elastic query is: {0}", srb);
+    LOG.log(Level.INFO, "Global search Elastic query is: {0}", srb);
     ActionFuture<SearchResponse> futureResponse = srb.execute();
     SearchResponse response = futureResponse.actionGet();
 
@@ -248,7 +248,7 @@ public class ElasticController {
     } else if (!this.typeExists(client, Settings.META_INDEX,
         Settings.META_DEFAULT_TYPE)) {
       throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_TYPE_NOT_FOUND, Level.SEVERE,
-        "filterType: " + Settings.META_DEFAULT_TYPE);
+        "type: " + Settings.META_DEFAULT_TYPE);
     }
 
     SearchRequestBuilder srb = client.prepareSearch(Settings.META_INDEX);
@@ -292,7 +292,7 @@ public class ElasticController {
     } else if (!this.typeExists(client, Settings.META_INDEX,
         Settings.META_DEFAULT_TYPE)) {
       throw new ServiceException(RESTCodes.ServiceErrorCode.ELASTIC_INDEX_TYPE_NOT_FOUND, Level.SEVERE,
-        "filterType: " + Settings.META_DEFAULT_TYPE);
+        "type: " + Settings.META_DEFAULT_TYPE);
     }
 
     String dsName = datasetName;
@@ -413,13 +413,13 @@ public class ElasticController {
         String projectName = index.split("_logs-*")[0];
         if (projects.contains(projectName)) {
           objectsToDelete.
-              put(allObjects.getJSONObject(i).getString("id"), allObjects.getJSONObject(i).getString("filterType"));
+              put(allObjects.getJSONObject(i).getString("id"), allObjects.getJSONObject(i).getString("type"));
         }
       }
     }
     params.put("op", "DELETE");
     for (String id : objectsToDelete.keySet()) {
-      LOG.log(Level.FINE, "deleteProjectSavedObjects-deleting id:{0}, of filterType:{1}", new Object[]{id,
+      LOG.log(Level.FINE, "deleteProjectSavedObjects-deleting id:{0}, of type:{1}", new Object[]{id,
         objectsToDelete.get(id)});
       sendKibanaReq(params, objectsToDelete.get(id), id);
     }
@@ -527,7 +527,7 @@ public class ElasticController {
   }
 
   /**
-   * Global searchBasic on datasets and projects.
+   * Global search on datasets and projects.
    * <p/>
    * @param searchTerm
    * @return
@@ -544,7 +544,7 @@ public class ElasticController {
   }
 
   /**
-   * Project specific searchBasic.
+   * Project specific search.
    * <p/>
    * @param searchTerm
    * @return
@@ -564,7 +564,7 @@ public class ElasticController {
   }
 
   /**
-   * Dataset specific searchBasic.
+   * Dataset specific search.
    * <p/>
    * @param searchTerm
    * @return
@@ -655,7 +655,7 @@ public class ElasticController {
     QueryBuilder descriptionPhraseMatch = matchPhraseQuery(
         Settings.META_DESCRIPTION_FIELD, searchTerm);
 
-    //add a fuzzy searchBasic on description field
+    //add a fuzzy search on description field
     QueryBuilder descriptionFuzzyQuery = fuzzyQuery(
         Settings.META_DESCRIPTION_FIELD, searchTerm);
 
@@ -713,7 +713,7 @@ public class ElasticController {
   }
 
   /**
-   * Checks if a given data filterType exists. It is a given that the index exists
+   * Checks if a given data type exists. It is a given that the index exists
    * <p/>
    * @param client
    * @param typeName
@@ -830,8 +830,8 @@ public class ElasticController {
   public String getIndexFromKibana(JSONObject json){
     String index = null;
 
-    if (json.has("filterType")) {
-      switch (json.getString("filterType")) {
+    if (json.has("type")) {
+      switch (json.getString("type")) {
         case Settings.ELASTIC_INDEX_PATTERN:
           index = json.getString("id");
           break;
@@ -846,7 +846,7 @@ public class ElasticController {
             if (json.getJSONObject("attributes").has("savedSearchId")) {
               //We get the searchId first and then the index
               String searchId = json.getJSONObject("attributes").getString("savedSearchId");
-              //Then get searchBasic object and call function again
+              //Then get search object and call function again
               Map<String, String> params = new HashMap<>();
               params.put("op", "GET");
               JSONObject savedSearch = sendKibanaReq(params, Settings.ELASTIC_SAVED_SEARCH, searchId);
@@ -869,10 +869,10 @@ public class ElasticController {
                 .getJSONObject(0).get("id");
             LOG.log(Level.FINE, "dashboard-id:{0}", id);
             String type = (String) new JSONArray((String) json.getJSONObject("attributes").get("panelsJSON"))
-                .getJSONObject(0).get("filterType");
-            LOG.log(Level.FINE, "dashboard-filterType:{0}", type);
+                .getJSONObject(0).get("type");
+            LOG.log(Level.FINE, "dashboard-type:{0}", type);
 
-            //Get index from visualization/"saved searchBasic"
+            //Get index from visualization/"saved search"
             //Get and parse all objects
             Map<String, String> params = new HashMap<>();
             params.put("op", "GET");
@@ -912,18 +912,18 @@ public class ElasticController {
           .getJSONObject("attributes")
           .getJSONObject("kibanaSavedObjectMeta")
           .getString("searchSourceJSON")).getString("index");
-    } else if (json.getString("filterType").equals("dashboard")
+    } else if (json.getString("type").equals("dashboard")
         && HopsUtils.jsonKeyExists(json, "panelsJSON")) {
-      //We need to get the index name from the visualization or saved searchBasic this dashboard is
+      //We need to get the index name from the visualization or saved search this dashboard is
       //created from
       String id = (String) new JSONArray((String) json.getJSONObject("attributes")
           .get("panelsJSON")).getJSONObject(0).get("id");
       LOG.log(Level.FINE, "dashboard-id:{0}", id);
       String type = (String) new JSONArray((String) json.getJSONObject("attributes")
-          .get("panelsJSON")).getJSONObject(0).get("filterType");
-      LOG.log(Level.FINE, "dashboard-filterType:{0}", type);
+          .get("panelsJSON")).getJSONObject(0).get("type");
+      LOG.log(Level.FINE, "dashboard-type:{0}", type);
 
-      //Get index from visualization/"saved searchBasic"
+      //Get index from visualization/"saved search"
       //Get and parse all objects
       Map<String, String> params = new HashMap<>();
       params.put("op", "GET");

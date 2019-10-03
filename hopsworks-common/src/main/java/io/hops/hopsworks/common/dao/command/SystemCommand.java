@@ -226,6 +226,6 @@ public class SystemCommand implements Serializable {
   
   @Override
   public String toString() {
-    return "SystemCommand with ID " + id + " OP: " + op + " PROV_TYPE: " + status;
+    return "SystemCommand with ID " + id + " OP: " + op + " STATUS: " + status;
   }
 }
