@@ -100,34 +100,34 @@ describe "On #{ENV['OS']}" do
       @project2 = create_project_by_name(@project2_name)
     end
 
-    after :each do
-      pp "cleanup cycle"
-      ops1 = cleanup_cycle(@project1)
-      ops2 = cleanup_cycle(@project2)
-
-      if ops1["count"] != 0
-        pp "secondary cleanup cycle(1)"
-        sleep(1)
-        ops1 = cleanup_cycle(@project1)
-      end
-
-      if ops2["count"] != 0
-        pp "secondary cleanup cycle(2)"
-        sleep(1)
-        ops2 = cleanup_cycle(@project2)
-      end
-
-      expect(ops1["count"]).to eq 0
-      expect(ops2["count"]).to eq 0
-    end
-
-    after :all do
-      pp "delete projects"
-      delete_project(@project1)
-      @project1 = nil
-      delete_project(@project2)
-      @project2 = nil
-    end
+#     after :each do
+#       pp "cleanup cycle"
+#       ops1 = cleanup_cycle(@project1)
+#       ops2 = cleanup_cycle(@project2)
+#
+#       if ops1["count"] != 0
+#         pp "secondary cleanup cycle(1)"
+#         sleep(1)
+#         ops1 = cleanup_cycle(@project1)
+#       end
+#
+#       if ops2["count"] != 0
+#         pp "secondary cleanup cycle(2)"
+#         sleep(1)
+#         ops2 = cleanup_cycle(@project2)
+#       end
+#
+#       expect(ops1["count"]).to eq 0
+#       expect(ops2["count"]).to eq 0
+#     end
+#
+#     after :all do
+#       pp "delete projects"
+#       delete_project(@project1)
+#       @project1 = nil
+#       delete_project(@project2)
+#       @project2 = nil
+#     end
 
     describe 'provenance tests - experiments' do
       it 'simple experiments'  do
@@ -264,15 +264,15 @@ describe "On #{ENV['OS']}" do
         get_ml_asset_by_xattr_count(@project1, "TRAINING_DATASET", "key", "val2", 1)
         get_ml_asset_by_xattr_count(@project2, "TRAINING_DATASET", "key", "val2", 1)
 
-        pp "cleanup hops"
-        prov_delete_td(@project1, @td1_name, @td_version1)
-        prov_delete_td(@project1, @td1_name, @td_version2)
-        prov_delete_td(@project1, @td2_name, @td_version1)
-        prov_delete_td(@project2, @td2_name, @td_version1)
-
-        pp "check hops cleanup"
-        prov_wait_for_epipe()
-        get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 0)
+#         pp "cleanup hops"
+#         prov_delete_td(@project1, @td1_name, @td_version1)
+#         prov_delete_td(@project1, @td1_name, @td_version2)
+#         prov_delete_td(@project1, @td2_name, @td_version1)
+#         prov_delete_td(@project2, @td2_name, @td_version1)
+#
+#         pp "check hops cleanup"
+#         prov_wait_for_epipe()
+#         get_ml_asset_in_project(@project1, "TRAINING_DATASET", false, 0)
       end
 
       it "training dataset with nested xattr count" do
