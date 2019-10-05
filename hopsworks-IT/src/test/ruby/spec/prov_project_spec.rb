@@ -230,7 +230,7 @@ describe "On #{ENV['OS']}" do
         result3 = check_no_ml_asset_by_id(@project1, "TRAINING_DATASET", prov_td_id(@td1_name, @td_version1), false)
       end
 
-      it "training dataset with simple xattr count"  do
+      it "training dataset with simple xattr count", focus: true  do
         pp "stop epipe"
         execute_remotely @hostname, "sudo systemctl stop epipe"
 
