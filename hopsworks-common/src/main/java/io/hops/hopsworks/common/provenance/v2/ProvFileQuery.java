@@ -387,9 +387,9 @@ public class ProvFileQuery {
     String[] keyParts =key.split("\\.");
     StringJoiner keyj = new StringJoiner(".");
     if(keyParts.length == 1) {
-      keyj.add(keyParts[0]).add("raw");
+      keyj.add("xattr_prov").add(keyParts[0]).add("raw");
     } else {
-      keyj.add(keyParts[0]).add("value");
+      keyj.add("xattr_prov").add(keyParts[0]).add("value");
       for(int i = 1; i < keyParts.length; i++) keyj.add(keyParts[i]);
     }
     return keyj.toString();
