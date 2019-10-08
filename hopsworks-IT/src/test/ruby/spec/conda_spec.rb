@@ -168,9 +168,18 @@ describe "On #{ENV['OS']}" do
             expect_status(200)
           end
 
-          it 'search libraries' do
+          it 'search library (conda)' do
             @project = create_env_and_update_project(@project, python_version, true)
             search_library(@project[:id], @project[:python_version], 'conda', 'dropbox', conda_channel)
+            expect_status(200)
+            expect(json_body.count).to be >= 1
+            dropbox = json_body[:items].detect { |library| library[:library] == "dropbox" }
+            expect(dropbox[:versions].count).to be >= 1
+          end
+          
+          it 'search library (pip)' do
+            @project = create_env_and_update_project(@project, python_version, true)
+            search_library(@project[:id], @project[:python_version], 'pip', 'dropbox')
             expect_status(200)
             expect(json_body.count).to be >= 1
             dropbox = json_body[:items].detect { |library| library[:library] == "dropbox" }
@@ -185,7 +194,7 @@ describe "On #{ENV['OS']}" do
 
           it 'should not fail if library is not found (pip)' do
             @project = create_env_and_update_project(@project, python_version, true)
-            search_library(@project[:id], @project[:python_version], 'pip', 'pretty-sure-not-to-exist', conda_channel)
+            search_library(@project[:id], @project[:python_version], 'pip', 'pretty-sure-not-to-exist')
             expect_status(204)
           end
 
@@ -298,6 +307,14 @@ describe "On #{ENV['OS']}" do
 
           end
 
+          it 'should fail to install same library with upper and lower case variation' do
+            @project = create_env_and_update_project(@project, python_version, true)
+            install_library(@project[:id], python_version_2, 'tflearn', 'pip', '0.3.2', 'ALL', conda_channel)
+            expect_status(201)
+            install_library(@project[:id], python_version_2, 'TFLEARN', 'pip', '0.3.2', 'ALL', conda_channel)
+            expect_status(409)
+          end
+
           it 'list libraries' do
             @project = create_env_and_update_project(@project, python_version, true)
             list_libraries(@project[:id], @project[:python_version])
@@ -386,13 +403,18 @@ describe "On #{ENV['OS']}" do
             expect(check_if_env_exists_locally("python36")).to be true
           end
 
-          it 'enable environment from yml' do
-            create_env_yml(@project[:id], true, "/Projects/#{@project[:projectname]}/Resources/environment_cpu.yml", '', '')
+          it 'create environment from yml' do
+            delete_env(@project[:id], python_version)
+            upload_yml
+            create_env_yml(@project[:id], true, "/Projects/#{@project[:projectname]}/Resources/environment_cpu.yml", nil, nil, true)
             expect_status(201)
 
             wait_for do
               CondaCommands.find_by(proj: @project[:projectname]).nil?
             end
+
+            @project = get_project_by_name(@project[:projectname])
+            expect(@project[:python_version]).to eq "3.6"
           end
 
           it 'GC stale Conda env' do

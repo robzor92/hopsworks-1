@@ -67,6 +67,12 @@ module CondaHelper
     File.exists?(@conda_bin)
   end
 
+  def upload_yml
+    chmod_local_dir_recursive("#{ENV['PROJECT_DIR']}/tools", 777)
+    copy_from_local("#{ENV['PROJECT_DIR']}/tools/conda/python3.yml",
+                    "/Projects/#{@project[:projectname]}/Resources/environment_cpu.yml", @user[:username],
+                    "#{@project[:projectname]}__#{@dataset[:inode_name]}", 750, "#{@project[:projectname]}")
+
   def get_conda_envs_locally
     cmd = "#{@conda_bin} env list --json"
     Open3.popen3(cmd) do |_, stdout, _, _|
@@ -114,9 +120,9 @@ module CondaHelper
     end
   end
 
-  def create_env_yml(projectId, pythonKernelEnable, allYmlPath, cpuYmlPath, gpuYmlPath)
+  def create_env_yml(projectId, pythonKernelEnable, allYmlPath, cpuYmlPath, gpuYmlPath, installJupyter)
     post "#{ENV['HOPSWORKS_API']}/project/#{projectId}/python/environments",
-         {pythonKernelEnable: pythonKernelEnable, allYmlPath: allYmlPath, cpuYmlPath: cpuYmlPath, gpuYmlPath: gpuYmlPath}
+         {pythonKernelEnable: pythonKernelEnable, allYmlPath: allYmlPath, cpuYmlPath: cpuYmlPath, gpuYmlPath: gpuYmlPath, installJupyter: installJupyter}
   end
 
   def export_env(projectId, version)

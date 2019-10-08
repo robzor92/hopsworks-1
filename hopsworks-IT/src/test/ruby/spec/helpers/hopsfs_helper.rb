@@ -64,6 +64,23 @@ module HopsFSHelper
     end
   end
 
+  def copy_from_local(src, dest, owner, group, mode, name)
+    system "sudo su #{@@hdfs_user} /bin/bash -c \"#{@@hadoop_home}/bin/hdfs dfs -copyFromLocal #{src} #{dest}\""
+    if $?.exitstatus > 0
+      raise "Failed to chmod: #{dest} "
+    end
+
+    system "sudo su #{@@hdfs_user} /bin/bash -c \"#{@@hadoop_home}/bin/hdfs dfs -chown -R #{name}__#{owner}:#{group} #{dest}\""
+    if $?.exitstatus > 0
+      raise "Failed to chown: #{dest} to #{owner}:#{group}"
+    end
+
+    system "sudo su #{@@hdfs_user} /bin/bash -c \"#{@@hadoop_home}/bin/hdfs dfs -chmod -R #{mode} #{dest}\""
+    if $?.exitstatus > 0
+      raise "Failed to chmod: #{dest} "
+    end
+  end
+
   def rm(path)
     system "sudo su #{@@hdfs_user} /bin/bash -c \"#{@@hadoop_home}/bin/hdfs dfs -rm #{path}\""
     if $?.exitstatus > 0
