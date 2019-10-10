@@ -1,0 +1,59 @@
+<!--
+  ~ This file is part of Hopsworks
+  ~ Copyright (C) 2019, Logical Clocks AB. All rights reserved
+  ~
+  ~ Hopsworks is free software: you can redistribute it and/or modify it under the terms of
+  ~ the GNU Affero General Public License as published by the Free Software Foundation,
+  ~ either version 3 of the License, or (at your option) any later version.
+  ~
+  ~ Hopsworks is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  ~ without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+  ~ PURPOSE.  See the GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License along with this program.
+  ~ If not, see <https://www.gnu.org/licenses/>.
+  -->
+<div class="modal-header">
+    <button class="close" ng-click="dagComposerModalsCtrl.close()" data-dismiss="modal"
+        aria-hidden="true" type="button">&times;
+    </button>
+    <h2 class="modal-title">DAG properties</h2>
+</div>
+<div class="modal-body">
+    <!-- DAG name id -->
+    <div class="row">
+        <div class="text-right col-md-4">Name<i class="fa fa-info-circle"
+            uib-tooltip="Arbitrary name to refer to the DAG later" style="margin-left: 10px"></i>
+        </div>
+        <div class="col-md-2">
+            <input type="text" ng-model="dagComposerModalsCtrl.tmpDagDefinition.name">
+        </div>
+    </div>
+    <!-- Schedule interval -->
+    <div class="row">
+        <div class="text-right col-md-4">Scheduler interval<i class="fa fa-info-circle"
+                uib-tooltip="cron like expression or Airflow expression" style="margin-left: 10px"></i>
+        </div>
+        <div class="col-md-2">
+            <input type="text" ng-model="dagComposerModalsCtrl.tmpDagDefinition.scheduleInterval">
+        </div>
+    </div>
+    <!-- Schedule interval -->
+    <div class="row">
+        <div class="text-right col-md-4">API key<i class="fa fa-info-circle"
+                uib-tooltip="Optional API key for operator to use to authenticate to Hopsworks" style="margin-left: 10px"></i>
+        </div>
+        <div class="col-md-2">
+            <input type="text" ng-model="dagComposerModalsCtrl.tmpDagDefinition.apiKey">
+        </div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" ng-click="dagComposerModalsCtrl.finalizeDagDefition()" class="btn btn-primary">
+        Save
+    </button>
+    <button type="button" ng-click="dagComposerModalsCtrl.close()" class="btn btn-secondary"
+        data-dismiss="modal">
+        Close
+    </button>
+</div>
