@@ -314,7 +314,8 @@ public class Settings implements Serializable {
   private static final String VARIABLE_KUBE_JUPYTER_IMG_VERSION = "kube_jupyter_img_version";
 
   private static final String VARIABLE_KUBE_API_MAX_ATTEMPTS = "kube_api_max_attempts";
-
+  private static final String VARIABLE_DOCKER_MAX_MEMORY_ALLOCATION = "docker_max_memory_allocation";
+  private static final String VARIABLE_DOCKER_MAX_CORES_ALLOCATION = "docker_max_cores_allocation";
   /*
    * -------------------- Jupyter ---------------
    */
@@ -655,6 +656,8 @@ public class Settings implements Serializable {
       KUBE_FILEBEAT_IMG_VERSION = setVar(VARIABLE_KUBE_FILEBEAT_IMG_VERSION, KUBE_FILEBEAT_IMG_VERSION);
       KUBE_JUPYTER_IMG_VERSION = setVar(VARIABLE_KUBE_JUPYTER_IMG_VERSION, KUBE_JUPYTER_IMG_VERSION);
       KUBE_API_MAX_ATTEMPTS = setIntVar(VARIABLE_KUBE_API_MAX_ATTEMPTS, KUBE_API_MAX_ATTEMPTS);
+      DOCKER_MAX_MEMORY_ALLOCATION = setIntVar(VARIABLE_DOCKER_MAX_MEMORY_ALLOCATION, DOCKER_MAX_MEMORY_ALLOCATION);
+      DOCKER_MAX_CORES_ALLOCATION = setIntVar(VARIABLE_DOCKER_MAX_CORES_ALLOCATION, DOCKER_MAX_CORES_ALLOCATION);
 
       JUPYTER_HOST = setStrVar(VARIABLE_JUPYTER_HOST, JUPYTER_HOST);
 
@@ -3309,7 +3312,6 @@ public class Settings implements Serializable {
     return KUBE_FILEBEAT_IMG_VERSION;
   }
   
-  
   private Boolean ONLINE_FEATURESTORE = false;
   
   public synchronized Boolean isOnlineFeaturestore() {
@@ -3321,6 +3323,18 @@ public class Settings implements Serializable {
   public synchronized String getJupyterImgVersion() {
     checkCache();
     return KUBE_JUPYTER_IMG_VERSION;
+  }
+
+  private Integer DOCKER_MAX_MEMORY_ALLOCATION = 8192;
+  public synchronized Integer getDockerMaxMemoryAllocation() {
+    checkCache();
+    return DOCKER_MAX_MEMORY_ALLOCATION;
+  }
+
+  private Integer DOCKER_MAX_CORES_ALLOCATION = 4;
+  public synchronized Integer getDockerMaxCoresAllocation() {
+    checkCache();
+    return DOCKER_MAX_CORES_ALLOCATION;
   }
 
   private String SERVING_MONITOR_INT = "30s";

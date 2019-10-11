@@ -1,0 +1,77 @@
+<!--
+ ~
+ ~ This file is part of Hopsworks
+ ~ Copyright (C) 2019, Logical Clocks AB. All rights reserved
+ ~
+ ~ Hopsworks is free software: you can redistribute it and/or modify it under the terms of
+ ~ the GNU Affero General Public License as published by the Free Software Foundation,
+ ~ either version 3 of the License, or (at your option) any later version.
+ ~
+ ~ Hopsworks is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ ~ without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ ~ PURPOSE.  See the GNU Affero General Public License for more details.
+ ~
+ ~ You should have received a copy of the GNU Affero General Public License along with this program.
+ ~ If not, see <https://www.gnu.org/licenses/>.
+ ~
+ -->
+
+<!-- Start Jupyter Git backed -->
+<div ng-if="jupyterCtrl.jupyterSettings.gitAvailable">
+    <div class="form-group">
+        <label class="control-label col-sm-3" for="enableGit"
+               uib-tooltip="Clone notebooks from a remote Git repository. Check the Advanced section for more options!">
+            Enable Git: </label>
+        <div class="col-sm-6">
+            <md-switch id="enableGit" class="md-primary"
+                       aria-label="Git"
+                       style="margin: 0px"
+                       ng-click="jupyterCtrl.load_third_party_api_keys()"
+                       ng-model="jupyterCtrl.jupyterSettings.gitBackend">
+                {{ jupyterCtrl.jupyterSettings.gitBackend? 'ON' : 'OFF' }}
+            </md-switch>
+        </div>
+    </div>
+    <div class="form-group" ng-if="jupyterCtrl.jupyterSettings.gitBackend">
+        <label class="control-label col-sm-3" for="git-url">GitHub repository URL: </label>
+        <div class="col-sm-6" ng-class="(jupyterCtrl.git_error === 'URI_SYNTAX_ERROR') ? 'jupyter-left has-error' : 'jupyter-left'">
+            <input type="text" class="form-control" id="git-url"
+                   ng-model="jupyterCtrl.jupyterSettings.gitConfig.remoteGitURL"
+                   placeholder="https://github.com/logicalclocks/hopsworks.git">
+        </div>
+    </div>
+    <div class="row" ng-show="jupyterCtrl.git_error === 'URI_SYNTAX_ERROR'">
+        <div class="col-md-4 pull-left"></div>
+        <div ng-show="jupyterCtrl.git_error === 'URI_SYNTAX_ERROR'" class="col-md-2 pull-left"
+             style="font-weight: bold; color: orange;">
+            <i class="fa fa-warning" style="color:orange;"></i>&nbsp;Could not parse repository URL, it should be like
+            https://github.com/logicalclocks/hopsworks.git
+        </div>
+    </div>
+    <div class="form-group" ng-if="jupyterCtrl.jupyterSettings.gitBackend">
+        <label class="control-label col-sm-3" for="git-api-key"
+               uib-tooltip="API key to communicate with remote Git repository. Add an API key by clicking on your Account settingsand then add them as your Secrets">
+            API key: </label>
+        <div class="col-sm-6" ng-class="(jupyterCtrl.git_error === 'URI_SYNTAX_ERROR') ? 'jupyter-left has-error' : 'jupyter-left'">
+                <ui-select id="git-api-key" ng-model="jupyterCtrl.git_api_key" theme="bootstrap"
+                           on-select="jupyterCtrl.git_api_key_selected()" style="z-index:2">
+                    <ui-select-match>
+                        <span ng-bind="jupyterCtrl.git_api_key.name"></span>
+                    </ui-select-match>
+                    <ui-select-choices
+                            repeat="api_key in (jupyterCtrl.third_party_api_keys | filter: $select.search) track by api_key.name">
+                        <span ng-bind="api_key.name | highlight: $select.search"></span>
+                    </ui-select-choices>
+                </ui-select>
+            </div>
+        </div>
+    </div>
+    <div class="row" ng-show="jupyterCtrl.git_error === 'API_KEY_ERROR'">
+        <div class="col-md-4 pull-left"></div>
+        <div ng-show="jupyterCtrl.git_error === 'API_KEY_ERROR'" class="col-md-2 pull-left"
+             style="font-weight: bold; color: orange;">
+            <i class="fa fa-warning" style="color:orange;"></i>&nbsp;Invalid API key
+        </div>
+    </div>
+</div>
+<!-- End Jupyter Git backed -->

@@ -41,12 +41,11 @@
 angular.module('hopsWorksApp')
     .controller('JupyterCtrl', ['$scope', '$routeParams', '$route',
         'growl', 'ModalService', '$interval', 'JupyterService', 'StorageService', '$location',
-        '$timeout', '$window', '$sce', 'PythonService', 'TourService', 'UserService',
+        '$timeout', '$window', '$sce', 'PythonService', 'TourService', 'UserService', 'VariablesService',
         function($scope, $routeParams, $route, growl, ModalService, $interval, JupyterService,
-            StorageService, $location, $timeout, $window, $sce, PythonService, TourService, UserService) {
+            StorageService, $location, $timeout, $window, $sce, PythonService, TourService, UserService, VariablesService) {
 
             var self = this;
-            self.connectedStatus = false;
             self.loading = false;
             self.loadingText = "";
             self.jupyterServer;
@@ -65,6 +64,8 @@ angular.module('hopsWorksApp')
             self.numNotEnabledEnvs = 0;
             self.opsStatus = {};
             self.pythonVersion;
+            self.maxDockerMemory = 0;
+            self.maxDockerCores = 0;
 
             self.dirs = [{
                 id: 1,
@@ -100,6 +101,31 @@ angular.module('hopsWorksApp')
                 modifiedFiles: -1,
                 branch: 'UNKNOWN',
                 repository: 'UNKNOWN'
+            };
+
+            var getDockerMaxAllocation = function () {
+              VariablesService.getVariable('docker_max_memory_allocation')
+                .then(function (success) {
+                  self.maxDockerMemory = parseInt(success.data.successMessage);
+                }, function (error) {
+                  self.maxDockerMemory = -1;
+              });
+              VariablesService.getVariable('docker_max_cores_allocation')
+                .then(function (success) {
+                  self.maxDockerCores = parseInt(success.data.successMessage);
+                }, function (error) {
+                  self.maxDockerCores = -1;
+              });
+            };
+
+            getDockerMaxAllocation();
+
+            self.range = function (max) {
+                var input = [];
+                for (var i = 1; i <= max; i++) {
+                    input.push(i);
+                }
+                return input;
             };
 
             self.changeShutdownLevel = function() {
@@ -385,15 +411,12 @@ angular.module('hopsWorksApp')
                     }
                 );
                 self.livySessions(self.projectId);
-
             };
-
-
 
             self.openWindow = function() {
                 $window.open(self.ui, '_blank');
                 timeToShutdown();
-            }
+            };
 
             var startLoading = function(label) {
                 self.loading = true;
@@ -475,7 +498,6 @@ angular.module('hopsWorksApp')
                 }
             }
 
-
             self.git_error = "";
             self.git_api_key_selected = function() {
                 self.jupyterSettings.gitConfig.apiKeyName = self.git_api_key.name
@@ -535,7 +557,7 @@ angular.module('hopsWorksApp')
                         )
                     }, 30000);
                 }
-            }
+            };
 
             self.start = function() {
                 startLoading("Connecting to Jupyter...");

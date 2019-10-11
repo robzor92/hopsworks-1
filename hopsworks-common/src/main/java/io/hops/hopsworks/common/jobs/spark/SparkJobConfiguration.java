@@ -267,7 +267,7 @@ public class SparkJobConfiguration extends YarnJobConfiguration {
       return JobType.SPARK;
     }
   }
-  
+
   @Override
   @XmlElement(name="jobTypeName")
   public String getJobTypeName() {

@@ -1,0 +1,95 @@
+<!--
+ ~
+ ~ This file is part of Hopsworks
+ ~ Copyright (C) 2019, Logical Clocks AB. All rights reserved
+ ~
+ ~ Hopsworks is free software: you can redistribute it and/or modify it under the terms of
+ ~ the GNU Affero General Public License as published by the Free Software Foundation,
+ ~ either version 3 of the License, or (at your option) any later version.
+ ~
+ ~ Hopsworks is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ ~ without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ ~ PURPOSE.  See the GNU Affero General Public License for more details.
+ ~
+ ~ You should have received a copy of the GNU Affero General Public License along with this program.
+ ~ If not, see <https://www.gnu.org/licenses/>.
+ ~
+ -->
+<!-- Start of Jupyter Git backed -->
+<div ng-if="jupyterCtrl.jupyterSettings.gitAvailable">
+    <div class="form-group" ng-if="jupyterCtrl.jupyterSettings.gitBackend">
+        <label class="control-label col-sm-3" for="auto_pull"
+               uib-tooltip="Automatically pull from Base branch on Jupyter startup">
+            Auto pull on startup: </label>
+        <div class="col-sm-6">
+            <md-switch id="auto_pull" class="md-primary"
+                       aria-label="Auto pull"
+                       style="margin: 0px"
+                       ng-model="jupyterCtrl.jupyterSettings.gitConfig.startupAutoPull">
+                {{ jupyterCtrl.jupyterSettings.gitConfig.startupAutoPull? 'ON' : 'OFF' }}
+            </md-switch>
+        </div>
+    </div>
+
+    <div class="form-group" ng-if="jupyterCtrl.jupyterSettings.gitBackend">
+        <label class="control-label col-sm-3" for="auto_push"
+               uib-tooltip="Automatically commit to Head and push any changes to remote Git repository on Jupyter Notebook server shutdown">
+            Auto push on shutdown: </label>
+        <div class="col-sm-6">
+            <md-switch id="auto_push" class="md-primary"
+                       aria-label="Auto pull"
+                       style="margin: 0px"
+                       ng-model="jupyterCtrl.jupyterSettings.gitConfig.shutdownAutoPushl">
+                {{ jupyterCtrl.jupyterSettings.gitConfig.shutdownAutoPush? 'ON' : 'OFF' }}
+            </md-switch>
+        </div>
+    </div>
+    <div class="form-group" ng-if="jupyterCtrl.jupyterSettings.gitBackend">
+        <label class="control-label col-sm-3" for="base_branch"
+               uib-tooltip="Base branch to pull from. If not set it will pull from repository's default branch.">
+            Base branch: </label>
+        <div class="col-sm-6">
+            <ui-select id="base_branch" ng-model="jupyterCtrl.jupyterSettings.gitConfig.baseBranch" theme="bootstrap"
+                       style="z-index:2" ;>
+                <ui-select-match placeholder="Select branch...">
+                    <span ng-bind="jupyterCtrl.jupyterSettings.gitConfig.baseBranch"></span>
+                </ui-select-match>
+                <ui-select-choices
+                        repeat="branch in (jupyterCtrl.jupyterSettings.gitConfig.branches | filter: $select.search) track by branch">
+                    <span ng-bind="branch | highlight: $select.search"></span>
+                </ui-select-choices>
+            </ui-select>
+        </div>
+    </div>
+
+
+    <div class="form-group" ng-if="jupyterCtrl.jupyterSettings.gitBackend">
+        <label class="control-label col-sm-3" for="head_branch"
+               uib-tooltip="Branch to save modifications. If not set it will commit changes to repository's default branch.">
+            <i ng-if="jupyterCtrl.gitWorking" style="margin-top: 2px" class="fa fa-spinner fa-spin"></i>Head branch:
+        </label>
+        <div class="col-sm-6" ng-if="jupyterCtrl.gitNewHeadBranchPressed == false">
+            <ui-select id="head_branch" ng-model="jupyterCtrl.jupyterSettings.gitConfig.headBranch" theme="bootstrap"
+                       style="z-index:1" ;>
+                <ui-select-match placeholder="Select branch...">
+                    <span ng-bind="jupyterCtrl.jupyterSettings.gitConfig.headBranch"></span>
+                </ui-select-match>
+                <ui-select-choices
+                        repeat="branch in (jupyterCtrl.jupyterSettings.gitConfig.branches | filter: $select.search) track by branch">
+                    <span ng-bind="branch | highlight: $select.search"></span>
+                </ui-select-choices>
+            </ui-select>
+        </div>
+        <div class="col-md-2 jupyter-left" ng-if="jupyterCtrl.gitNewHeadBranchPressed == true">
+            <input type="text" ng-model="jupyterCtrl.jupyterSettings.gitConfig.headBranch" class="form-control"
+                   placeholder="Branch name">
+        </div>
+        <div class="col-md-2 jupyter-right" ng-if="jupyterCtrl.gitNewHeadBranchPressed == false">
+            <button uib-tooltip='Create new HEAD branch'
+                    class="btn btn-default" ng-click="jupyterCtrl.gitNewHeadBranchPressed = true">
+                <i class="fa fa-plus"></i>
+            </button>
+        </div>
+    </div>
+</div>
+<!-- End of Jupyter Git backed -->
