@@ -70,11 +70,6 @@
                 </div>
               </div>
             </div>
-            <div class="col-sm-2 col-md-2 col-lg-2" style="margin-top:-20px;" ng-if="jupyterCtrl.ui === ''">
-              <button class="btn btn-primary" ng-click="jupyterCtrl.start()" type="button" id="newNotebook" style="width:90px;">
-                Start
-              </button>
-            </div>
             <div class="col-sm-2 col-md-2 col-lg-2" style="margin-top:-20px;" ng-if="jupyterCtrl.ui !== '' && sparkConfigCtrl.uneditableMode===false" id="viewConfig">
               <button class="btn btn-primary btn-md" ng-click="jupyterCtrl.tgState=false; sparkConfigCtrl.uneditableMode=true;">
                 <i class="fa fa-sliders"></i> View Configuration
@@ -108,7 +103,7 @@
             </div>
           </div>
           <div ng-if="jupyterCtrl.ui === '' || sparkConfigCtrl.uneditableMode===true">
-            <div ng-include="'views/sparkConfig.html'"></div>
+            <div ng-include="'views/jupyter/jupyterConfigPanel.html'"></div>
           </div>  
           <div class="row top-buffer" ng-if="jupyterCtrl.ui !== '' && sparkConfigCtrl.uneditableMode===false" class="animate-if">
             <div class="col-md-4 panel panel-default jupyter-left" style="min-height: 212px;" id="applications">

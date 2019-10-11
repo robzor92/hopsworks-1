@@ -102,6 +102,19 @@ angular.module('hopsWorksApp')
                 repository: 'UNKNOWN'
             };
 
+            self.availableGPUs = 10;
+            self.availableCPUs = 10;
+            self.requestedGPUs = 1;
+            self.requestedCPUs = 1;
+
+            self.range = function (max) {
+                var input = [];
+                for (var i = 1; i <= max; i++) {
+                    input.push(i);
+                }
+                return input;
+            };
+
             self.changeShutdownLevel = function() {
                 self.jupyterSettings.shutdownLevel = self.shutdownLevelSelected.name;
             };
@@ -393,7 +406,7 @@ angular.module('hopsWorksApp')
             self.openWindow = function() {
                 $window.open(self.ui, '_blank');
                 timeToShutdown();
-            }
+            };
 
             var startLoading = function(label) {
                 self.loading = true;
@@ -535,7 +548,7 @@ angular.module('hopsWorksApp')
                         )
                     }, 30000);
                 }
-            }
+            };
 
             self.start = function() {
                 startLoading("Connecting to Jupyter...");

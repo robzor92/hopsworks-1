@@ -1,0 +1,60 @@
+<!--
+ ~
+ ~ This file is part of Hopsworks
+ ~ Copyright (C) 2019, Logical Clocks AB. All rights reserved
+ ~
+ ~ Hopsworks is free software: you can redistribute it and/or modify it under the terms of
+ ~ the GNU Affero General Public License as published by the Free Software Foundation,
+ ~ either version 3 of the License, or (at your option) any later version.
+ ~
+ ~ Hopsworks is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ ~ without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ ~ PURPOSE.  See the GNU Affero General Public License for more details.
+ ~
+ ~ You should have received a copy of the GNU Affero General Public License along with this program.
+ ~ If not, see <https://www.gnu.org/licenses/>.
+ ~
+ -->
+<p ng-show="sparkConfigCtrl.jobConfig.experimentType == 'EXPERIMENT'">A single process Python experiment.</p>
+<p ng-show="sparkConfigCtrl.jobConfig.experimentType == 'PARALLEL_EXPERIMENTS'">Parallel Hyperparameter Optimization.</p>
+<p ng-show="sparkConfigCtrl.jobConfig.experimentType == 'DISTRIBUTED_TRAINING'">Distributed Training using CollectiveAllReduceStrategy, ParameterServerStrategy and MirroredStrategy.</p>
+<form class="form-horizontal">
+    <div ng-include="'views/jupyter/commonConfig.html'"></div>
+    <div class="form-group" ng-if="sparkConfigCtrl.jobConfig.experimentType == 'PARALLEL_EXPERIMENTS'">
+        <label class="control-label col-sm-3" for="parallel-exp">Max parallel experiments: </label>
+        <div class="col-sm-6">
+            <input type="number" class="form-control" id="parallel-exp"  ng-init="1" min="1"
+                   ng-model="sparkConfigCtrl.jobConfig['spark.dynamicAllocation.maxExecutors']">
+        </div>
+    </div>
+    <div class="form-group" ng-if="sparkConfigCtrl.jobConfig.experimentType == 'DISTRIBUTED_TRAINING'">
+        <label class="control-label col-sm-3" for="strategy">Distribution strategy: </label>
+        <div class="col-sm-6">
+            <select class="form-control" id="strategy" ng-model="sparkConfigCtrl.jobConfig.distributionStrategy">
+                <option ng-repeat="strategy in sparkConfigCtrl.distribution_strategies" value="{{strategy.name}}">
+                    {{strategy.displayName}}</option>
+            </select>
+        </div>
+    </div>
+    <div class="form-group" ng-if="sparkConfigCtrl.jobConfig.experimentType == 'DISTRIBUTED_TRAINING'">
+        <label class="control-label col-sm-3" for="workers">Workers:</label>
+        <div class="col-sm-6">
+            <input type="number" class="form-control" id="workers"  ng-init="1" min="1"
+                   ng-model="sparkConfigCtrl.jobConfig['spark.dynamicAllocation.maxExecutors']">
+        </div>
+    </div>
+    <div class="form-group" ng-if="sparkConfigCtrl.jobConfig.experimentType == 'DISTRIBUTED_TRAINING' && sparkConfigCtrl.jobConfig.distributionStrategy === 'PARAMETER_SERVER'">
+        <label class="control-label col-sm-3" for="ps">Parameter servers:</label>
+        <div class="col-sm-6">
+            <input type="number" class="form-control" id="ps"  min="0"
+                   ng-model="sparkConfigCtrl.jobConfig['spark.tensorflow.num.ps']">
+        </div>
+    </div>
+    <h5 class="j-tab-advanced" ng-click="advanced = !advanced" data-toggle="collapse" data-target="#expAdvanced">
+        Advanced configurations
+        <i class="fa" ng-class="{'fa-chevron-down': advanced, 'fa-chevron-right': !aria-expanded}" style="margin-left: 5px"></i>
+    </h5>
+    <div id="expAdvanced" class="collapse">
+        <div ng-include="'views/jupyter/commonAdvancedConfig.html'"></div>
+    </div>
+</form>

@@ -39,17 +39,31 @@ angular.module('hopsWorksApp')
             self.isJobs = self.loc.endsWith('newJob');
             self.uneditableMode = false;
 
-            self.sparkType = "";
+            self.experimentType = '';
+            self.sparkType = 'SPARK_STATIC';
+            self.selectedType = 'EXPERIMENT';
 
             self.setAdvanced = function() {
                 self.settings.advanced = !self.settings.advanced;
             };
 
-            $scope.$watch('jobConfig', function(jobConfig, oldConfig) {
-            if(jobConfig) {
-              self.jobConfig = jobConfig;
-              self.setConf();
-              }
+            $scope.$watch('jobConfig', function (jobConfig, oldConfig) {
+                if (jobConfig) {
+                    self.jobConfig = jobConfig;
+                    self.setConf();
+                }
+            }, true);
+
+            $scope.$watch('sparkConfigCtrl.sparkType', function(sparkType, oldSparkType) {
+                if (sparkType && typeof self.jobConfig !== "undefined") {
+                    self.setMode(sparkType);
+                }
+            });
+
+            $scope.$watch('sparkConfigCtrl.selectedType', function(newSelectedType, oldSelectedType) {
+                if (newSelectedType && typeof self.jobConfig !== "undefined") {
+                    self.setMode(newSelectedType);
+                }
             });
 
             $scope.$watch('settings', function(settings, oldSettings) {
@@ -127,8 +141,39 @@ angular.module('hopsWorksApp')
                 }
             };
 
-            self.setMode = function(mode) {
+            var saveExperimentType = function () {
+                if (typeof self.jobConfig.experimentType !== "undefined") {
+                    self.experimentType = self.jobConfig.experimentType;
+                } else {
+                    self.experimentType = 'EXPERIMENT';
+                }
+            };
 
+            self.changeTab = function (tab) {
+                switch (tab) {
+                    case 'PYTHON':
+                        saveExperimentType();
+                        break;
+                    case 'EXPERIMENT':
+                        if (typeof self.jobConfig.experimentType !== "undefined") {
+                            saveExperimentType();
+                        } else {
+                            self.setMode(self.experimentType);
+                        }
+                        break;
+                    case 'SPARK':
+                        saveExperimentType();
+                        if (typeof self.jobConfig.experimentType !== "undefined") {
+                            delete self.jobConfig.experimentType;
+                        }
+                        if (self.sparkType === '') {
+                            self.setMode('SPARK_STATIC');
+                        }
+                        break;
+                }
+            };
+
+            self.setMode = function(mode) {
                 if (mode === 'PARALLEL_EXPERIMENTS' || mode === 'DISTRIBUTED_TRAINING') {
                     self.jobConfig['spark.dynamicAllocation.initialExecutors'] = 0;
                     self.jobConfig['spark.dynamicAllocation.minExecutors'] = 0;
@@ -149,7 +194,7 @@ angular.module('hopsWorksApp')
                         self.sparkType = mode;
                     } else {
                         self.jobConfig.experimentType = mode;
-                        self.sparkType = "";
+                        self.sparkType = '';
                     }
                 }
 
@@ -372,13 +417,16 @@ angular.module('hopsWorksApp')
 
             self.distribution_strategies = [{
                 id: 1,
-                name: 'MIRRORED'
+                name: 'MIRRORED',
+                displayName: 'Mirrored'
             }, {
                 id: 2,
-                name: 'COLLECTIVE_ALL_REDUCE'
+                name: 'COLLECTIVE_ALL_REDUCE',
+                displayName: 'CollectiveAllReduce'
             }, {
                 id: 3,
-                name: 'PARAMETER_SERVER'
+                name: 'PARAMETER_SERVER',
+                displayName: 'ParameterServer'
             }];
 
             self.distributionStrategySelected;
