@@ -50,11 +50,11 @@
                    ng-model="sparkConfigCtrl.jobConfig['spark.tensorflow.num.ps']">
         </div>
     </div>
-    <h5 class="j-tab-advanced" ng-click="advanced = !advanced" data-toggle="collapse" data-target="#expAdvanced">
+    <h5 class="j-tab-advanced" ng-click="sparkConfigCtrl.advanced = !sparkConfigCtrl.advanced" data-toggle="collapse" data-target="#expAdvanced">
         Advanced configurations
-        <i class="fa" ng-class="{'fa-chevron-down': advanced, 'fa-chevron-right': !aria-expanded}" style="margin-left: 5px"></i>
+        <i class="fa" ng-class="{'fa-chevron-down': sparkConfigCtrl.advanced, 'fa-chevron-right': !sparkConfigCtrl.advanced}" style="margin-left: 5px"></i>
     </h5>
-    <div id="expAdvanced" class="collapse">
+    <div id="expAdvanced" ng-class="{'collapse in': sparkConfigCtrl.advanced, 'collapse': !sparkConfigCtrl.advanced}">
         <div ng-include="'views/jupyter/commonAdvancedConfig.html'"></div>
     </div>
 </form>

@@ -7,7 +7,8 @@
 .j-panel-heading {
     background-color: #425066 !important;
     color: white;
-    border-radius: 10px 10px 0 0
+    border-radius: 10px 10px 0 0;
+    min-height: 55px;
 }
 
 .j-panel-body {

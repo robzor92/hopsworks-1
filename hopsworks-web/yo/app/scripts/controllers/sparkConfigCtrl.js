@@ -42,6 +42,9 @@ angular.module('hopsWorksApp')
             self.experimentType = '';
             self.sparkType = 'SPARK_STATIC';
             self.selectedType = 'EXPERIMENT';
+            self.sparkAdvanced = false;
+            self.advanced = false;
+            $scope.indextab = 0;
 
             self.setAdvanced = function() {
                 self.settings.advanced = !self.settings.advanced;
@@ -71,15 +74,17 @@ angular.module('hopsWorksApp')
             });
 
             self.setConf = function() {
-
                 if (self.jobConfig.experimentType) {
-                    self.jobConfig['spark.dynamicAllocation.enabled']=true;
+                    self.jobConfig['spark.dynamicAllocation.enabled'] = true;
                     self.setMode(self.jobConfig.experimentType);
+                    $scope.indextab = 1;
                 } else if (self.jobConfig['spark.dynamicAllocation.enabled'] && self.jobConfig['spark.dynamicAllocation.enabled'] === true) {
                     self.setMode('SPARK_DYNAMIC');
+                    $scope.indextab = 2;
                 } else {
                     self.setMode('SPARK_STATIC');
-                    self.jobConfig['spark.dynamicAllocation.enabled']=false;
+                    self.jobConfig['spark.dynamicAllocation.enabled'] = false;
+                    $scope.indextab = 2;
                 }
 
                 if (self.jobConfig.distributionStrategy) {
@@ -158,16 +163,24 @@ angular.module('hopsWorksApp')
                         if (typeof self.jobConfig.experimentType !== "undefined") {
                             saveExperimentType();
                         } else {
-                            self.setMode(self.experimentType);
+                            if (self.experimentType) {
+                                self.setMode(self.experimentType);
+                            } else {
+                                self.setMode('EXPERIMENT');
+                            }
                         }
                         break;
                     case 'SPARK':
                         saveExperimentType();
+                        if (self.sparkType === '' && self.jobConfig['spark.dynamicAllocation.enabled']) {
+                            self.setMode('SPARK_DYNAMIC');
+                        } else if (self.sparkType === '') {
+                            self.setMode('SPARK_STATIC');
+                        } else {
+                            self.setMode(self.sparkType);
+                        }
                         if (typeof self.jobConfig.experimentType !== "undefined") {
                             delete self.jobConfig.experimentType;
-                        }
-                        if (self.sparkType === '') {
-                            self.setMode('SPARK_STATIC');
                         }
                         break;
                 }
@@ -194,14 +207,14 @@ angular.module('hopsWorksApp')
                         self.sparkType = mode;
                     } else {
                         self.jobConfig.experimentType = mode;
-                        self.sparkType = '';
+                        //self.sparkType = '';
                     }
                 }
 
-                if(mode === 'SPARK_STATIC') {
-                  self.jobConfig['spark.dynamicAllocation.enabled']=false;
+                if (mode === 'SPARK_STATIC') {
+                    self.jobConfig['spark.dynamicAllocation.enabled'] = false;
                 } else {
-                  self.jobConfig['spark.dynamicAllocation.enabled']=true;
+                    self.jobConfig['spark.dynamicAllocation.enabled'] = true;
                 }
 
                 self.sliderOptions.min = self.jobConfig['spark.dynamicAllocation.minExecutors'];
