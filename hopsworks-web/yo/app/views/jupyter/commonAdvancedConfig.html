@@ -26,17 +26,12 @@
     <div class="row" ng-show="jupyterCtrl.jupyterSettings.baseDir === '/'">
         <div class="col-md-2 jupyter-left"></div>
         <div class="col-md-9 pull-right" style="font-weight: bold; color: orange;">
-            <i class="fa fa-warning" style="color:orange;"
-               uib-tooltip="Each Executor which runs the python code is allocated this number of GPUs.
-                            Make sure your code can actually use the configured number,
-                            otherwise the unused GPUs should be made available for other users."></i>
             &nbsp You can only create notebooks inside a dataset - not in the '/' (root) directory.
         </div>
     </div>
 </div>
 <div class="form-group" ng-if="sparkConfigCtrl.jobConfig.experimentType === 'PARALLEL_EXPERIMENTS' || sparkConfigCtrl.jobConfig.experimentType === 'EXPERIMENT'">
-    <label class="control-label col-sm-3"
-           for="faultTolerance">Fault-tolerant mode: </label>
+    <label class="control-label col-sm-3">Fault-tolerant mode: </label>
     <div class="col-sm-6">
         <md-switch id="faultTolerance" class="md-primary"
                    aria-label="Fault-tolerant"
