@@ -110,7 +110,6 @@ public class JupyterController {
     String prog = settings.getHopsworksDomainDir() + "/bin/convert-ipython-notebook.sh";
     ProcessDescriptor processDescriptor = new ProcessDescriptor.Builder()
         .addCommand(prog)
-        .addCommand("PY")
         .addCommand(notebookPath)
         .addCommand(hdfsUsername)
         .addCommand(settings.getAnacondaProjectDir(project))
@@ -125,8 +124,8 @@ public class JupyterController {
       if (!processResult.processExited() || processResult.getExitCode() != 0) {
         throw new ServiceException(RESTCodes.ServiceErrorCode.IPYTHON_CONVERT_ERROR,  Level.SEVERE,
             "error code: " + processResult.getExitCode(), "Failed to convert " + notebookPath
-          + "\nstderr: " + processResult.getStderr()
-          + "\nstdout: " + processResult.getStdout());
+            + "\nstderr: " + processResult.getStderr()
+            + "\nstdout: " + processResult.getStdout());
       }
     } catch (IOException ex) {
       throw new ServiceException(RESTCodes.ServiceErrorCode.IPYTHON_CONVERT_ERROR, Level.SEVERE, null, ex.getMessage(),
