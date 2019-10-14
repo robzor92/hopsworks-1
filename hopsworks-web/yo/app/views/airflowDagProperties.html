@@ -38,13 +38,27 @@
             <input type="text" ng-model="dagComposerModalsCtrl.tmpDagDefinition.scheduleInterval">
         </div>
     </div>
-    <!-- Schedule interval -->
+
     <div class="row">
-        <div class="text-right col-md-4">API key<i class="fa fa-info-circle"
-                uib-tooltip="Optional API key for operator to use to authenticate to Hopsworks" style="margin-left: 10px"></i>
+        <div class="text-right col-md-4">
+            <label ng-click="dagComposerModalsCtrl.toggleAdvanced();">
+                <span class="glyphicon glyphicon-chevron-right" ng-if="!dagComposerModalsCtrl.showAdvanced"></span>
+                <span class="glyphicon glyphicon-chevron-down" ng-if="dagComposerModalsCtrl.showAdvanced"></span>
+                Advanced</label>
         </div>
-        <div class="col-md-2">
-            <input type="text" ng-model="dagComposerModalsCtrl.tmpDagDefinition.apiKey">
+    
+    </div>
+
+    <div ng-if="dagComposerModalsCtrl.showAdvanced" class="animate-if">
+        <!-- API key-->
+        <div class="row">
+            <div class="text-right col-md-4">API key<i class="fa fa-info-circle"
+                    uib-tooltip="Optional API key for operator to use to authenticate to Hopsworks"
+                    style="margin-left: 10px"></i>
+            </div>
+            <div class="col-md-2">
+                <input type="text" ng-model="dagComposerModalsCtrl.tmpDagDefinition.apiKey">
+            </div>
         </div>
     </div>
 </div>

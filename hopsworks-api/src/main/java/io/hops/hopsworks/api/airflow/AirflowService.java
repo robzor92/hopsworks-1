@@ -160,9 +160,8 @@ public class AirflowService {
           dagDefinition.getName() + ".py");
       templateEngine.template("airflow_dag.py", dataModel, outputFile.toFile());
     } catch (IOException | TemplateException ex) {
-      // TODO(Antonis) Fix it!
-      throw new AirflowException(RESTCodes.AirflowErrorCode.JWT_NOT_STORED, Level.SEVERE,
-          "Could not store Airflow JWT for user ",
+      throw new AirflowException(RESTCodes.AirflowErrorCode.DAG_NOT_TEMPLATED, Level.SEVERE,
+          "Could not template DAG file for Project " + project.getName(),
           ex.getMessage(), ex);
     }
     return Response.ok().build();

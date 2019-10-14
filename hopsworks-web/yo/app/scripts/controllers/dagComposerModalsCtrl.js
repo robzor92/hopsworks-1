@@ -27,6 +27,11 @@ angular.module('hopsWorksApp')
                 dependsOn: []
             };
 
+            self.showAdvanced = false;
+            self.toggleAdvanced = function() {
+                self.showAdvanced = !self.showAdvanced;
+            }
+
             self.finalizeDagDefition = function() {
                 if (self.isUndefined(self.tmpDagDefinition.name) || self.tmpDagDefinition.name == "") {
                     var errorMsg = "DAG name is required";
