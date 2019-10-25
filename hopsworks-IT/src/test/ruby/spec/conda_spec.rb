@@ -307,6 +307,17 @@ describe "On #{ENV['OS']}" do
 
           end
 
+          it 'should fail to install same library with upper and lower case variation' do
+            @project = create_env_and_update_project(@project, python_version, true)
+            install_library(@project[:id], python_version_2, 'sciPY', 'pip', '1.2.2', 'ALL', conda_channel)
+            expect_status(201)
+            wait_for do
+              CondaCommands.find_by(proj: @project[:projectname]).nil?
+            end
+            install_library(@project[:id], python_version_2, 'scipy', 'pip', '1.2.2', 'ALL', conda_channel)
+            expect_status(409)
+          end
+
           it 'list libraries' do
             @project = create_env_and_update_project(@project, python_version, true)
             list_libraries(@project[:id], @project[:python_version])
@@ -341,7 +352,7 @@ describe "On #{ENV['OS']}" do
             end
           end
 
-          it 'export environment' do
+          it 'export base environment' do
             @project = create_env_and_update_project(@project, python_version, true)
             export_env(@project[:id], @project[:python_version])
             expect_status(200)
@@ -407,6 +418,11 @@ describe "On #{ENV['OS']}" do
 
             @project = get_project_by_name(@project[:projectname])
             expect(@project[:python_version]).to eq "3.6"
+          end
+
+          it 'export environment created from yml' do
+            export_env(@project[:id], @project[:python_version])
+            expect_status(200)
           end
 
           it 'GC stale Conda env' do
