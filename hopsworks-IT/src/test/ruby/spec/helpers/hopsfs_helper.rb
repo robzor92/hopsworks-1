@@ -81,6 +81,13 @@ module HopsFSHelper
     end
   end
 
+  def chmod_local_dir_recursive(src, mode)
+    system "sudo /bin/bash -c  \"chmod -R #{mode} #{src}\""
+    if $?.exitstatus > 0
+      raise "Failed chmod local dir: #{src} to #{mode} "
+    end
+  end
+
   def rm(path)
     system "sudo su #{@@hdfs_user} /bin/bash -c \"#{@@hadoop_home}/bin/hdfs dfs -rm #{path}\""
     if $?.exitstatus > 0
