@@ -309,9 +309,9 @@ describe "On #{ENV['OS']}" do
 
           it 'should fail to install same library with upper and lower case variation' do
             @project = create_env_and_update_project(@project, python_version, true)
-            install_library(@project[:id], python_version_2, 'tflearn', 'pip', '0.3.2', 'ALL', conda_channel)
+            install_library(@project[:id], python_version_2, 'sciPY', 'pip', '1.2.2', 'ALL', conda_channel)
             expect_status(201)
-            install_library(@project[:id], python_version_2, 'TFLEARN', 'pip', '0.3.2', 'ALL', conda_channel)
+            install_library(@project[:id], python_version_2, 'scipy', 'pip', '1.2.2', 'ALL', conda_channel)
             expect_status(409)
           end
 
