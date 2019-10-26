@@ -280,6 +280,15 @@ describe "On #{ENV['OS']}" do
             expect_status(404)
           end
 
+          it 'should fail to install same library with different case name' do
+            @project = create_env_and_update_project(@project, python_version, true)
+            install_library(@project[:id], @project[:python_version], 'sciPY', 'pip', '1.2.2', 'ALL', conda_channel)
+            expect_status(201)
+
+            install_library(@project[:id], @project[:python_version], 'scipy', 'pip', '1.2.2', 'ALL', conda_channel)
+            expect_status(409)
+          end
+
           it 'install libraries' do
             @project = create_env_and_update_project(@project, python_version, true)
             install_library(@project[:id], @project[:python_version], 'imageio', 'conda', '2.2.0', 'CPU', conda_channel)
@@ -305,17 +314,6 @@ describe "On #{ENV['OS']}" do
               CondaCommands.find_by(proj: @project[:projectname]).nil?
             end
 
-          end
-
-          it 'should fail to install same library with upper and lower case variation' do
-            @project = create_env_and_update_project(@project, python_version, true)
-            install_library(@project[:id], @project[:python_version], 'sciPY', 'pip', '1.2.2', 'ALL', conda_channel)
-            expect_status(201)
-            wait_for do
-              CondaCommands.find_by(proj: @project[:projectname]).nil?
-            end
-            install_library(@project[:id], @project[:python_version], 'scipy', 'pip', '1.2.2', 'ALL', conda_channel)
-            expect_status(409)
           end
 
           it 'list libraries' do
