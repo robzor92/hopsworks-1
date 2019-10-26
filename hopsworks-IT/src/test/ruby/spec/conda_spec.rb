@@ -407,7 +407,7 @@ describe "On #{ENV['OS']}" do
           it 'create environment from yml' do
             delete_env(@project[:id], python_version)
             upload_yml
-            create_env_yml(@project[:id], "/Projects/#{@project[:projectname]}/Resources/environment_cpu.yml", nil, nil, true)
+            create_env_yml(@project[:id], "/Projects/#{@project[:projectname]}/Resources/environment_cpu.yml", nil, nil, false)
             expect_status(201)
 
             wait_for do
