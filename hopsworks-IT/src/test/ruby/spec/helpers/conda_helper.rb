@@ -69,9 +69,7 @@ module CondaHelper
 
   def upload_yml
     chmod_local_dir_recursive("#{ENV['PROJECT_DIR']}/tools", 777)
-    copy_from_local("#{ENV['PROJECT_DIR']}/tools/conda/python3.yml",
-                    "/Projects/#{@project[:projectname]}/Resources/environment_cpu.yml", @user[:username],
-                    "#{@project[:projectname]}__#{@dataset[:inode_name]}", 750, "#{@project[:projectname]}")
+    copy_from_local("#{ENV['PROJECT_DIR']}/tools/conda/python3.yml", "/Projects/#{@project[:projectname]}/Resources/environment_cpu.yml", @user[:username], "#{@project[:projectname]}__Resources", 750, "#{@project[:projectname]}")
   end
 
   def get_conda_envs_locally
