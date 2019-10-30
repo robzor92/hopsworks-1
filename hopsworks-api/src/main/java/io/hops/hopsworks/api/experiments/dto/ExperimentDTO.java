@@ -29,7 +29,7 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   private String description;
 
-  private String duration;
+  private int duration;
 
   private double metric;
 
@@ -137,11 +137,11 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
     this.experimentType = experimentType;
   }
 
-  public String getDuration() {
+  public int getDuration() {
     return duration;
   }
 
-  public void setDuration(String duration) {
+  public void setDuration(int duration) {
     this.duration = duration;
   }
 

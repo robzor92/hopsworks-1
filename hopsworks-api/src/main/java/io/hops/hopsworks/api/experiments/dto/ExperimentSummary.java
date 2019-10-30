@@ -19,9 +19,9 @@ public class ExperimentSummary {
 
   private String userFullName;
 
-  private String duration;
+  private int duration;
 
-  private String endTimestamp;
+  private long endTimestamp;
 
   private String state;
 
@@ -135,19 +135,19 @@ public class ExperimentSummary {
     this.bestDir = bestDir;
   }
 
-  public String getDuration() {
+  public int getDuration() {
     return duration;
   }
 
-  public void setDuration(String duration) {
+  public void setDuration(int duration) {
     this.duration = duration;
   }
 
-  public String getEndTimestamp() {
+  public long getEndTimestamp() {
     return endTimestamp;
   }
 
-  public void setEndTimestamp(String endTimestamp) {
+  public void setEndTimestamp(long endTimestamp) {
     this.endTimestamp = endTimestamp;
   }
 }

@@ -28,7 +28,6 @@ import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.InvalidQueryException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
-import org.apache.parquet.Strings;
 import org.elasticsearch.search.sort.SortOrder;
 import org.json.JSONObject;
 
@@ -177,17 +176,17 @@ public class ExperimentsBuilder {
         experimentDTO.setStarted(DateUtils.millis2LocalDateTime(fileProvenanceHit.getCreateTime()).toString());
 
         if(!experimentSummary.getState().equals(Provenance.AppState.RUNNING.name()) &&
-          experimentSummary.getEndTimestamp() == null) {
+          experimentSummary.getEndTimestamp() == 0.0f) {
           updateNeeded = true;
-          if(experimentSummary.getDuration() != null) {
-            Long finishedTime = fileProvenanceHit.getCreateTime() + Long.valueOf(experimentSummary.getDuration());
-            experimentSummary.setEndTimestamp(finishedTime.toString());
+          if(experimentSummary.getDuration() > 0) {
+            long finishedTime = fileProvenanceHit.getCreateTime() + experimentSummary.getDuration();
+            experimentSummary.setEndTimestamp(finishedTime);
           } else {
-            experimentSummary.setEndTimestamp(fileProvenanceHit.getAppState().getFinishTime().toString());
+            experimentSummary.setEndTimestamp(fileProvenanceHit.getAppState().getFinishTime());
           }
         }
 
-        if(!Strings.isNullOrEmpty(experimentSummary.getEndTimestamp())) {
+        if(experimentSummary.getEndTimestamp() != 0.0f) {
           experimentDTO.setFinished(DateUtils.millis2LocalDateTime(
               Long.valueOf(experimentSummary.getEndTimestamp())).toString());
         }
@@ -197,9 +196,9 @@ public class ExperimentsBuilder {
               experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);
         }
 
-        if(!Strings.isNullOrEmpty(experimentSummary.getEndTimestamp())) {
+        if(experimentSummary.getEndTimestamp() != 0.0f) {
           experimentDTO.setFinished(DateUtils.millis2LocalDateTime(
-              Long.parseLong(experimentSummary.getEndTimestamp())).toString());
+              Long.valueOf(experimentSummary.getEndTimestamp())).toString());
         }
 
         experimentDTO.setState(experimentSummary.getState());
