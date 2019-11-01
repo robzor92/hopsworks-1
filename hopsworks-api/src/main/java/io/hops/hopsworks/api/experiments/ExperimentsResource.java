@@ -19,6 +19,7 @@ import io.hops.hopsworks.common.provenance.v2.xml.FileState;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
+import io.hops.hopsworks.exceptions.PythonException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
 import io.hops.hopsworks.restutils.RESTCodes;
@@ -109,7 +110,7 @@ public class ExperimentsResource {
       @PathParam("id") String id,
       @Context UriInfo uriInfo,
       @BeanParam ExperimentsBeanParam experimentsBeanParam)
-      throws ServiceException, GenericException, ExperimentsException, DatasetException {
+      throws ServiceException, GenericException, ExperimentsException, DatasetException, PythonException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.EXPERIMENTS);
     resourceRequest.setExpansions(experimentsBeanParam.getExpansions().getResources());
     FileState fileState = experimentsController.getExperiment(project, id);
@@ -135,14 +136,16 @@ public class ExperimentsResource {
       @QueryParam("model") String model,
       @Context HttpServletRequest req,
       @Context UriInfo uriInfo,
-      @Context SecurityContext sc) throws DatasetException, GenericException, ServiceException {
+      @Context SecurityContext sc) throws DatasetException, GenericException, ServiceException, PythonException {
     if (experimentSummary == null && model == null) {
       throw new IllegalArgumentException("Experiment configuration or model was not provided");
     }
     Users user = jwtHelper.getUserPrincipal(sc);
+
+    String usersFullName = user.getFname() + " " + user.getLname();
+
     if(experimentSummary != null) {
-      String realName = user.getFname() + " " + user.getLname();
-      experimentsController.attachExperiment(id, project, realName, experimentSummary, xAttrSetFlag);
+      experimentsController.attachExperiment(id, project, usersFullName, experimentSummary, xAttrSetFlag, true);
     } else {
       experimentsController.attachModel(id, project, model, xAttrSetFlag);
     }

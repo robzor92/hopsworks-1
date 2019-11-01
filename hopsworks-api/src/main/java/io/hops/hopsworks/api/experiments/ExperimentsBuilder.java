@@ -26,6 +26,7 @@ import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.InvalidQueryException;
+import io.hops.hopsworks.exceptions.PythonException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.elasticsearch.search.sort.SortOrder;
@@ -99,7 +100,7 @@ public class ExperimentsBuilder {
 
   //Build collection
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project)
-      throws ServiceException, GenericException, ExperimentsException, DatasetException {
+      throws GenericException, ExperimentsException, DatasetException {
     ExperimentDTO dto = new ExperimentDTO();
     uri(dto, uriInfo, project);
     expand(dto, resourceRequest);
@@ -123,7 +124,7 @@ public class ExperimentsBuilder {
             }
           }
         }
-      } catch(ServiceException se) {
+      } catch(ServiceException | PythonException se) {
         LOGGER.log(Level.WARNING, "Could not find elastic mapping for models query", se);
         if(RESTCodes.ServiceErrorCode.ELASTIC_QUERY_NO_MAPPING.getCode().equals(se.getErrorCode().getCode())) {
           return dto;
@@ -150,7 +151,7 @@ public class ExperimentsBuilder {
   //Build specific
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
                              FileState fileProvenanceHit) throws ExperimentsException, DatasetException,
-      GenericException, ServiceException {
+      GenericException, ServiceException, PythonException {
 
     ExperimentDTO experimentDTO = new ExperimentDTO();
     uri(experimentDTO, uriInfo, project, fileProvenanceHit);
@@ -193,7 +194,7 @@ public class ExperimentsBuilder {
 
         if(updateNeeded) {
           experimentsController.attachExperiment(fileProvenanceHit.getMlId(), project,
-              experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);
+              experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE, false);
         }
 
         if(experimentSummary.getEndTimestamp() != 0.0f) {

@@ -379,7 +379,8 @@ public class EnvironmentController {
     }
   }
   
-  public void exportEnv(Users user, Project project) throws PythonException, ServiceException {
+  public void exportEnv(Users user, Project project, String projectRelativeExportPath)
+      throws PythonException, ServiceException {
     if (!project.getConda()) {
       throw new PythonException(RESTCodes.PythonErrorCode.ANACONDA_ENVIRONMENT_NOT_FOUND, Level.FINE);
     }
@@ -389,11 +390,13 @@ public class EnvironmentController {
     Date date = new Date();
 
     if (cpuHost != null) {
-      exportEnvironment(cpuHost, "environment_cpu_" + date.getTime() + ".yml", hdfsUser, project);
+      exportEnvironment(cpuHost, "environment_cpu_" + date.getTime() + ".yml", hdfsUser, project,
+          projectRelativeExportPath);
     }
     String gpuHost = hostsFacade.findGPUHost();
     if (gpuHost != null) {
-      exportEnvironment(gpuHost, "environment_gpu_" + date.getTime() + ".yml", hdfsUser, project);
+      exportEnvironment(gpuHost, "environment_gpu_" + date.getTime() + ".yml", hdfsUser, project,
+          projectRelativeExportPath);
     }
   }
   
@@ -449,12 +452,12 @@ public class EnvironmentController {
     }
   }
   
-  private void exportEnvironment(String host, String environmentFile, String hdfsUser, Project project)
-    throws ServiceException {
+  private void exportEnvironment(String host, String environmentFile, String hdfsUser, Project project,
+                                 String projectRelativeExportPath) throws ServiceException {
     
     String secretDir = DigestUtils.sha256Hex(hdfsUser + environmentFile);
-    String exportPath = settings.getStagingDir() + Settings.PRIVATE_DIRS + secretDir;
-    File exportDir = new File(exportPath);
+    String localExportPath = settings.getStagingDir() + Settings.PRIVATE_DIRS + secretDir;
+    File exportDir = new File(localExportPath);
     exportDir.mkdirs();
 
     String prog = settings.getHopsworksDomainDir() + "/bin/condaexport.sh";
@@ -462,13 +465,14 @@ public class EnvironmentController {
     ProcessDescriptor processDescriptor = new ProcessDescriptor.Builder()
       .addCommand("/usr/bin/sudo")
       .addCommand(prog)
-      .addCommand(exportPath)
+      .addCommand(localExportPath)
       .addCommand(project.getName())
       // Conda environment name
       .addCommand(projectUtils.getCurrentCondaEnvironment(project))
       .addCommand(host)
       .addCommand(environmentFile)
       .addCommand(hdfsUser)
+      .addCommand(projectRelativeExportPath)
       .setWaitTimeout(180L, TimeUnit.SECONDS)
       .ignoreOutErrStreams(false)
       .build();

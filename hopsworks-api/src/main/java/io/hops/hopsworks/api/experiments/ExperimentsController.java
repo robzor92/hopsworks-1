@@ -11,9 +11,11 @@ import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
 import io.hops.hopsworks.common.provenance.v2.xml.FileState;
 import io.hops.hopsworks.common.provenance.v2.xml.FileStateDTO;
+import io.hops.hopsworks.common.python.environment.EnvironmentController;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.GenericException;
+import io.hops.hopsworks.exceptions.PythonException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.apache.hadoop.fs.Path;
@@ -48,15 +50,16 @@ public class ExperimentsController {
   private DistributedFsService dfs;
   @EJB
   private ProvenanceController provenanceController;
+  @EJB
+  private EnvironmentController environmentController;
 
-  public void attachExperiment(String id, Project project, String userFullName, ExperimentSummary experimentSummary,
-                      ExperimentDTO.XAttrSetFlag xAttrSetFlag)
-      throws DatasetException, GenericException, ServiceException {
 
-    experimentSummary.setUserFullName(userFullName);
+  public void attachExperiment(String id, Project project, String usersFullName, ExperimentSummary experimentSummary,
+                      ExperimentDTO.XAttrSetFlag xAttrSetFlag, boolean export)
+      throws DatasetException, GenericException, ServiceException, PythonException {
 
+    experimentSummary.setUserFullName(usersFullName);
     String experimentPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/" + id;
-
     // attempt to set the final timestamp time
     if(experimentSummary.getDuration() > 0 &&
         xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.REPLACE)) {
@@ -91,6 +94,11 @@ public class ExperimentsController {
       flags.add(XAttrSetFlag.valueOf(xAttrSetFlag.name()));
 
       dfso.setXAttr(experimentPath, "provenance.experiment_summary", experiment, flags);
+
+      if(export && xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
+        environmentController.exportEnv(null, project, Settings.HOPS_EXPERIMENTS_DATASET + "/" + id);
+      }
+
     } catch(IOException | JAXBException ex) {
       throw new DatasetException(RESTCodes.DatasetErrorCode.ATTACH_XATTR_ERROR, Level.SEVERE,
           "path: " + experimentPath, ex.getMessage(), ex);

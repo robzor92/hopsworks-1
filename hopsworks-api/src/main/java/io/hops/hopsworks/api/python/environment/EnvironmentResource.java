@@ -28,6 +28,7 @@ import io.hops.hopsworks.common.dao.hdfs.inode.InodeFacade;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.python.environment.EnvironmentController;
+import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ProjectException;
 import io.hops.hopsworks.exceptions.PythonException;
@@ -77,6 +78,8 @@ public class EnvironmentResource {
   private EnvironmentCommandsResource environmentCommandsResource;
   @EJB
   private EnvironmentBuilder environmentBuilder;
+  @EJB
+  private Settings settings;
   
   private Project project;
   
@@ -148,7 +151,7 @@ public class EnvironmentResource {
     EnvironmentDTO dto;
     switch ((action != null) ? action : EnvironmentDTO.Operation.CREATE) {
       case EXPORT:
-        environmentController.exportEnv(user, project);
+        environmentController.exportEnv(user, project, Settings.PROJECT_STAGING_DIR);
         dto = buildEnvDTO(uriInfo, null, version);
         return Response.ok().entity(dto).build();
       case CREATE:
