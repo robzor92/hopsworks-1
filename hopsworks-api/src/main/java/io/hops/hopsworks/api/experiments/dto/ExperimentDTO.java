@@ -29,9 +29,9 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   private String description;
 
-  private int duration;
+  private Integer duration;
 
-  private double metric;
+  private Double metric;
 
   private String userFullName;
 
