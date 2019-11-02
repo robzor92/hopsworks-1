@@ -18,9 +18,9 @@
  * Controller for the Experiments service
  */
 angular.module('hopsWorksApp')
-    .controller('ExperimentCtrl', ['$scope', '$timeout', 'growl', '$location', 'MembersService', 'UserService', 'ModalService', 'ProjectService', 'ExperimentService', 'TensorBoardService', '$interval',
+    .controller('ExperimentCtrl', ['$scope', '$timeout', 'growl', '$window', 'MembersService', 'UserService', 'ModalService', 'ProjectService', 'ExperimentService', 'TensorBoardService', '$interval',
         '$routeParams', '$route', '$sce', '$window',
-        function($scope, $timeout, growl, $location, MembersService, UserService, ModalService, ProjectService, ExperimentService, TensorBoardService, $interval,
+        function($scope, $timeout, growl, $window, MembersService, UserService, ModalService, ProjectService, ExperimentService, TensorBoardService, $interval,
             $routeParams, $route, $sce, $window) {
 
             var self = this;
@@ -146,9 +146,9 @@ angular.module('hopsWorksApp')
 
             self.viewMonitor = function (experiment) {
               if(experiment.jobName) {
-                $location.path('project/' + self.projectId + '/jobMonitor-job/' + experiment.jobName);
+                $window.open('project/' + self.projectId + '/jobMonitor-job/' + experiment.jobName, '_blank');
               } else {
-                $location.path('project/' + self.projectId + '/jobMonitor-app/' + experiment.appId + '/true/jupyter');
+                $window.open('project/' + self.projectId + '/jobMonitor-app/' + experiment.appId + '/true/jupyter', '_blank');
               }
             };
 
@@ -231,12 +231,12 @@ angular.module('hopsWorksApp')
              * @param serviceName project page
              */
             self.goToExperiment = function (experiment_id) {
-                $location.path('project/' + self.projectId + '/datasets/Experiments/' + experiment_id);
+                $window.open('project/' + self.projectId + '/datasets/Experiments/' + experiment_id, '_blank');
             };
 
             self.goToModel = function (model) {
                 var modelSplit = model.split('_')
-                $location.path('project/' + self.projectId + '/datasets/Models/' + modelSplit[0] + '/' + modelSplit[1]);
+                $window.open('project/' + self.projectId + '/datasets/Models/' + modelSplit[0] + '/' + modelSplit[1], '_blank');
             };
 
             self.init = function () {
@@ -399,7 +399,7 @@ angular.module('hopsWorksApp')
             };
 
             self.goToDirectory = function (path) {
-                $location.path('project/' + self.projectId + '/datasets/' + path);
+                $window.open('project/' + self.projectId + '/datasets/' + path, '_blank');
             };
 
             self.buildModelLink = function(modelName) {

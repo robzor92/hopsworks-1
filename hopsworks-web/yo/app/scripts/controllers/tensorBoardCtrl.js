@@ -68,13 +68,6 @@ angular.module('hopsWorksApp')
                     });
             };
 
-            self.refresh = function() {
-                var iframe = document.getElementById('ui_iframe');
-                if (iframe !== null) {
-                    iframe.contentWindow.location.reload();
-                }
-            };
-
             angular.module('hopsWorksApp').directive('bindHtmlUnsafe', function($parse, $compile) {
                 return function($scope, $element, $attrs) {
                     var compile = function(newHTML) {
