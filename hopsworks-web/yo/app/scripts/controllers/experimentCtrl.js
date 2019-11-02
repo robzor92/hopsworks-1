@@ -19,9 +19,9 @@
  */
 angular.module('hopsWorksApp')
     .controller('ExperimentCtrl', ['$scope', '$timeout', 'growl', '$window', 'MembersService', 'UserService', 'ModalService', 'ProjectService', 'ExperimentService', 'TensorBoardService', '$interval',
-        '$routeParams', '$route', '$sce', '$window',
+        '$routeParams', '$route', '$sce',
         function($scope, $timeout, growl, $window, MembersService, UserService, ModalService, ProjectService, ExperimentService, TensorBoardService, $interval,
-            $routeParams, $route, $sce, $window) {
+            $routeParams, $route, $sce) {
 
             var self = this;
 
