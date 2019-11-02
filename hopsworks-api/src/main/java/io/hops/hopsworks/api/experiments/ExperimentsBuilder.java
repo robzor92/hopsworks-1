@@ -194,7 +194,7 @@ public class ExperimentsBuilder {
 
         if(updateNeeded) {
           experimentsController.attachExperiment(fileProvenanceHit.getMlId(), project,
-              experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE, false);
+              experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);
         }
 
         if(experimentSummary.getEndTimestamp() != 0.0f) {

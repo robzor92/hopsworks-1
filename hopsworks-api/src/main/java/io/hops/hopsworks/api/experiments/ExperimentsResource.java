@@ -145,7 +145,8 @@ public class ExperimentsResource {
     String usersFullName = user.getFname() + " " + user.getLname();
 
     if(experimentSummary != null) {
-      experimentsController.attachExperiment(id, project, usersFullName, experimentSummary, xAttrSetFlag, true);
+      experimentsController.attachExperiment(id, project, usersFullName, experimentSummary, xAttrSetFlag);
+      experimentsController.exportExperimentEnvironment(id, project, user);
     } else {
       experimentsController.attachModel(id, project, model, xAttrSetFlag);
     }

@@ -3,6 +3,7 @@ package io.hops.hopsworks.api.experiments;
 import io.hops.hopsworks.api.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.api.experiments.dto.ExperimentSummary;
 import io.hops.hopsworks.common.dao.project.Project;
+import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
 import io.hops.hopsworks.common.hdfs.Utils;
@@ -55,7 +56,7 @@ public class ExperimentsController {
 
 
   public void attachExperiment(String id, Project project, String usersFullName, ExperimentSummary experimentSummary,
-                      ExperimentDTO.XAttrSetFlag xAttrSetFlag, boolean export)
+                               ExperimentDTO.XAttrSetFlag xAttrSetFlag)
       throws DatasetException, GenericException, ServiceException, PythonException {
 
     experimentSummary.setUserFullName(usersFullName);
@@ -95,10 +96,6 @@ public class ExperimentsController {
 
       dfso.setXAttr(experimentPath, "provenance.experiment_summary", experiment, flags);
 
-      if(export && xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
-        environmentController.exportEnv(null, project, Settings.HOPS_EXPERIMENTS_DATASET + "/" + id);
-      }
-
     } catch(IOException | JAXBException ex) {
       throw new DatasetException(RESTCodes.DatasetErrorCode.ATTACH_XATTR_ERROR, Level.SEVERE,
           "path: " + experimentPath, ex.getMessage(), ex);
@@ -107,6 +104,11 @@ public class ExperimentsController {
         dfs.closeDfsClient(dfso);
       }
     }
+  }
+
+  public void exportExperimentEnvironment(String id, Project project, Users user)
+      throws PythonException, ServiceException {
+    environmentController.exportEnv(user, project, Settings.HOPS_EXPERIMENTS_DATASET + "/" + id);
   }
 
   public void attachModel(String id, Project project, String model,
