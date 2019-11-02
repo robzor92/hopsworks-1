@@ -146,7 +146,9 @@ public class ExperimentsResource {
 
     if(experimentSummary != null) {
       experimentsController.attachExperiment(id, project, usersFullName, experimentSummary, xAttrSetFlag);
-      experimentsController.exportExperimentEnvironment(id, project, user);
+      if(xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
+        experimentsController.exportExperimentEnvironment(id, project, user);
+      }
     } else {
       experimentsController.attachModel(id, project, model, xAttrSetFlag);
     }
