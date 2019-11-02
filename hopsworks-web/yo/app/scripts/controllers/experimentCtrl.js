@@ -189,7 +189,7 @@ angular.module('hopsWorksApp')
                           }
                         }
                         self.updating = false;
-                        if(success.data.count !== self.experiments.length) {
+                        if(success.data.count !== self.totalItems) {
                             console.log('overwrite')
                             self.experiments = success.data.items;
                         } else {
