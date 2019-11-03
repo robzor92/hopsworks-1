@@ -15,6 +15,7 @@
  */
 package io.hops.hopsworks.common.python.environment;
 
+import com.google.common.base.Strings;
 import io.hops.hopsworks.common.agent.AgentController;
 import io.hops.hopsworks.common.dao.host.Hosts;
 import io.hops.hopsworks.common.dao.host.HostsFacade;
@@ -474,17 +475,21 @@ public class EnvironmentController {
       .addCommand(hdfsUser)
       .addCommand(projectRelativeExportPath)
       .setWaitTimeout(180L, TimeUnit.SECONDS)
-      .ignoreOutErrStreams(false)
+      .redirectErrorStream(true)
       .build();
+
     try {
       ProcessResult processResult = osProcessExecutor.execute(processDescriptor);
-  
       if (processResult.getExitCode() != 0) {
-        throw new IOException("A problem occurred when exporting the environment.");
+        if(!Strings.isNullOrEmpty(processResult.getStdout())) {
+          throw new IOException("A problem occurred when exporting the environment.\n " + processResult.getStdout());
+        } else {
+          throw new IOException("A problem occurred when exporting the environment.");
+        }
       }
     } catch (IOException ex) {
-      throw new ServiceException(RESTCodes.ServiceErrorCode.ANACONDA_EXPORT_ERROR, Level.SEVERE, "host: " + host + ","
-        + " environmentFile: " + environmentFile + ", " + "hdfsUser: " + hdfsUser, ex.getMessage(), ex);
+      throw new ServiceException(RESTCodes.ServiceErrorCode.ANACONDA_EXPORT_ERROR, Level.SEVERE, "host: " + host + ": "
+          + ex.getMessage(), ex.getMessage(), ex);
     }
   }
 

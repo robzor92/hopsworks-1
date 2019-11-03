@@ -117,7 +117,7 @@ angular.module('hopsWorksApp')
 
             var showErrorGrowl = function (error) {
                 var errorMsg = typeof error.data.usrMsg !== 'undefined'? error.data.usrMsg : '';
-                growl.error(errorMsg, {title: error.data.errorMsg, ttl: 5000});
+                growl.error(errorMsg, {title: error.data.errorMsg, ttl: 10000});
             };
 
             //bit ugly code but some custom behaviour was needed to fix the checkboxes:
