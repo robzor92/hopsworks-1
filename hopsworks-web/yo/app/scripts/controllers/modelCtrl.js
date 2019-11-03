@@ -18,9 +18,9 @@
  * Controller for the Models service
  */
 angular.module('hopsWorksApp')
-    .controller('ModelCtrl', ['$scope', '$timeout', 'growl', '$location', 'MembersService', 'UserService', 'ModalService', 'ModelService', 'ProjectService', '$interval',
+    .controller('ModelCtrl', ['$scope', '$timeout', 'growl', 'MembersService', 'UserService', 'ModalService', 'ModelService', 'ProjectService', '$interval',
         '$routeParams', '$route', '$sce', '$window',
-        function($scope, $timeout, growl, $location, MembersService, UserService, ModalService, ModelService, ProjectService, $interval,
+        function($scope, $timeout, growl, MembersService, UserService, ModalService, ModelService, ProjectService, $interval,
             $routeParams, $route, $sce, $window) {
 
             var self = this;
@@ -318,11 +318,7 @@ angular.module('hopsWorksApp')
             };
 
             self.goToModelVersion = function (modelName, modelVersion) {
-                $location.path('project/' + self.projectId + '/datasets/Models/' + modelName + '/' + modelVersion);
-            };
-
-            self.goToModel = function (modelName) {
-                $location.path('project/' + self.projectId + '/datasets/Models/' + modelName);
+                $window.open('project/' + self.projectId + '/datasets/Models/' + modelName + '/' + modelVersion, '_blank');
             };
 
             self.init = function () {
