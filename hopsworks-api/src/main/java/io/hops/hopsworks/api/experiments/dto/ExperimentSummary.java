@@ -13,15 +13,15 @@ public class ExperimentSummary {
 
   private String name;
 
-  private double metric;
+  private Double metric;
 
   private String description;
 
   private String userFullName;
 
-  private int duration;
+  private Integer duration;
 
-  private long endTimestamp;
+  private Long endTimestamp;
 
   private String state;
 
@@ -63,11 +63,11 @@ public class ExperimentSummary {
     this.description = description;
   }
 
-  public double getMetric() {
+  public Double getMetric() {
     return metric;
   }
 
-  public void setMetric(double metric) {
+  public void setMetric(Double metric) {
     this.metric = metric;
   }
 
@@ -135,19 +135,19 @@ public class ExperimentSummary {
     this.bestDir = bestDir;
   }
 
-  public int getDuration() {
+  public Integer getDuration() {
     return duration;
   }
 
-  public void setDuration(int duration) {
+  public void setDuration(Integer duration) {
     this.duration = duration;
   }
 
-  public long getEndTimestamp() {
+  public Long getEndTimestamp() {
     return endTimestamp;
   }
 
-  public void setEndTimestamp(long endTimestamp) {
+  public void setEndTimestamp(Long endTimestamp) {
     this.endTimestamp = endTimestamp;
   }
 }

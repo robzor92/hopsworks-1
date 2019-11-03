@@ -29,8 +29,6 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   private String description;
 
-  private Integer duration;
-
   private Double metric;
 
   private String userFullName;
@@ -135,14 +133,6 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   public void setExperimentType(String experimentType) {
     this.experimentType = experimentType;
-  }
-
-  public int getDuration() {
-    return duration;
-  }
-
-  public void setDuration(int duration) {
-    this.duration = duration;
   }
 
   public TensorBoardDTO getTensorboard() {
