@@ -62,8 +62,8 @@ public class ExperimentsController {
     experimentSummary.setUserFullName(usersFullName);
     String experimentPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/" + id;
     // attempt to set the final timestamp time
-    if(experimentSummary.getDuration() > 0 &&
-        xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.REPLACE)) {
+    if(xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.REPLACE) && experimentSummary.getDuration() != null &&
+        experimentSummary.getDuration() > 0) {
       FileState fileState = getExperiment(project, id);
       if(fileState != null && fileState.getCreateTime() != null) {
         Long finishedTime = fileState.getCreateTime() + experimentSummary.getDuration();

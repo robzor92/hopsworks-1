@@ -201,9 +201,9 @@ angular.module('hopsWorksApp')
                                 }
                                 self.experiments[i].name = experiment.name;
                                 self.experiments[i].metric = experiment.metric;
-                                self.experiments[i].user = experiment.user;
-                                self.experiments[i].start = experiment.start;
-                                self.experiments[i].end = experiment.end;
+                                self.experiments[i].userFullName = experiment.userFullName;
+                                self.experiments[i].started = experiment.started;
+                                self.experiments[i].finished = experiment.finished;
                                 self.experiments[i].state = experiment.state;
                                 i++;
                             });

@@ -103,11 +103,11 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
     this.state = state;
   }
 
-  public double getMetric() {
+  public Double getMetric() {
     return metric;
   }
 
-  public void setMetric(double metric) {
+  public void setMetric(Double metric) {
     this.metric = metric;
   }
 

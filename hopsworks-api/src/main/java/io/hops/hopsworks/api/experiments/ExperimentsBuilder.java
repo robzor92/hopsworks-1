@@ -179,7 +179,7 @@ public class ExperimentsBuilder {
         if(!experimentSummary.getState().equals(Provenance.AppState.RUNNING.name()) &&
           experimentSummary.getEndTimestamp() == 0.0f) {
           updateNeeded = true;
-          if(experimentSummary.getDuration() > 0) {
+          if(experimentSummary.getDuration() != null && experimentSummary.getDuration() > 0) {
             long finishedTime = fileProvenanceHit.getCreateTime() + experimentSummary.getDuration();
             experimentSummary.setEndTimestamp(finishedTime);
           } else {
@@ -187,17 +187,12 @@ public class ExperimentsBuilder {
           }
         }
 
-        if(experimentSummary.getEndTimestamp() != 0.0f) {
-          experimentDTO.setFinished(DateUtils.millis2LocalDateTime(
-              Long.valueOf(experimentSummary.getEndTimestamp())).toString());
-        }
-
         if(updateNeeded) {
           experimentsController.attachExperiment(fileProvenanceHit.getMlId(), project,
               experimentSummary.getUserFullName(), experimentSummary, ExperimentDTO.XAttrSetFlag.REPLACE);
         }
 
-        if(experimentSummary.getEndTimestamp() != 0.0f) {
+        if(experimentSummary.getEndTimestamp() != null && experimentSummary.getEndTimestamp() != 0.0f) {
           experimentDTO.setFinished(DateUtils.millis2LocalDateTime(
               Long.valueOf(experimentSummary.getEndTimestamp())).toString());
         }
