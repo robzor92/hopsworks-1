@@ -141,19 +141,16 @@ public class ExperimentsResource {
       throw new IllegalArgumentException("Experiment configuration or model was not provided");
     }
     Users user = jwtHelper.getUserPrincipal(sc);
-
     String usersFullName = user.getFname() + " " + user.getLname();
-
     if(experimentSummary != null) {
-      experimentsController.attachExperiment(id, project, usersFullName, experimentSummary, xAttrSetFlag);
       if(xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
-        experimentsController.exportExperimentEnvironment(id, project, user);
+        experimentSummary.setEnvironmentYmlFiles(experimentsController.exportExperimentEnvironment(id, project, user));
       }
+      experimentsController.attachExperiment(id, project, usersFullName, experimentSummary, xAttrSetFlag);
     } else {
       experimentsController.attachModel(id, project, model, xAttrSetFlag);
     }
     UriBuilder builder = uriInfo.getAbsolutePathBuilder().path(id);
-    //TODO: fix return type to ExperimentDTO
     if(xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
       return Response.created(builder.build()).entity(experimentSummary).build();
     } else {

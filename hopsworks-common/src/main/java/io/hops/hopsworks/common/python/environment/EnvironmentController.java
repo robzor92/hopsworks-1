@@ -380,7 +380,7 @@ public class EnvironmentController {
     }
   }
   
-  public void exportEnv(Users user, Project project, String projectRelativeExportPath)
+  public String[] exportEnv(Users user, Project project, String projectRelativeExportPath)
       throws PythonException, ServiceException {
     if (!project.getConda()) {
       throw new PythonException(RESTCodes.PythonErrorCode.ANACONDA_ENVIRONMENT_NOT_FOUND, Level.FINE);
@@ -390,15 +390,22 @@ public class EnvironmentController {
 
     Date date = new Date();
 
+    ArrayList<String> ymlList = new ArrayList<>();
+    long exportTime = date.getTime();
     if (cpuHost != null) {
-      exportEnvironment(cpuHost, "environment_cpu_" + date.getTime() + ".yml", hdfsUser, project,
+      String cpuYmlName = "environment_cpu_" + exportTime + ".yml";
+      exportEnvironment(cpuHost, cpuYmlName, hdfsUser, project,
           projectRelativeExportPath);
+      ymlList.add(projectRelativeExportPath + "/" + cpuYmlName);
     }
     String gpuHost = hostsFacade.findGPUHost();
     if (gpuHost != null) {
-      exportEnvironment(gpuHost, "environment_gpu_" + date.getTime() + ".yml", hdfsUser, project,
+      String gpuYmlName = "environment_gpu_" + exportTime + ".yml";
+      exportEnvironment(gpuHost, gpuYmlName, hdfsUser, project,
           projectRelativeExportPath);
+      ymlList.add(projectRelativeExportPath + "/" + gpuYmlName);
     }
+    return ymlList.toArray(new String[0]);
   }
   
   public void createEnv(String version, Project project) throws PythonException,

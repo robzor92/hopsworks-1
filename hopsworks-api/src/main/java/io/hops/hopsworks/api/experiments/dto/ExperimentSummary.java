@@ -39,6 +39,8 @@ public class ExperimentSummary {
 
   private String bestDir;
 
+  private String[] environmentYmlFiles;
+
   public String getName() {
     return name;
   }
@@ -149,5 +151,13 @@ public class ExperimentSummary {
 
   public void setEndTimestamp(Long endTimestamp) {
     this.endTimestamp = endTimestamp;
+  }
+
+  public String[] getEnvironmentYmlFiles() {
+    return environmentYmlFiles;
+  }
+
+  public void setEnvironmentYmlFiles(String[] environmentYmlFiles) {
+    this.environmentYmlFiles = environmentYmlFiles;
   }
 }
