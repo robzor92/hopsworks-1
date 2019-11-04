@@ -183,7 +183,6 @@ angular.module('hopsWorksApp')
                         if(success.data.items) {
                           for(var i = 0; success.data.items.length > i; i++) {
                             if(success.data.items[i].id in self.deleted) {
-                               console.log('removing element currently being deleted')
                                success.data.items.splice(i, 1);
                                success.data.count = success.data.count - 1;
                             }
@@ -191,11 +190,9 @@ angular.module('hopsWorksApp')
                         }
                         self.updating = false;
                         if(success.data.count !== self.totalItems) {
-                            console.log('overwrite')
                             self.experiments = success.data.items;
                         } else {
                         var i=0;
-                            //Construct an array of jobs and their latest execution info
                             angular.forEach(success.data.items, function (experiment, key) {
                                 if(typeof self.experiments[i] === 'undefined'){
                                     self.experiments[i] = {};

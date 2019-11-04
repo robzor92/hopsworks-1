@@ -69,10 +69,10 @@
                         <tbody>
                         <tr dir-paginate-start="model in modelCtrl.models | orderBy:modelCtrl.sortType:modelCtrl.reverse | itemsPerPage: modelCtrl.pageSize"
                             pagination-id="models_pagination" ng-class="{'active':modelCtrl.expandModel[model.name]}">
-                            <td data-target="#{{model.name}}" ng-click="modelCtrl.getVersions(model.name)"><span style="font-size:12px;" class="glyphicon glyphicon-chevron-right" ng-show="modelCtrl.selectedModel[model.name]"></span>{{model.name}}</td>
-                            <td data-target="#{{model.name}}" ng-click="modelCtrl.getVersions(model.name)">{{model.count}}</td>
-                            <td data-target="#{{model.name}}" ng-click="modelCtrl.getVersions(model.name)">{{model.created | date:'medium'}}</td>
-                            <td data-target="#{{model.name}}" ng-click="modelCtrl.getVersions(model.name)">{{model.description}} </td>
+                            <td data-target="#{{model.name}}" ng-click="modelCtrl.expand(model.name)"><span style="font-size:12px;" class="glyphicon glyphicon-chevron-right" ng-show="modelCtrl.selectedModel[model.name]"></span>{{model.name}}</td>
+                            <td data-target="#{{model.name}}" ng-click="modelCtrl.expand(model.name)">{{model.count}}</td>
+                            <td data-target="#{{model.name}}" ng-click="modelCtrl.expand(model.name)">{{model.created | date:'medium'}}</td>
+                            <td data-target="#{{model.name}}" ng-click="modelCtrl.expand(model.name)">{{model.description}} </td>
                         </tr>
                         <tr dir-paginate-end>
                             <td colspan="12">

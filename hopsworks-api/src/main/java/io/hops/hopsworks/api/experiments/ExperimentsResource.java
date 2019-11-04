@@ -89,7 +89,7 @@ public class ExperimentsResource {
   public Response getAll(
       @BeanParam Pagination pagination,
       @BeanParam ExperimentsBeanParam experimentsBeanParam,
-      @Context UriInfo uriInfo) throws ServiceException, GenericException, ExperimentsException, DatasetException {
+      @Context UriInfo uriInfo) throws GenericException, ExperimentsException, DatasetException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.EXPERIMENTS);
     resourceRequest.setOffset(pagination.getOffset());
     resourceRequest.setLimit(pagination.getLimit());

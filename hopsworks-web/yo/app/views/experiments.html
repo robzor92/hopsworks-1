@@ -169,6 +169,16 @@
                                         <td>{{experiment.experimentType}}</td>
                                     </tr>
                                     <tr>
+                                        <td>Environment</td>
+                                        <td>
+                                            <ul>
+                                                <li ng-repeat="yml in experiment.environmentYmlFiles" ng-bind-html-unsafe="opt.text" >
+                                                    <a ng-click="experimentCtrl.goToDirectory(yml)">{{yml}}</a>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr>
                                         <td>Output Directory</td>
                                         <td><a ng-click="experimentCtrl.goToDirectory('Experiments/' + experiment.id)">Experiments/{{experiment.id}}</a></td>
                                     </tr>

@@ -57,7 +57,7 @@ public class ExperimentsController {
 
   public void attachExperiment(String id, Project project, String usersFullName, ExperimentSummary experimentSummary,
                                ExperimentDTO.XAttrSetFlag xAttrSetFlag)
-      throws DatasetException, GenericException, ServiceException, PythonException {
+      throws DatasetException, GenericException, ServiceException {
 
     experimentSummary.setUserFullName(usersFullName);
     String experimentPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/" + id;

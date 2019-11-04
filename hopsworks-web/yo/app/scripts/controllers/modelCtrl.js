@@ -46,7 +46,6 @@ angular.module('hopsWorksApp')
             self.loaded = false;
             self.expandModel = {};
 
-
             self.modelsFilter = "";
 
             self.query = "";
@@ -55,8 +54,6 @@ angular.module('hopsWorksApp')
             self.members = [];
             self.userEmail = "";
 
-
-            self.expandModel = {}
             self.updating = false;
 
             self.metricHeaders = {};
@@ -158,7 +155,7 @@ angular.module('hopsWorksApp')
                     });
             };
 
-            self.getVersions = function(modelName) {
+            self.expand = function(modelName) {
                 if (!self.expandModel[modelName]) {
                     self.expandModel[modelName] = true;
                 } else {

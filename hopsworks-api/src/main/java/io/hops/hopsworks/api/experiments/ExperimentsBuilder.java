@@ -26,9 +26,9 @@ import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.InvalidQueryException;
-import io.hops.hopsworks.exceptions.PythonException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
+import org.apache.parquet.Strings;
 import org.elasticsearch.search.sort.SortOrder;
 import org.json.JSONObject;
 
@@ -127,7 +127,7 @@ public class ExperimentsBuilder {
             }
           }
         }
-      } catch(ServiceException | PythonException se) {
+      } catch(ServiceException se) {
         LOGGER.log(Level.WARNING, "Could not find elastic mapping for models query", se);
         if(RESTCodes.ServiceErrorCode.ELASTIC_QUERY_NO_MAPPING.getCode().equals(se.getErrorCode().getCode())) {
           return dto;
@@ -155,7 +155,7 @@ public class ExperimentsBuilder {
   //Build specific
   public ExperimentDTO build(UriInfo uriInfo, ResourceRequest resourceRequest, Project project,
                              FileState fileProvenanceHit) throws ExperimentsException, DatasetException,
-      GenericException, ServiceException, PythonException {
+      GenericException, ServiceException {
 
     ExperimentDTO experimentDTO = new ExperimentDTO();
     uri(experimentDTO, uriInfo, project, fileProvenanceHit);
@@ -181,8 +181,9 @@ public class ExperimentsBuilder {
 
         experimentDTO.setStarted(DateUtils.millis2LocalDateTime(fileProvenanceHit.getCreateTime()).toString());
 
-        if(!experimentSummary.getState().equals(Provenance.AppState.RUNNING.name()) &&
-          experimentSummary.getEndTimestamp() == 0.0f) {
+        if(!Strings.isNullOrEmpty(experimentSummary.getState()) &&
+            !experimentSummary.getState().equals(Provenance.AppState.RUNNING.name()) &&
+            experimentSummary.getEndTimestamp() != null && experimentSummary.getEndTimestamp() == 0.0f) {
           updateNeeded = true;
           if(experimentSummary.getDuration() != null && experimentSummary.getDuration() > 0) {
             long finishedTime = fileProvenanceHit.getCreateTime() + experimentSummary.getDuration();
