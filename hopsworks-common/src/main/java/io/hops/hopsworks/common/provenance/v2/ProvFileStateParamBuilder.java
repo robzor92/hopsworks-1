@@ -36,6 +36,7 @@ public class ProvFileStateParamBuilder {
   private List<Pair<ProvFileQuery.Field, SortOrder>> fileStateSortBy = new ArrayList<>();
   private Map<String, String> exactXAttrFilter = new HashMap<>();
   private Map<String, String> likeXAttrFilter = new HashMap<>();
+  private Set<String> hasXAttrFilter = new HashSet<>();
   private List<SortE> xAttrSortBy = new ArrayList<>();
   private Set<ProvFileQuery.FileExpansions> expansions = new HashSet<>();
   private Map<String, ProvFileQuery.FilterVal> appStateFilter = new HashMap<>();
@@ -95,6 +96,10 @@ public class ProvFileStateParamBuilder {
   
   public Map<String, String> getLikeXAttrFilter() {
     return likeXAttrFilter;
+  }
+  
+  public Set<String> getHasXAttrFilter() {
+    return hasXAttrFilter;
   }
   
   public List<SortE> getXAttrSortBy() {
@@ -269,6 +274,13 @@ public class ProvFileStateParamBuilder {
     ProvParamBuilder.addToFilters(fileStateFilter, Pair.with(field, v));
     return this;
   }
+  
+  public ProvFileStateParamBuilder filterByHasXAttr(String key) {
+    String xattrKey = ProvFileQuery.processXAttrKey(key);
+    hasXAttrFilter.add(xattrKey);
+    return this;
+  }
+  
   public boolean hasAppExpansion() {
     return expansions.contains(ProvFileQuery.FileExpansions.APP);
   }

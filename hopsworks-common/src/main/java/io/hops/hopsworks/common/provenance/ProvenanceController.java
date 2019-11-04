@@ -120,8 +120,8 @@ public class ProvenanceController {
     checkMapping(project, params);
     FileStateDTO.PList fileStates = elasticCtrl.provFileState(project.getInode().getId(),
       params.getFileStateFilter(), params.getFileStateSortBy(),
-      params.getExactXAttrFilter(), params.getLikeXAttrFilter(), params.getXAttrSortBy(),
-      params.getPagination().getValue0(), params.getPagination().getValue1());
+      params.getExactXAttrFilter(), params.getLikeXAttrFilter(), params.getHasXAttrFilter(),
+      params.getXAttrSortBy(), params.getPagination().getValue0(), params.getPagination().getValue1());
 
     if (params.hasAppExpansion()) {
       //If withAppStates, update params based on appIds of items files and do a appState index query.
@@ -178,7 +178,7 @@ public class ProvenanceController {
         "provenance file state count does not currently work with app state expansion");
     }
     return elasticCtrl.provFileStateCount(project.getInode().getId(), params.getFileStateFilter(),
-      params.getExactXAttrFilter(), params.getLikeXAttrFilter());
+      params.getExactXAttrFilter(), params.getLikeXAttrFilter(), params.getHasXAttrFilter());
   }
   
   public FileOpDTO.PList provFileOpsList(Project project, ProvFileOpsParamBuilder params)

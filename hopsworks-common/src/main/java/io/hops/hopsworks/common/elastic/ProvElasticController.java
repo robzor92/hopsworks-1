@@ -98,11 +98,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
+import static org.elasticsearch.index.query.QueryBuilders.existsQuery;
 import static org.elasticsearch.index.query.QueryBuilders.idsQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
@@ -242,7 +244,7 @@ public class ProvElasticController {
   public FileStateDTO.PList provFileState(Long projectIId,
     Map<String, ProvFileQuery.FilterVal> fileStateFilters,
     List<Pair<ProvFileQuery.Field, SortOrder>> fileStateSortBy,
-    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters,
+    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters, Set<String> hasXAttrsFilters,
     List<ProvFileStateParamBuilder.SortE> xattrSortBy,
     Integer offset, Integer limit)
     throws GenericException, ServiceException {
@@ -250,7 +252,7 @@ public class ProvElasticController {
       baseSearchRequest(
         settings.getProvFileIndex(projectIId),
         Settings.PROV_FILE_DOC_TYPE)
-        .andThen(filterByStateParams(fileStateFilters, xAttrsFilters, likeXAttrsFilters))
+        .andThen(filterByStateParams(fileStateFilters, xAttrsFilters, likeXAttrsFilters, hasXAttrsFilters))
         .andThen(withFileStateOrder(fileStateSortBy, xattrSortBy))
         .andThen(withPagination(offset, limit));
     SearchRequest request = srF.get();
@@ -261,13 +263,13 @@ public class ProvElasticController {
   
   public Long provFileStateCount(Long projectIId,
     Map<String, ProvFileQuery.FilterVal> fileStateFilters,
-    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters)
+    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters, Set<String> hasXAttrsFilters)
     throws GenericException, ServiceException {
     CheckedSupplier<SearchRequest, GenericException> srF =
       countSearchRequest(
         settings.getProvFileIndex(projectIId),
         Settings.PROV_FILE_DOC_TYPE)
-        .andThen(filterByStateParams(fileStateFilters, xAttrsFilters, likeXAttrsFilters));
+        .andThen(filterByStateParams(fileStateFilters, xAttrsFilters, likeXAttrsFilters, hasXAttrsFilters));
     SearchRequest request = srF.get();
     Long searchResult = HopsworksElasticClientHelper.searchCount(heClient, request,Collections.emptyList()).getValue0();
     return searchResult;
@@ -772,7 +774,7 @@ public class ProvElasticController {
   
   private CheckedFunction<SearchRequest, SearchRequest, GenericException> filterByStateParams(
     Map<String, ProvFileQuery.FilterVal> fileStateFilters,
-    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters) {
+    Map<String, String> xAttrsFilters, Map<String, String> likeXAttrsFilters, Set<String> hasXAttrsFilters) {
     return (SearchRequest sr) -> {
       BoolQueryBuilder query = boolQuery()
         .must(termQuery(ProvElasticFields.FileBase.ENTRY_TYPE.toString().toLowerCase(),
@@ -783,6 +785,9 @@ public class ProvElasticController {
       }
       for (Map.Entry<String, String> filter : likeXAttrsFilters.entrySet()) {
         query = query.must(getLikeXAttrQB(filter.getKey(), filter.getValue()));
+      }
+      for(String xattrKey : hasXAttrsFilters) {
+        query = query.must(hasXAttrQB(xattrKey));
       }
       sr.source().query(query);
       return sr;
@@ -845,6 +850,10 @@ public class ProvElasticController {
       scriptQB.must(new ScriptQueryBuilder(script));
     }
     return query;
+  }
+  
+  public QueryBuilder hasXAttrQB(String xattrAdjustedKey) {
+    return existsQuery(xattrAdjustedKey);
   }
   
   public QueryBuilder getXAttrQB(String xattrAdjustedKey, String xattrVal) {
