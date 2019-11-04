@@ -185,6 +185,7 @@ angular.module('hopsWorksApp')
                             if(success.data.items[i].id in self.deleted) {
                                console.log('removing element currently being deleted')
                                success.data.items.splice(i, 1);
+                               success.data.count = success.data.count - 1;
                             }
                           }
                         }
