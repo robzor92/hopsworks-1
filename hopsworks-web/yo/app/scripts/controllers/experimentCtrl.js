@@ -146,9 +146,9 @@ angular.module('hopsWorksApp')
 
             self.viewMonitor = function (experiment) {
               if(experiment.jobName) {
-                $window.open('project/' + self.projectId + '/jobMonitor-job/' + experiment.jobName, '_blank');
+                $window.open('#!/project/' + self.projectId + '/jobMonitor-job/' + experiment.jobName, '_blank');
               } else {
-                $window.open('project/' + self.projectId + '/jobMonitor-app/' + experiment.appId + '/true/jupyter', '_blank');
+                $window.open('#!/project/' + self.projectId + '/jobMonitor-app/' + experiment.appId + '/true/jupyter', '_blank');
               }
             };
 
@@ -231,12 +231,12 @@ angular.module('hopsWorksApp')
              * @param serviceName project page
              */
             self.goToExperiment = function (experiment_id) {
-                $window.open('project/' + self.projectId + '/datasets/Experiments/' + experiment_id, '_blank');
+                $window.open('#!/project/' + self.projectId + '/datasets/Experiments/' + experiment_id, '_blank');
             };
 
             self.goToModel = function (model) {
                 var modelSplit = model.split('_')
-                $window.open('project/' + self.projectId + '/datasets/Models/' + modelSplit[0] + '/' + modelSplit[1], '_blank');
+                $window.open('#!/project/' + self.projectId + '/datasets/Models/' + modelSplit[0] + '/' + modelSplit[1], '_blank');
             };
 
             self.init = function () {
@@ -399,7 +399,7 @@ angular.module('hopsWorksApp')
             };
 
             self.goToDirectory = function (path) {
-                $window.open('project/' + self.projectId + '/datasets/' + path, '_blank');
+                $window.open('#!/project/' + self.projectId + '/datasets/' + path, '_blank');
             };
 
             self.buildModelLink = function(modelName) {

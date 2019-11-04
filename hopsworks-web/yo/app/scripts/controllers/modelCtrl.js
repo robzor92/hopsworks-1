@@ -318,7 +318,7 @@ angular.module('hopsWorksApp')
             };
 
             self.goToModelVersion = function (modelName, modelVersion) {
-                $window.open('project/' + self.projectId + '/datasets/Models/' + modelName + '/' + modelVersion, '_blank');
+                $window.open('#!/project/' + self.projectId + '/datasets/Models/' + modelName + '/' + modelVersion, '_blank');
             };
 
             self.init = function () {
