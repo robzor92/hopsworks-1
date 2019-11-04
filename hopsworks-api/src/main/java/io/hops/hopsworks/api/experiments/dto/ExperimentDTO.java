@@ -49,6 +49,8 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   private String bestDir;
 
+  private String[] environmentYmlFiles;
+
   private ExperimentResultSummaryDTO results;
 
   private TensorBoardDTO tensorboard;
@@ -205,6 +207,14 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   public void setBestDir(String bestDir) {
     this.bestDir = bestDir;
+  }
+
+  public String[] getEnvironmentYmlFiles() {
+    return environmentYmlFiles;
+  }
+
+  public void setEnvironmentYmlFiles(String[] environmentYmlFiles) {
+    this.environmentYmlFiles = environmentYmlFiles;
   }
 
   public enum XAttrSetFlag {
