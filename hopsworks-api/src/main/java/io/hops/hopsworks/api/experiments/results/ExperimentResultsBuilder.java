@@ -70,7 +70,7 @@ public class ExperimentResultsBuilder {
       try {
         dfso = dfs.getDfsOps();
         String summaryPath = Utils.getProjectPath(project.getName()) + Settings.HOPS_EXPERIMENTS_DATASET + "/"
-            + mlId + "/summary.json";
+            + mlId + "/.summary.json";
         if (dfso.exists(summaryPath)) {
           String summaryJson = dfso.cat(new Path(summaryPath));
           ExperimentResultsDTO[] results = experimentSummaryConverter
