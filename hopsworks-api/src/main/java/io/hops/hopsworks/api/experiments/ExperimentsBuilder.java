@@ -52,6 +52,9 @@ import java.util.logging.Logger;
 @TransactionAttribute(TransactionAttributeType.NEVER)
 public class ExperimentsBuilder {
 
+  public static final String EXPERIMENT_SUMMARY_XATTR_NAME = "experiment_summary";
+  public static final String EXPERIMENT_MODEL_XATTR_NAME = "experiment_model";
+
   private static final Logger LOGGER = Logger.getLogger(ExperimentsBuilder.class.getName());
 
   @EJB
@@ -141,6 +144,7 @@ public class ExperimentsBuilder {
         .withProjectInodeId(project.getInode().getId())
         .withMlType(Provenance.MLType.EXPERIMENT.name())
         .withPagination(resourceRequest.getOffset(), resourceRequest.getLimit())
+        .filterByHasXAttr(EXPERIMENT_SUMMARY_XATTR_NAME)
         .withAppExpansion();
 
     buildSortOrder(provFilesParamBuilder, resourceRequest.getSort());
@@ -158,8 +162,9 @@ public class ExperimentsBuilder {
     expand(experimentDTO, resourceRequest);
 
     if (experimentDTO.isExpand()) {
-      if(fileProvenanceHit.getXattrs() != null && fileProvenanceHit.getXattrs().containsKey("experiment_summary")) {
-        JSONObject summary = new JSONObject(fileProvenanceHit.getXattrs().get("experiment_summary"));
+      if(fileProvenanceHit.getXattrs() != null
+          && fileProvenanceHit.getXattrs().containsKey(EXPERIMENT_SUMMARY_XATTR_NAME)) {
+        JSONObject summary = new JSONObject(fileProvenanceHit.getXattrs().get(EXPERIMENT_SUMMARY_XATTR_NAME));
 
         ExperimentSummary experimentSummary =
             experimentSummaryConverter.unmarshalDescription(summary.toString());
@@ -199,8 +204,8 @@ public class ExperimentsBuilder {
 
         experimentDTO.setState(experimentSummary.getState());
 
-        if(fileProvenanceHit.getXattrs().containsKey("experiment_model")) {
-          String model = fileProvenanceHit.getXattrs().get("experiment_model");
+        if(fileProvenanceHit.getXattrs().containsKey(EXPERIMENT_MODEL_XATTR_NAME)) {
+          String model = fileProvenanceHit.getXattrs().get(EXPERIMENT_MODEL_XATTR_NAME);
           experimentDTO.setModel(model);
         }
 
@@ -237,7 +242,7 @@ public class ExperimentsBuilder {
       for (AbstractFacade.FilterBy filterBy : filters) {
         if(filterBy.getParam().compareToIgnoreCase(Filters.NAME.name()) == 0) {
           HashMap<String, String> map = new HashMap<>();
-          map.put("experiment_summary.name", filterBy.getValue());
+          map.put(EXPERIMENT_SUMMARY_XATTR_NAME + ".name", filterBy.getValue());
           provFilesParamBuilder.withXAttrsLike(map);
         } else if(filterBy.getParam().compareToIgnoreCase(Filters.DATE_START_LT.name()) == 0) {
           provFilesParamBuilder.createdBefore(getDate(filterBy.getField(), filterBy.getValue()).getTime());
@@ -251,7 +256,7 @@ public class ExperimentsBuilder {
           provFilesParamBuilder.withUserId(hdfsUsers.getId().toString());
         } else if(filterBy.getParam().compareToIgnoreCase(Filters.STATE.name()) == 0) {
           HashMap<String, String> map = new HashMap<>();
-          map.put("experiment_summary.state", filterBy.getValue());
+          map.put(EXPERIMENT_SUMMARY_XATTR_NAME + ".state", filterBy.getValue());
           provFilesParamBuilder.withXAttrsLike(map);
         } else {
           throw new WebApplicationException("Filter by need to set a valid filter parameter, but found: " +
@@ -276,22 +281,22 @@ public class ExperimentsBuilder {
     if(sort != null) {
       for(AbstractFacade.SortBy sortBy: sort) {
         if(sortBy.getValue().compareToIgnoreCase(SortBy.NAME.name()) == 0) {
-          provFilesParamBuilder.sortBy("experiment_summary.name",
+          provFilesParamBuilder.sortBy(EXPERIMENT_SUMMARY_XATTR_NAME + ".name",
               SortOrder.valueOf(sortBy.getParam().getValue()));
         } else if(sortBy.getValue().compareToIgnoreCase(SortBy.METRIC.name()) == 0) {
-          provFilesParamBuilder.sortBy("experiment_summary.metric",
+          provFilesParamBuilder.sortBy(EXPERIMENT_SUMMARY_XATTR_NAME + ".metric",
               SortOrder.valueOf(sortBy.getParam().getValue()));
         } else if(sortBy.getValue().compareToIgnoreCase(SortBy.USER.name()) == 0) {
-          provFilesParamBuilder.sortBy("experiment_summary.userFullName",
+          provFilesParamBuilder.sortBy(EXPERIMENT_SUMMARY_XATTR_NAME + ".userFullName",
               SortOrder.valueOf(sortBy.getParam().getValue()));
         } else if(sortBy.getValue().compareToIgnoreCase(SortBy.START.name()) == 0) {
           provFilesParamBuilder.sortBy("create_timestamp",
               SortOrder.valueOf(sortBy.getParam().getValue()));
         }  else if(sortBy.getValue().compareToIgnoreCase(SortBy.END.name()) == 0) {
-          provFilesParamBuilder.sortBy("experiment_summary.endTimestamp",
+          provFilesParamBuilder.sortBy(EXPERIMENT_SUMMARY_XATTR_NAME + ".endTimestamp",
               SortOrder.valueOf(sortBy.getParam().getValue()));
         }  else if(sortBy.getValue().compareToIgnoreCase(SortBy.STATE.name()) == 0) {
-          provFilesParamBuilder.sortBy("experiment_summary.state",
+          provFilesParamBuilder.sortBy(EXPERIMENT_SUMMARY_XATTR_NAME + ".state",
               SortOrder.valueOf(sortBy.getParam().getValue()));
         } else {
           throw new WebApplicationException("Sort by need to set a valid sort parameter, but found: " +

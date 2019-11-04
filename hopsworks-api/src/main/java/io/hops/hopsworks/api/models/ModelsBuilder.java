@@ -38,6 +38,8 @@ import java.util.logging.Logger;
 @TransactionAttribute(TransactionAttributeType.NEVER)
 public class ModelsBuilder {
 
+  private final String MODEL_SUMMARY_XATTR_NAME = "model_summary";
+
   private static final Logger LOGGER = Logger.getLogger(ModelsBuilder.class.getName());
   @EJB
   private UserFacade userFacade;
@@ -117,8 +119,8 @@ public class ModelsBuilder {
     expand(modelDTO, resourceRequest);
 
     if (modelDTO.isExpand()) {
-      if(fileProvenanceHit.getXattrs() != null && fileProvenanceHit.getXattrs().containsKey("model_summary")) {
-        JSONObject summary = new JSONObject(fileProvenanceHit.getXattrs().get("model_summary"));
+      if(fileProvenanceHit.getXattrs() != null && fileProvenanceHit.getXattrs().containsKey(MODEL_SUMMARY_XATTR_NAME)) {
+        JSONObject summary = new JSONObject(fileProvenanceHit.getXattrs().get(MODEL_SUMMARY_XATTR_NAME));
         ModelSummary modelSummary = modelSummaryConverter.unmarshalDescription(summary.toString());
         modelDTO.setId(fileProvenanceHit.getMlId());
         modelDTO.setName(modelSummary.getName());
@@ -141,11 +143,11 @@ public class ModelsBuilder {
       for (AbstractFacade.FilterBy filterBy : filters) {
         if(filterBy.getParam().compareToIgnoreCase(Filters.NAME_EQ.name()) == 0) {
           HashMap<String, String> map = new HashMap<>();
-          map.put("model_summary.name", filterBy.getValue());
+          map.put(MODEL_SUMMARY_XATTR_NAME + ".name", filterBy.getValue());
           provFilesParamBuilder.withXAttrs(map);
         } else if(filterBy.getParam().compareToIgnoreCase(Filters.NAME_LIKE.name()) == 0) {
           HashMap<String, String> map = new HashMap<>();
-          map.put("model_summary.name", filterBy.getValue());
+          map.put(MODEL_SUMMARY_XATTR_NAME + ".name", filterBy.getValue());
           provFilesParamBuilder.withXAttrsLike(map);
         } else {
           throw new WebApplicationException("Filter by need to set a valid filter parameter, but found: " +
@@ -160,11 +162,13 @@ public class ModelsBuilder {
     if(sort != null) {
       for(AbstractFacade.SortBy sortBy: sort) {
         if(sortBy.getValue().compareToIgnoreCase(SortBy.NAME.name()) == 0) {
-          provFilesParamBuilder.sortBy("model_summary.name", SortOrder.valueOf(sortBy.getParam().getValue()));
+          provFilesParamBuilder.sortBy(MODEL_SUMMARY_XATTR_NAME + ".name",
+              SortOrder.valueOf(sortBy.getParam().getValue()));
         } else {
           String sortKeyName = sortBy.getValue();
           String sortKeyOrder = sortBy.getParam().getValue();
-          provFilesParamBuilder.sortBy("model_summary.metrics." + sortKeyName, SortOrder.valueOf(sortKeyOrder));
+          provFilesParamBuilder.sortBy(MODEL_SUMMARY_XATTR_NAME + ".metrics." + sortKeyName,
+              SortOrder.valueOf(sortKeyOrder));
         }
       }
     }
@@ -195,7 +199,8 @@ public class ModelsBuilder {
     ProvFileStateParamBuilder builder = new ProvFileStateParamBuilder()
         .withProjectInodeId(project.getInode().getId())
         .withMlType(Provenance.MLType.MODEL.name())
-        .withPagination(resourceRequest.getOffset(), resourceRequest.getLimit());
+        .withPagination(resourceRequest.getOffset(), resourceRequest.getLimit())
+        .filterByHasXAttr(MODEL_SUMMARY_XATTR_NAME);
 
     buildSortOrder(builder, resourceRequest.getSort());
     buildFilter(builder, resourceRequest.getFilter());

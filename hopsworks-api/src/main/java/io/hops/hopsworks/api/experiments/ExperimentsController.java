@@ -94,7 +94,8 @@ public class ExperimentsController {
       EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
       flags.add(XAttrSetFlag.valueOf(xAttrSetFlag.name()));
 
-      dfso.setXAttr(experimentPath, "provenance.experiment_summary", experiment, flags);
+      dfso.setXAttr(experimentPath, "provenance." +
+          ExperimentsBuilder.EXPERIMENT_SUMMARY_XATTR_NAME, experiment, flags);
 
     } catch(IOException | JAXBException ex) {
       throw new DatasetException(RESTCodes.DatasetErrorCode.ATTACH_XATTR_ERROR, Level.SEVERE,
@@ -108,7 +109,8 @@ public class ExperimentsController {
 
   public String[] exportExperimentEnvironment(String id, Project project, Users user)
       throws PythonException, ServiceException {
-    return environmentController.exportEnv(user, project, Settings.HOPS_EXPERIMENTS_DATASET + "/" + id);
+    return environmentController.exportEnv(user, project,
+        Settings.HOPS_EXPERIMENTS_DATASET + "/" + id);
   }
 
   public void attachModel(String id, Project project, String model,
@@ -122,7 +124,8 @@ public class ExperimentsController {
       dfso = dfs.getDfsOps();
       EnumSet<XAttrSetFlag> flags = EnumSet.noneOf(XAttrSetFlag.class);
       flags.add(XAttrSetFlag.valueOf(xAttrSetFlag.name()));
-      dfso.setXAttr(experimentPath, "provenance.experiment_model", experiment, flags);
+      dfso.setXAttr(experimentPath, "provenance." +
+          ExperimentsBuilder.EXPERIMENT_MODEL_XATTR_NAME, experiment, flags);
     } catch(IOException ex) {
       throw new DatasetException(RESTCodes.DatasetErrorCode.ATTACH_XATTR_ERROR, Level.SEVERE,
           "path: " + experimentPath, ex.getMessage(), ex);
@@ -164,6 +167,7 @@ public class ExperimentsController {
         .withMlType(Provenance.MLType.EXPERIMENT.name())
         .withPagination(0, 1)
         .withAppExpansion()
+        .filterByHasXAttr(ExperimentsBuilder.EXPERIMENT_SUMMARY_XATTR_NAME)
         .withMlId(mlId);
     FileStateDTO.PList fileState = provenanceController.provFileStateList(project, provFilesParamBuilder);
     if (fileState != null && fileState.getItems() != null) {
