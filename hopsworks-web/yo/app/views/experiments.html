@@ -179,15 +179,8 @@
                                         <td>
                                             <button type="button" class="btn btn-default fa fa-camera" title="View"
                                                     ng-click="experimentCtrl.viewFile(experiment.environmentYmlFiles[0])"></button>
-                                            <button type="button" class="btn btn-default fa fa-cloud-download" title="Download file"
+                                            <button type="button" class="btn btn-default fa fa-cloud-download" title="Download"
                                                     ng-click="experimentCtrl.downloadFile(experiment.environmentYmlFiles[0])"></button>
-
-
-                                            <ul>
-                                                <li ng-repeat="yml in experiment.environmentYmlFiles" ng-bind-html-unsafe="opt.text" >
-                                                    <a ng-click="experimentCtrl.goToDirectory(yml)">{{yml}}</a>
-                                                </li>
-                                            </ul>
                                         </td>
                                     </tr>
                                     <tr>
