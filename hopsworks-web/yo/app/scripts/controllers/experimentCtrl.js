@@ -386,14 +386,16 @@ angular.module('hopsWorksApp')
                     var query = self.buildResultsQuery(experiment);
                     ExperimentService.get(self.projectId, experiment.id, query).then(
                         function(success) {
+                            self.expandExperiment[experiment.id] = true;
+                            self.expanding[experiment.id] = false;
                             self.initExpansionTable(success.data);
                             if(success.data.results.count) {
                               self.resultTotalItems[experiment.id] = success.data.results.count;
                             }
-                            self.expandExperiment[experiment.id] = true;
-                            self.expanding[experiment.id] = false;
                         },
                         function(error) {
+                            self.expandExperiment[experiment.id] = false;
+                            self.expanding[experiment.id] = false;
                             if (typeof error.data.usrMsg !== 'undefined') {
                                 growl.error(error.data.usrMsg, {
                                     title: error.data.errorMsg,
