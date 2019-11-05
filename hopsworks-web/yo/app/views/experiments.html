@@ -73,7 +73,8 @@
             <div>
             <table class="table table-hover">
                 <thead style="border:none;">
-                <th style="width: 19%" ng-click="experimentCtrl.sortByExperiments('name')">
+                <th style="width: 3%"></th>
+                <th style="width: 16%" ng-click="experimentCtrl.sortByExperiments('name')">
                     Name
                     <span class="glyphicon sort-icon" ng-show="experimentCtrl.sortType == 'name'" ng-class="{'glyphicon-chevron-up':!experimentCtrl.reverse,'glyphicon-chevron-down':experimentCtrl.reverse}"></span></th>
                 <th style="width: 11%" ng-click="experimentCtrl.sortByExperiments('metric')">
@@ -92,7 +93,7 @@
                     End
                     <span class="glyphicon sort-icon" ng-show="experimentCtrl.sortType == 'end'" ng-class="{'glyphicon-chevron-up':!experimentCtrl.reverse,'glyphicon-chevron-down':experimentCtrl.reverse}"></span>
                 </th>
-                <th style="width: 11%" ng-click="experimentCtrl.sortByExperiments('state')">
+                <th style="width: 8%" ng-click="experimentCtrl.sortByExperiments('state')">
                     State
                     <span class="glyphicon sort-icon" ng-show="experimentCtrl.sortType == 'state'" ng-class="{'glyphicon-chevron-up':!experimentCtrl.reverse,'glyphicon-chevron-down':experimentCtrl.reverse}"></span>
                 </th>
@@ -103,8 +104,10 @@
                         pagination-id="experiments_pagination"
                         current-page="experimentCtrl.currentPage"
                         total-items="experimentCtrl.totalItems" ng-class="{'active':experimentCtrl.expandExperiment[experiment.id]}">
+                        <td>
+                            <span class="glyphicon glyphicon-refresh" ng-class="{'spin-icon':experimentCtrl.expanding[experiment.id]}" ng-show="experimentCtrl.expanding[experiment.id]"> </span>
+                        </td>
                         <td data-target="#{{experiment.id}}" ng-click="experimentCtrl.getResults(experiment, false)">
-                            <span class="glyphicon glyphicon-refresh" style="width:15px;" ng-class="{'spin-icon':experimentCtrl.expanding[experiment.id]}" ng-show="experimentCtrl.expanding[experiment.id]"> </span>
                             {{experiment.name}}
                         </td>
                         <td data-target="#{{experiment.id}}" ng-click="experimentCtrl.getResults(experiment, false)"> {{experiment.metric}} </td>
