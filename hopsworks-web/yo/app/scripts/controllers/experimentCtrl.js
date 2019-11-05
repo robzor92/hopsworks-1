@@ -25,8 +25,6 @@ angular.module('hopsWorksApp')
 
             var self = this;
 
-            var dataSetService = DataSetService(self.projectId);
-
             self.deleted = {}
 
             self.pageSize = 12;
@@ -47,6 +45,8 @@ angular.module('hopsWorksApp')
             self.inModalView = false;
 
             self.projectId = $routeParams.projectID;
+
+            var dataSetService = DataSetService(self.projectId);
 
             self.memberSelected = {};
 
