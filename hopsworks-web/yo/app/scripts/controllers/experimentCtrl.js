@@ -18,12 +18,14 @@
  * Controller for the Experiments service
  */
 angular.module('hopsWorksApp')
-    .controller('ExperimentCtrl', ['$scope', '$timeout', 'growl', '$window', 'MembersService', 'UserService', 'ModalService', 'ProjectService', 'ExperimentService', 'TensorBoardService', '$interval',
+    .controller('ExperimentCtrl', ['$scope', '$timeout', 'growl', '$window', 'MembersService', 'UserService', 'ModalService', 'ProjectService', 'ExperimentService', 'TensorBoardService', 'DataSetService', '$interval',
         '$routeParams', '$route', '$sce',
-        function($scope, $timeout, growl, $window, MembersService, UserService, ModalService, ProjectService, ExperimentService, TensorBoardService, $interval,
+        function($scope, $timeout, growl, $window, MembersService, UserService, ModalService, ProjectService, ExperimentService, TensorBoardService, DataSetService, $interval,
             $routeParams, $route, $sce) {
 
             var self = this;
+
+            var dataSetService = DataSetService(self.projectId);
 
             self.deleted = {}
 
@@ -366,6 +368,16 @@ angular.module('hopsWorksApp')
                     function(success) {},
                     function(error) {});
             };
+
+            self.downloadFile = function(filePath) {
+                  dataSetService.checkFileForDownload(filePath).then(
+                          function (success) {
+                            var token = success.data.data.value;
+                            dataSetService.fileDownload(filePath, token);
+                          },function (error) {
+                            growl.error(error.data.errorMsg, {title: 'Error', ttl: 5000});
+                  });
+            }
 
             self.getResults = function(experiment, expand) {
                 if(!self.expandExperiment[experiment.id] || expand) {

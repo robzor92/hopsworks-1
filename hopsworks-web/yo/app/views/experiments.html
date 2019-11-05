@@ -169,8 +169,14 @@
                                         <td>{{experiment.experimentType}}</td>
                                     </tr>
                                     <tr>
-                                        <td>Environment</td>
+                                        <td>Anaconda Environment</td>
                                         <td>
+                                            <button type="button" class="btn btn-default fa fa-camera" title="View"
+                                                    ng-click="experimentCtrl.viewFile(experiment.environmentYmlFiles[0])"></button>
+                                            <button type="button" class="btn btn-default fa fa-cloud-download" title="Download file"
+                                                    ng-click="experimentCtrl.downloadFile(experiment.environmentYmlFiles[0])"></button>
+
+
                                             <ul>
                                                 <li ng-repeat="yml in experiment.environmentYmlFiles" ng-bind-html-unsafe="opt.text" >
                                                     <a ng-click="experimentCtrl.goToDirectory(yml)">{{yml}}</a>
@@ -188,7 +194,7 @@
                                     </tr>
                                     <tr ng-if="experiment.model">
                                         <td>Model Directory</td>
-                                        <td><a ng-click="experimentCtrl.goToModelDirectory(experimentCtrl.buildModelLink(experiment.model))">{{experimentCtrl.buildModelLink(experiment.model)}}</a></td>
+                                        <td><a ng-click="experimentCtrl.goToModel(experimentCtrl.buildModelLink(experiment.model))">{{experimentCtrl.buildModelLink(experiment.model)}}</a></td>
                                     </tr>
                                     </tbody>
                                 </table>
