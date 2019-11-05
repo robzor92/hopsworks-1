@@ -67,6 +67,7 @@ angular.module('hopsWorksApp')
 
             self.updating = false;
             self.expandExperiment = {};
+            self.expanding = {};
 
             self.experimentsToDate = new Date();
             self.experimentsToDate.setMinutes(self.experimentsToDate.getMinutes() + 60*24);
@@ -381,6 +382,7 @@ angular.module('hopsWorksApp')
 
             self.getResults = function(experiment, expand) {
                 if(!self.expandExperiment[experiment.id] || expand) {
+                    self.expanding[experiment.id] = true;
                     var query = self.buildResultsQuery(experiment);
                     ExperimentService.get(self.projectId, experiment.id, query).then(
                         function(success) {
@@ -389,6 +391,7 @@ angular.module('hopsWorksApp')
                               self.resultTotalItems[experiment.id] = success.data.results.count;
                             }
                             self.expandExperiment[experiment.id] = true;
+                            self.expanding[experiment.id] = false;
                         },
                         function(error) {
                             if (typeof error.data.usrMsg !== 'undefined') {
@@ -404,6 +407,7 @@ angular.module('hopsWorksApp')
                             }
                         });
                 } else if(!expand) {
+                    delete self.expanding[experiment.id];
                     delete self.expandExperiment[experiment.id];
                 }
             };

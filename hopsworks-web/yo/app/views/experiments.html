@@ -103,7 +103,10 @@
                         pagination-id="experiments_pagination"
                         current-page="experimentCtrl.currentPage"
                         total-items="experimentCtrl.totalItems" ng-class="{'active':experimentCtrl.expandExperiment[experiment.id]}">
-                        <td data-target="#{{experiment.id}}" ng-click="experimentCtrl.getResults(experiment, false)"> {{experiment.name}} </td>
+                        <td data-target="#{{experiment.id}}" ng-click="experimentCtrl.getResults(experiment, false)">
+                            <span class="glyphicon glyphicon-refresh" style="width:15px;" ng-class="{'spin-icon':experimentCtrl.expanding[experiment.id]}" ng-show="experimentCtrl.expanding[experiment.id]"> </span>
+                            {{experiment.name}}
+                        </td>
                         <td data-target="#{{experiment.id}}" ng-click="experimentCtrl.getResults(experiment, false)"> {{experiment.metric}} </td>
                         <td data-target="#{{experiment.id}}" ng-click="experimentCtrl.getResults(experiment, false)"> {{experiment.userFullName}} </td>
                         <td data-target="#{{experiment.id}}" ng-click="experimentCtrl.getResults(experiment, false)"> {{experiment.started | date:'medium'}} </td>
