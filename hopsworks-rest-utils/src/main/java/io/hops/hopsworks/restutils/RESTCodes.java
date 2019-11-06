@@ -1638,7 +1638,9 @@ public class RESTCodes {
     RESULTS_NOT_FOUND(3, "No results found for provided id.",
         Response.Status.NOT_FOUND),
     RESULTS_RETRIEVAL_ERROR(4, "Error occurred when retrieving experiment results.",
-        Response.Status.INTERNAL_SERVER_ERROR);
+        Response.Status.INTERNAL_SERVER_ERROR),
+    EXPERIMENT_EXECUTABLE_NOT_FOUND(5, "Could not find experiment executable.",
+        Response.Status.BAD_REQUEST);
 
     private int code;
     private String message;

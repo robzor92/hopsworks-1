@@ -19,6 +19,7 @@ import io.hops.hopsworks.common.provenance.v2.xml.FileState;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
+import io.hops.hopsworks.exceptions.JobException;
 import io.hops.hopsworks.exceptions.PythonException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.jwt.annotation.JWTRequired;
@@ -136,7 +137,8 @@ public class ExperimentsResource {
       @QueryParam("model") String model,
       @Context HttpServletRequest req,
       @Context UriInfo uriInfo,
-      @Context SecurityContext sc) throws DatasetException, GenericException, ServiceException, PythonException {
+      @Context SecurityContext sc)
+      throws DatasetException, GenericException, ServiceException, PythonException, JobException {
     if (experimentSummary == null && model == null) {
       throw new IllegalArgumentException("Experiment configuration or model was not provided");
     }
@@ -144,7 +146,9 @@ public class ExperimentsResource {
     String usersFullName = user.getFname() + " " + user.getLname();
     if(experimentSummary != null) {
       if(xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
+        //export the experiment environment
         experimentSummary.setEnvironmentYmlFiles(experimentsController.exportExperimentEnvironment(id, project, user));
+        experimentsController.copyExecutable(project, user, experimentSummary, id);
       }
       experimentsController.attachExperiment(id, project, usersFullName, experimentSummary, xAttrSetFlag);
     } else {

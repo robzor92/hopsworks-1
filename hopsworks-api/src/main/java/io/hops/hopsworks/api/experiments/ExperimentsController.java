@@ -2,11 +2,15 @@ package io.hops.hopsworks.api.experiments;
 
 import io.hops.hopsworks.api.experiments.dto.ExperimentDTO;
 import io.hops.hopsworks.api.experiments.dto.ExperimentSummary;
+import io.hops.hopsworks.common.dao.jobs.description.Jobs;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
+import io.hops.hopsworks.common.hdfs.HdfsUsersController;
 import io.hops.hopsworks.common.hdfs.Utils;
+import io.hops.hopsworks.common.jobs.JobController;
+import io.hops.hopsworks.common.jobs.spark.SparkJobConfiguration;
 import io.hops.hopsworks.common.provenance.Provenance;
 import io.hops.hopsworks.common.provenance.ProvenanceController;
 import io.hops.hopsworks.common.provenance.v2.ProvFileStateParamBuilder;
@@ -15,7 +19,9 @@ import io.hops.hopsworks.common.provenance.v2.xml.FileStateDTO;
 import io.hops.hopsworks.common.python.environment.EnvironmentController;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.DatasetException;
+import io.hops.hopsworks.exceptions.ExperimentsException;
 import io.hops.hopsworks.exceptions.GenericException;
+import io.hops.hopsworks.exceptions.JobException;
 import io.hops.hopsworks.exceptions.PythonException;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
@@ -53,6 +59,12 @@ public class ExperimentsController {
   private ProvenanceController provenanceController;
   @EJB
   private EnvironmentController environmentController;
+  @EJB
+  private JobController jobController;
+  @EJB
+  private DistributedFsService dfsService;
+  @EJB
+  private HdfsUsersController hdfsUsersController;
 
 
   public void attachExperiment(String id, Project project, String usersFullName, ExperimentSummary experimentSummary,
@@ -177,5 +189,42 @@ public class ExperimentsController {
       }
     }
     return null;
+  }
+
+  public void copyExecutable(Project project, Users user, ExperimentSummary experimentSummary, String experimentId)
+      throws JobException {
+    String jobName = experimentSummary.getJobName();
+    if(!Strings.isNullOrEmpty(experimentSummary.getJobName())) {
+      //job
+      Jobs experimentJob = jobController.getJob(project, jobName);
+      SparkJobConfiguration sparkJobConf = (SparkJobConfiguration)experimentJob.getJobConfig();
+      copy(sparkJobConf.getAppPath(), project, user, experimentId);
+    } else {
+      //jupyter
+
+    }
+  }
+
+  @TransactionAttribute(TransactionAttributeType.NEVER)
+  public void copy(String path, Project project, Users user, String experimentId) {
+    DistributedFileSystemOps udfso = null;
+    try {
+      String username = hdfsUsersController.getHdfsUserName(project, user);
+      udfso = dfs.getDfsOps(username);
+      if(!udfso.exists(path)) {
+        throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.EXPERIMENT_EXECUTABLE_NOT_FOUND, Level.FINE,
+            "path: " + path);
+      } else {
+        udfso.copyInHdfs(new Path(path), new Path(Utils.getProjectPath(project.getName()) +
+            Settings.HOPS_EXPERIMENTS_DATASET + "/" + experimentId));
+      }
+    } catch (IOException | ExperimentsException e) {
+
+
+    } finally {
+      if (udfso != null) {
+        dfs.closeDfsClient(udfso);
+      }
+    }
   }
 }
