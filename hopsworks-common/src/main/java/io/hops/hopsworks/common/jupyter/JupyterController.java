@@ -100,8 +100,8 @@ public class JupyterController {
   private JupyterNbVCSController jupyterNbVCSController;
 
   @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-  public void convertIPythonNotebook(String hdfsUsername, String notebookPath, Project project, String pyPath)
-      throws ServiceException {
+  public void convertIPythonNotebook(String hdfsUsername, String notebookPath, Project project, String pyPath,
+                                     NotebookConversion notebookConversion)  throws ServiceException {
 
     String conversionDir = DigestUtils.sha256Hex(Integer.toString(ThreadLocalRandom.current().nextInt()));
     notebookPath = notebookPath.replace(" ", "\\ ");
@@ -115,6 +115,7 @@ public class JupyterController {
         .addCommand(settings.getAnacondaProjectDir(project))
         .addCommand(pyPath)
         .addCommand(conversionDir)
+        .addCommand(notebookConversion.name())
         .setWaitTimeout(60l, TimeUnit.SECONDS) //on a TLS VM the timeout needs to be greater than 20s
         .build();
 
@@ -250,5 +251,10 @@ public class JupyterController {
     jupyterFacade.update(jupyterProject);
 
     return jupyterSettings;
+  }
+
+  public enum NotebookConversion {
+    PY,
+    HTML
   }
 }
