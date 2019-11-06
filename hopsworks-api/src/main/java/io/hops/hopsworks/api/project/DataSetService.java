@@ -1055,6 +1055,8 @@ public class DataSetService {
         } else {
           throw new DatasetException(RESTCodes.DatasetErrorCode.IMAGE_SIZE_INVALID, Level.FINE);
         }
+      } else if(fileExtension.equalsIgnoreCase("ipynb")) {
+
       } else {
         try (DataInputStream dis = new DataInputStream(is)) {
           int sizeThreshold = Settings.FILE_PREVIEW_TXT_SIZE_BYTES; //in bytes

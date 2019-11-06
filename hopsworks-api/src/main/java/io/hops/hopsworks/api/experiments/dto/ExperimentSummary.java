@@ -41,6 +41,8 @@ public class ExperimentSummary {
 
   private String[] environmentYmlFiles;
 
+  private String executable;
+
   public String getName() {
     return name;
   }
@@ -159,5 +161,13 @@ public class ExperimentSummary {
 
   public void setEnvironmentYmlFiles(String[] environmentYmlFiles) {
     this.environmentYmlFiles = environmentYmlFiles;
+  }
+
+  public String getExecutable() {
+    return executable;
+  }
+
+  public void setExecutable(String executable) {
+    this.executable = executable;
   }
 }

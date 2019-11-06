@@ -192,7 +192,7 @@ public class ExperimentsController {
   }
 
   public void copyExecutable(Project project, Users user, ExperimentSummary experimentSummary, String experimentId)
-      throws JobException {
+      throws JobException, ExperimentsException {
     String jobName = experimentSummary.getJobName();
     if(!Strings.isNullOrEmpty(experimentSummary.getJobName())) {
       //job
@@ -205,7 +205,7 @@ public class ExperimentsController {
     }
   }
 
-  public void copy(String path, Project project, Users user, String experimentId) {
+  public void copy(String path, Project project, Users user, String experimentId) throws ExperimentsException {
     DistributedFileSystemOps udfso = null;
     try {
       String username = hdfsUsersController.getHdfsUserName(project, user);
