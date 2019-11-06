@@ -205,7 +205,6 @@ public class ExperimentsController {
     }
   }
 
-  @TransactionAttribute(TransactionAttributeType.NEVER)
   public void copy(String path, Project project, Users user, String experimentId) {
     DistributedFileSystemOps udfso = null;
     try {
@@ -219,8 +218,8 @@ public class ExperimentsController {
             Settings.HOPS_EXPERIMENTS_DATASET + "/" + experimentId));
       }
     } catch (IOException | ExperimentsException e) {
-
-
+      throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.EXPERIMENT_EXECUTABLE_COPY_FAILED, Level.FINE,
+          "path: " + path);
     } finally {
       if (udfso != null) {
         dfs.closeDfsClient(udfso);

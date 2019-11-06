@@ -1640,6 +1640,8 @@ public class RESTCodes {
     RESULTS_RETRIEVAL_ERROR(4, "Error occurred when retrieving experiment results.",
         Response.Status.INTERNAL_SERVER_ERROR),
     EXPERIMENT_EXECUTABLE_NOT_FOUND(5, "Could not find experiment executable.",
+        Response.Status.BAD_REQUEST),
+    EXPERIMENT_EXECUTABLE_COPY_FAILED(5, "Error occurred when copying experiment executable.",
         Response.Status.BAD_REQUEST);
 
     private int code;
