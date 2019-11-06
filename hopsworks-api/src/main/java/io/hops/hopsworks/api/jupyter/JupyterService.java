@@ -461,7 +461,8 @@ public class JupyterService {
     StringBuilder pathBuilder = new StringBuilder(ipynbPath.substring(0, extensionIndex)).append(".py");
     String pyAppPath = pathBuilder.toString();
     String hdfsUsername = getHdfsUser(sc);
-    jupyterController.convertIPythonNotebook(hdfsUsername, ipynbPath, project, pyAppPath);
+    jupyterController.convertIPythonNotebook(hdfsUsername, ipynbPath, project, pyAppPath,
+        JupyterController.NotebookConversion.PY);
     return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).build();
   }
 
