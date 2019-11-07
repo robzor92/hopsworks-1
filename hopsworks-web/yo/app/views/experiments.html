@@ -184,6 +184,15 @@
                                         </td>
                                     </tr>
                                     <tr>
+                                        <td>Executable</td>
+                                        <td>
+                                            <button type="button" class="btn btn-default fa fa-camera" title="View"
+                                                    ng-click="experimentCtrl.viewFile(experiment.executable)"></button>
+                                            <button type="button" class="btn btn-default fa fa-cloud-download" title="Download"
+                                                    ng-click="experimentCtrl.downloadFile(experiment.executable)"></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
                                         <td>Output Directory</td>
                                         <td><a ng-click="experimentCtrl.goToDirectory('Experiments/' + experiment.id)">Experiments/{{experiment.id}}</a></td>
                                     </tr>
