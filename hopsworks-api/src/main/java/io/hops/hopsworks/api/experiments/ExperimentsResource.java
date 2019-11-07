@@ -148,7 +148,7 @@ public class ExperimentsResource {
       if(xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
         //export the experiment environment
         experimentSummary.setEnvironmentYmlFiles(experimentsController.exportExperimentEnvironment(id, project, user));
-        experimentsController.copyExecutable(project, user, experimentSummary, id);
+        experimentSummary.setExecutable(experimentsController.versionExecutable(project, user, experimentSummary, id));
       }
       experimentsController.attachExperiment(id, project, usersFullName, experimentSummary, xAttrSetFlag);
     } else {

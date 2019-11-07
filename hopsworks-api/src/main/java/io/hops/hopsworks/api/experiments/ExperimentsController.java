@@ -191,23 +191,24 @@ public class ExperimentsController {
     return null;
   }
 
-  public void copyExecutable(Project project, Users user, ExperimentSummary experimentSummary, String experimentId)
+  public String versionExecutable(Project project, Users user, ExperimentSummary experimentSummary, String experimentId)
       throws JobException, ExperimentsException {
     String jobName = experimentSummary.getJobName();
     if(!Strings.isNullOrEmpty(experimentSummary.getJobName())) {
       //job
       Jobs experimentJob = jobController.getJob(project, jobName);
       SparkJobConfiguration sparkJobConf = (SparkJobConfiguration)experimentJob.getJobConfig();
-      copy(sparkJobConf.getAppPath(), project, user, experimentId);
+      return copy(sparkJobConf.getAppPath(), project, user, experimentId);
     } else {
       //jupyter
-
+      return "";
     }
   }
 
-  public void copy(String path, Project project, Users user, String experimentId) throws ExperimentsException {
+  public String copy(String path, Project project, Users user, String experimentId) throws ExperimentsException {
     DistributedFileSystemOps udfso = null;
     try {
+      String suffix = path.substring(path.lastIndexOf("."));
       String username = hdfsUsersController.getHdfsUserName(project, user);
       udfso = dfs.getDfsOps(username);
       if(!udfso.exists(path)) {
@@ -215,8 +216,9 @@ public class ExperimentsController {
             "path: " + path);
       } else {
         udfso.copyInHdfs(new Path(path), new Path(Utils.getProjectPath(project.getName()) +
-            Settings.HOPS_EXPERIMENTS_DATASET + "/" + experimentId));
+            Settings.HOPS_EXPERIMENTS_DATASET + "/" + experimentId + "/executable" + suffix));
       }
+      return Settings.HOPS_EXPERIMENTS_DATASET + "/" + experimentId + "/executable" + suffix;
     } catch (IOException | ExperimentsException e) {
       throw new ExperimentsException(RESTCodes.ExperimentsErrorCode.EXPERIMENT_EXECUTABLE_COPY_FAILED, Level.FINE,
           "path: " + path);
