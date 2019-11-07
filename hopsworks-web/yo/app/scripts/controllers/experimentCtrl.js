@@ -211,6 +211,11 @@ angular.module('hopsWorksApp')
                         }
                         self.totalItems = success.data.count;
                         self.loaded = true;
+                        angular.forEach(self.experiments, function (experiment, key) {
+                            if(self.expandExperiment[experiment.id]) {
+                                self.getResults(experiment, false);
+                            }
+                        });
                     },
                     function(error) {
                         if(loadingText) {
