@@ -16,6 +16,7 @@
 
 package io.hops.hopsworks.common.jupyter;
 
+import com.google.common.base.Strings;
 import io.hops.hopsworks.common.dao.hdfsUser.HdfsUsers;
 import io.hops.hopsworks.common.dao.hdfsUser.HdfsUsersFacade;
 import io.hops.hopsworks.common.dao.jupyter.JupyterProject;
@@ -100,7 +101,7 @@ public class JupyterController {
   private JupyterNbVCSController jupyterNbVCSController;
 
   @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-  public void convertIPythonNotebook(String hdfsUsername, String notebookPath, Project project, String pyPath,
+  public String convertIPythonNotebook(String hdfsUsername, String notebookPath, Project project, String pyPath,
                                      NotebookConversion notebookConversion)  throws ServiceException {
 
     String conversionDir = DigestUtils.sha256Hex(Integer.toString(ThreadLocalRandom.current().nextInt()));
@@ -127,6 +128,13 @@ public class JupyterController {
             "error code: " + processResult.getExitCode(), "Failed to convert " + notebookPath
             + "\nstderr: " + processResult.getStderr()
             + "\nstdout: " + processResult.getStdout());
+      }
+      String stdOut = processResult.getStdout();
+      if(!Strings.isNullOrEmpty(stdOut) && notebookConversion.equals(NotebookConversion.HTML)) {
+        StringBuilder renderedNotebookSB = new StringBuilder(stdOut);
+        int startIndex = renderedNotebookSB.indexOf("<html>");
+        int stopIndex = renderedNotebookSB.lastIndexOf("</html>");
+        return renderedNotebookSB.substring(startIndex, stopIndex);
       }
     } catch (IOException ex) {
       throw new ServiceException(RESTCodes.ServiceErrorCode.IPYTHON_CONVERT_ERROR, Level.SEVERE, null, ex.getMessage(),
