@@ -41,7 +41,7 @@
                             <input class="form-control" style="margin-left: 10px;" ng-model="experimentCtrl.experimentsFilter"
                                    ng-model-options="{debounce: 800}" ng-change="experimentCtrl.getExperiments()">
                             <i class="fa fa-info-circle"
-                               uib-tooltip="Case sensitive search for experiment name." tooltip-placement="bottom"></i>
+                               uib-tooltip="Case insensitive filter for experiment name." tooltip-placement="bottom"></i>
                             <md-datepicker ng-change="experimentCtrl.getExperiments()"
                                            ng-model="experimentCtrl.experimentsFromDate"
                                            md-placeholder="From"></md-datepicker>
