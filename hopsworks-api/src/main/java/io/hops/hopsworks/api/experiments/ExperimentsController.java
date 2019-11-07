@@ -119,9 +119,9 @@ public class ExperimentsController {
     }
   }
 
-  public String[] exportExperimentEnvironment(String id, Project project, Users user)
+  public String[] exportExperimentEnvironment(String id, Project project)
       throws PythonException, ServiceException {
-    return environmentController.exportEnv(user, project,
+    return environmentController.exportEnv(project,
         Settings.HOPS_EXPERIMENTS_DATASET + "/" + id);
   }
 

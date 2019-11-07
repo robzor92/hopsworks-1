@@ -138,7 +138,7 @@ public class ExperimentsResource {
       @Context HttpServletRequest req,
       @Context UriInfo uriInfo,
       @Context SecurityContext sc)
-      throws DatasetException, GenericException, ServiceException, PythonException, JobException, ExperimentsException {
+      throws DatasetException, GenericException, ServiceException, JobException, ExperimentsException {
     if (experimentSummary == null && model == null) {
       throw new IllegalArgumentException("Experiment configuration or model was not provided");
     }
@@ -148,7 +148,7 @@ public class ExperimentsResource {
       if(xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
         try {
           experimentSummary.setEnvironmentYmlFiles(
-              experimentsController.exportExperimentEnvironment(id, project, user));
+              experimentsController.exportExperimentEnvironment(id, project));
         } catch(Exception e) {
           LOGGER.log(Level.WARNING, "Failed to export Anaconda environment in project " + project.getName(), e);
         }

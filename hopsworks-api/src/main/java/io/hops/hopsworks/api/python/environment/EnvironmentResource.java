@@ -147,11 +147,10 @@ public class EnvironmentResource {
       @QueryParam("action") EnvironmentDTO.Operation action,
       @Context UriInfo uriInfo,
       @Context SecurityContext sc) throws PythonException, ServiceException {
-    Users user = jWTHelper.getUserPrincipal(sc);
     EnvironmentDTO dto;
     switch ((action != null) ? action : EnvironmentDTO.Operation.CREATE) {
       case EXPORT:
-        environmentController.exportEnv(user, project, Settings.PROJECT_STAGING_DIR);
+        environmentController.exportEnv(project, Settings.PROJECT_STAGING_DIR);
         dto = buildEnvDTO(uriInfo, null, version);
         return Response.ok().entity(dto).build();
       case CREATE:
