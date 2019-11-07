@@ -213,7 +213,7 @@ angular.module('hopsWorksApp')
                         self.loaded = true;
                         angular.forEach(self.experiments, function (experiment, key) {
                             if(self.expandExperiment[experiment.id]) {
-                                self.getResults(experiment, false);
+                                self.getResults(experiment, true);
                             }
                         });
                     },
