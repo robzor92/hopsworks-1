@@ -146,8 +146,12 @@ public class ExperimentsResource {
     String usersFullName = user.getFname() + " " + user.getLname();
     if(experimentSummary != null) {
       if(xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
-        //export the experiment environment
-        experimentSummary.setEnvironmentYmlFiles(experimentsController.exportExperimentEnvironment(id, project, user));
+        try {
+          experimentSummary.setEnvironmentYmlFiles(
+              experimentsController.exportExperimentEnvironment(id, project, user));
+        } catch(Exception e) {
+          LOGGER.log(Level.WARNING, "Failed to export Anaconda environment in project " + project.getName(), e);
+        }
         experimentSummary.setExecutable(experimentsController.versionExecutable(project, user, experimentSummary, id));
       }
       experimentsController.attachExperiment(id, project, usersFullName, experimentSummary, xAttrSetFlag);
