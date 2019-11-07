@@ -174,7 +174,7 @@
                                         <td>ExperimentType</td>
                                         <td>{{experiment.experimentType}}</td>
                                     </tr>
-                                    <tr>
+                                    <tr ng-if="experiment.environmentYmlFiles && experiment.environmentYmlFiles.length > 0">
                                         <td>Anaconda Environment</td>
                                         <td>
                                             <button type="button" class="btn btn-default fa fa-camera" title="View"
@@ -183,7 +183,7 @@
                                                     ng-click="experimentCtrl.downloadFile(experiment.environmentYmlFiles[0])"></button>
                                         </td>
                                     </tr>
-                                    <tr>
+                                    <tr ng-if="experiment.executable">
                                         <td>Executable</td>
                                         <td>
                                             <button type="button" class="btn btn-default fa fa-camera" title="View"
