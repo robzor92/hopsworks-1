@@ -200,12 +200,24 @@ angular.module('hopsWorksApp')
                                 if(typeof self.experiments[i] === 'undefined'){
                                     self.experiments[i] = {};
                                 }
+                                self.experiments[i].id = experiment.id;
                                 self.experiments[i].name = experiment.name;
+                                self.experiments[i].description = experiment.description;
                                 self.experiments[i].metric = experiment.metric;
                                 self.experiments[i].userFullName = experiment.userFullName;
                                 self.experiments[i].started = experiment.started;
                                 self.experiments[i].finished = experiment.finished;
                                 self.experiments[i].state = experiment.state;
+                                self.experiments[i].experimentType = experiment.experimentType;
+                                self.experiments[i].direction = experiment.direction;
+                                self.experiments[i].optimizationKey = experiment.optimizationKey;
+                                self.experiments[i].model = experiment.model;
+                                self.experiments[i].jobName = experiment.jobName;
+                                self.experiments[i].appId = experiment.appId;
+                                self.experiments[i].bestDir = experiment.bestDir;
+                                self.experiments[i].environmentYmlFiles = experiment.environmentYmlFiles;
+                                self.experiments[i].executable = experiment.executable;
+                                self.experiments[i].function = experiment.function;
                                 i++;
                             });
                         }
