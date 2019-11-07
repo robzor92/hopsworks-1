@@ -25,7 +25,10 @@
                 <div ng-if="tensorBoardCtrl.loading" class="loadingwrap">
                     <div class="loading-content">
                         <div class="loader-in-wrap"></div>
-                        {{tensorBoardCtrl.loadingText}}
+                        {{tensorBoardCtrl.loadingHeadingText}}
+                        <br>
+                        <br>
+                        {{tensorBoardCtrl.loadingBottomText}}
                     </div>
                 </div>
                 <div ng-if="experimentCtrl.loading" class="loadingwrap">

@@ -35,20 +35,23 @@ angular.module('hopsWorksApp')
             self.mlId = "";
 
             self.loading = false;
-            self.loadingText = "";
+            self.loadingHeadingText = "";
+            self.loadingBottomText = "";
 
-            var startLoading = function(label) {
+            var startLoading = function(headingText, bottomText) {
                 self.loading = true;
-                self.loadingText = label;
+                self.loadingHeadingText = headingText;
+                self.loadingBottomText = bottomText;
             };
             var stopLoading = function() {
                 self.loading = false;
-                self.loadingText = "";
+                self.loadingHeadingText = "";
+                self.loadingBottomText = "";
             };
 
             self.start = function(mlId) {
 
-                startLoading("Starting TensorBoard...");
+                startLoading("Starting TensorBoard...", "Visualizations are loaded in the background and may take a while to appear.");
 
                 TensorBoardService.startTensorBoard(self.projectId, mlId).then(
                     function(success) {
@@ -67,21 +70,6 @@ angular.module('hopsWorksApp')
                         }
                     });
             };
-
-            angular.module('hopsWorksApp').directive('bindHtmlUnsafe', function($parse, $compile) {
-                return function($scope, $element, $attrs) {
-                    var compile = function(newHTML) {
-                        newHTML = $compile(newHTML)($scope);
-                        $element.html('').append(newHTML);
-                    };
-                    var htmlName = $attrs.bindHtmlUnsafe;
-                    $scope.$watch(htmlName, function(newHTML) {
-                        if (!newHTML)
-                            return;
-                        compile(newHTML);
-                    });
-                };
-            });
 
            self.newWindow = function () {
              $window.open(self.ui, '_blank');
