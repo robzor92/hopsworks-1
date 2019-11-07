@@ -257,17 +257,24 @@ public class EnvironmentController {
     String arg, LibraryFacade.MachineType machineType, String environmentYml,
     Boolean installJupyter, boolean singleHost)
     throws ServiceException {
-    
+
     if (projectUtils.isReservedProjectName(proj.getName())) {
       throw new IllegalStateException("Tried to execute a conda env op on a reserved project name");
     }
     List<Hosts> hosts = validateCondaHosts(machineType);
-    for (Hosts h : hosts) {
-      // For environment operations, we don't care about the Conda Channel, so we just pick 'defaults'
-      CondaCommands cc = new CondaCommands(h, settings.getAnacondaUser(),
-        op, CondaCommandFacade.CondaStatus.NEW, CondaCommandFacade.CondaInstallType.ENVIRONMENT, machineType,
-        proj, pythonVersion, "", "defaults", new Date(), arg, environmentYml, installJupyter);
+    if (singleHost) {
+      CondaCommands cc = new CondaCommands(hosts.get(0), settings.getAnacondaUser(),
+          op, CondaCommandFacade.CondaStatus.NEW, CondaCommandFacade.CondaInstallType.ENVIRONMENT, machineType,
+          proj, pythonVersion, "", "defaults", new Date(), arg, environmentYml, installJupyter);
       condaCommandFacade.save(cc);
+    } else {
+      for (Hosts h : hosts) {
+        // For environment operations, we don't care about the Conda Channel, so we just pick 'defaults'
+        CondaCommands cc = new CondaCommands(h, settings.getAnacondaUser(),
+            op, CondaCommandFacade.CondaStatus.NEW, CondaCommandFacade.CondaInstallType.ENVIRONMENT, machineType,
+            proj, pythonVersion, "", "defaults", new Date(), arg, environmentYml, installJupyter);
+        condaCommandFacade.save(cc);
+      }
     }
   }
   
@@ -384,7 +391,7 @@ public class EnvironmentController {
     if (!project.getConda()) {
       throw new PythonException(RESTCodes.PythonErrorCode.ANACONDA_ENVIRONMENT_NOT_FOUND, Level.FINE);
     }
-    
+
     String cpuHost = hostsFacade.findCPUHost();
     Date date = new Date();
 
