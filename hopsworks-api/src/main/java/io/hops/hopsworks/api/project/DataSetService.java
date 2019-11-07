@@ -76,12 +76,14 @@ import io.hops.hopsworks.common.dao.user.security.apiKey.ApiScope;
 import io.hops.hopsworks.common.dataset.DatasetController;
 import io.hops.hopsworks.common.dataset.FilePreviewDTO;
 import io.hops.hopsworks.common.hdfs.FsPermissions;
+import io.hops.hopsworks.common.jupyter.JupyterController;
 import io.hops.hopsworks.common.project.ProjectController;
 import io.hops.hopsworks.common.provenance.v2.xml.ProvTypeDTO;
 import io.hops.hopsworks.exceptions.DatasetException;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.HopsSecurityException;
 import io.hops.hopsworks.exceptions.ProjectException;
+import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import io.hops.hopsworks.common.hdfs.DistributedFileSystemOps;
 import io.hops.hopsworks.common.hdfs.DistributedFsService;
@@ -188,6 +190,8 @@ public class DataSetService {
   private FeaturestoreController featurestoreController;
   @EJB
   private DsUpdateOperations dsUpdateOperations;
+  @EJB
+  private JupyterController jupyterController;
 
   private Integer projectId;
   private Project project;
@@ -1013,7 +1017,7 @@ public class DataSetService {
   @JWTRequired(acceptedTokens={Audience.API}, allowedUserRoles={"HOPS_ADMIN", "HOPS_USER"})
   @ApiKeyRequired( acceptedScopes = {ApiScope.DATASET_VIEW}, allowedUserRoles = {"HOPS_ADMIN", "HOPS_USER"})
   public Response filePreview(@PathParam("path") String path, @QueryParam("mode") String mode,
-          @Context SecurityContext sc) throws DatasetException, ProjectException {
+          @Context SecurityContext sc) throws DatasetException, ProjectException, ServiceException {
     Users user = jWTHelper.getUserPrincipal(sc);
     String username = hdfsUsersController.getHdfsUserName(project, user);
 
@@ -1056,7 +1060,8 @@ public class DataSetService {
           throw new DatasetException(RESTCodes.DatasetErrorCode.IMAGE_SIZE_INVALID, Level.FINE);
         }
       } else if(fileExtension.equalsIgnoreCase("ipynb")) {
-
+        jupyterController.convertIPythonNotebook(username, fullPath.toString(), project, "''",
+            JupyterController.NotebookConversion.HTML);
       } else {
         try (DataInputStream dis = new DataInputStream(is)) {
           int sizeThreshold = Settings.FILE_PREVIEW_TXT_SIZE_BYTES; //in bytes

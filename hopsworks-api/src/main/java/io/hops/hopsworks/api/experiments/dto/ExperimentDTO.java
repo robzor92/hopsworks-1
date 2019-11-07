@@ -51,6 +51,8 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   private String[] environmentYmlFiles;
 
+  private String executable;
+
   private ExperimentResultSummaryDTO results;
 
   private TensorBoardDTO tensorboard;
@@ -215,6 +217,14 @@ public class ExperimentDTO extends RestDTO<ExperimentDTO> {
 
   public void setEnvironmentYmlFiles(String[] environmentYmlFiles) {
     this.environmentYmlFiles = environmentYmlFiles;
+  }
+
+  public String getExecutable() {
+    return executable;
+  }
+
+  public void setExecutable(String executable) {
+    this.executable = executable;
   }
 
   public enum XAttrSetFlag {
