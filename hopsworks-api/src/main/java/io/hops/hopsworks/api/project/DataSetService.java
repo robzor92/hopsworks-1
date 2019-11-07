@@ -1060,8 +1060,10 @@ public class DataSetService {
           throw new DatasetException(RESTCodes.DatasetErrorCode.IMAGE_SIZE_INVALID, Level.FINE);
         }
       } else if(fileExtension.equalsIgnoreCase("ipynb")) {
-        jupyterController.convertIPythonNotebook(username, fullPath.toString(), project, "''",
+        String html = jupyterController.convertIPythonNotebook(username, fullPath.toString(), project, "''",
             JupyterController.NotebookConversion.HTML);
+        filePreviewDTO = new FilePreviewDTO(Settings.FILE_PREVIEW_HTML_TYPE, fileExtension.toLowerCase(),
+            html);
       } else {
         try (DataInputStream dis = new DataInputStream(is)) {
           int sizeThreshold = Settings.FILE_PREVIEW_TXT_SIZE_BYTES; //in bytes

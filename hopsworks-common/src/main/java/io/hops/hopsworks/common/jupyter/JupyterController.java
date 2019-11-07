@@ -118,6 +118,7 @@ public class JupyterController {
         .addCommand(conversionDir)
         .addCommand(notebookConversion.name())
         .setWaitTimeout(60l, TimeUnit.SECONDS) //on a TLS VM the timeout needs to be greater than 20s
+        .redirectErrorStream(true)
         .build();
 
     LOGGER.log(Level.FINE, processDescriptor.toString());
@@ -133,9 +134,10 @@ public class JupyterController {
       if(!Strings.isNullOrEmpty(stdOut) && notebookConversion.equals(NotebookConversion.HTML)) {
         StringBuilder renderedNotebookSB = new StringBuilder(stdOut);
         int startIndex = renderedNotebookSB.indexOf("<html>");
-        int stopIndex = renderedNotebookSB.lastIndexOf("</html>");
+        int stopIndex = renderedNotebookSB.length();
         return renderedNotebookSB.substring(startIndex, stopIndex);
       }
+      return null;
     } catch (IOException ex) {
       throw new ServiceException(RESTCodes.ServiceErrorCode.IPYTHON_CONVERT_ERROR, Level.SEVERE, null, ex.getMessage(),
           ex);

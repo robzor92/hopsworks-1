@@ -38,8 +38,8 @@
  */
 
 angular.module('hopsWorksApp')
-        .controller('FilePreviewCtrl', ['$uibModalInstance','DataSetService', 'growl', 'fileName', 'filePath', 'projectId', 'mode',
-          function ($uibModalInstance, DataSetService, growl, fileName, filePath, projectId, mode) {
+        .controller('FilePreviewCtrl', ['$uibModalInstance','DataSetService', 'growl', 'fileName', 'filePath', 'projectId', 'mode', '$sce',
+          function ($uibModalInstance, DataSetService, growl, fileName, filePath, projectId, mode, $sce) {
             var self = this;
             self.modes = ['head','tail'];
             self.filePath = filePath;
@@ -70,7 +70,11 @@ angular.module('hopsWorksApp')
                         self.type = self.fileDetails.filePreviewDTO[0].type;
                         self.content = self.fileDetails.filePreviewDTO[0].content;
                         self.extension = self.fileDetails.filePreviewDTO[0].extension;
-                        self.getImageWidthHeight();
+                        if(self.content==='image') {
+                            self.getImageWidthHeight();
+                        } else if(self.content==='html') {
+                            self.content = $sce.trustAsHtml(self.content);
+                        }
                       }, function (error) {
                 growl.error(error.data.errorMsg, {title: 'Could not get file contents', ttl: 5000, referenceId: 23});
               });

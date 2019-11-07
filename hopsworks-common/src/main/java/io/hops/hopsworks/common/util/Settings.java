@@ -1863,6 +1863,7 @@ public class Settings implements Serializable {
       + "## %s";
 
   public static final String FILE_PREVIEW_TEXT_TYPE = "text";
+  public static final String FILE_PREVIEW_HTML_TYPE = "html";
   public static final String FILE_PREVIEW_IMAGE_TYPE = "image";
   public static final String FILE_PREVIEW_MODE_TAIL = "tail";
 
