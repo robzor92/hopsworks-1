@@ -183,6 +183,12 @@
                                                     ng-click="experimentCtrl.downloadFile(experiment.environmentYmlFiles[0])"></button>
                                         </td>
                                     </tr>
+                                    <tr ng-if="!experiment.environmentYmlFiles">
+                                        <td>Anaconda Environment</td>
+                                        <td>
+                                            <span style="color:red;">Environment could not be exported.</span>
+                                        </td>
+                                    </tr>
                                     <tr ng-if="experiment.executable">
                                         <td>Executable</td>
                                         <td>
