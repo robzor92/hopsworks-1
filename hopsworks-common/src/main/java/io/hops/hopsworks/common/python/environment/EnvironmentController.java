@@ -169,7 +169,7 @@ public class EnvironmentController {
     return true;
   }
   
-  public Collection<PythonDep> createProjectInDb(Project project, String pythonVersion,
+  private Collection<PythonDep> createProjectInDb(Project project, String pythonVersion,
     LibraryFacade.MachineType machineType, String environmentYml, Boolean installJupyter) throws ServiceException {
     
     if (environmentYml == null && pythonVersion.compareToIgnoreCase("2.7") != 0 && pythonVersion.
@@ -181,12 +181,12 @@ public class EnvironmentController {
     
     if (environmentYml != null) {
       condaEnvironmentOp(CondaCommandFacade.CondaOp.YML, pythonVersion, project, pythonVersion, machineType,
-        environmentYml, installJupyter);
+        environmentYml, installJupyter, false);
       setCondaEnv(project, true);
     } else {
       validateCondaHosts(machineType);
     }
-    
+
     List<PythonDep> all = new ArrayList<>();
     enableConda(project);
     return all;
@@ -204,8 +204,8 @@ public class EnvironmentController {
     project.setCondaEnv(condaEnv);
     projectFacade.mergeProject(project);
   }
-  
-  
+
+
   private List<Hosts> validateCondaHosts(LibraryFacade.MachineType machineType) throws ServiceException {
     List<Hosts> hosts = hostsFacade.getCondaHosts(machineType);
     if (hosts.isEmpty()) {
@@ -222,7 +222,7 @@ public class EnvironmentController {
   @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
   public void copyOnWriteCondaEnv(Project project) throws ServiceException {
     condaEnvironmentOp(CondaCommandFacade.CondaOp.CREATE, project.getPythonVersion(), project,
-      project.getPythonVersion(), LibraryFacade.MachineType.ALL, null, false);
+      project.getPythonVersion(), LibraryFacade.MachineType.ALL, null, false, false);
     setCondaEnv(project, true);
   }
   
@@ -255,7 +255,7 @@ public class EnvironmentController {
    */
   private void condaEnvironmentOp(CondaCommandFacade.CondaOp op, String pythonVersion, Project proj,
     String arg, LibraryFacade.MachineType machineType, String environmentYml,
-    Boolean installJupyter)
+    Boolean installJupyter, boolean singleHost)
     throws ServiceException {
     
     if (projectUtils.isReservedProjectName(proj.getName())) {
@@ -273,12 +273,12 @@ public class EnvironmentController {
   
   private void condaEnvironmentRemove(Project proj) throws ServiceException {
     condaEnvironmentOp(CondaCommandFacade.CondaOp.REMOVE, "", proj,
-      "", LibraryFacade.MachineType.ALL, null, false);
+      "", LibraryFacade.MachineType.ALL, null, false, false);
   }
   
   private void condaEnvironmentClone(Project srcProj, Project destProj) throws ServiceException {
     condaEnvironmentOp(CondaCommandFacade.CondaOp.CLONE, "", srcProj, destProj.getName(),
-      LibraryFacade.MachineType.ALL, null, false);
+      LibraryFacade.MachineType.ALL, null, false, false);
   }
   
   public CondaCommands getOngoingEnvCreation(Project proj) {
@@ -293,14 +293,13 @@ public class EnvironmentController {
     }
     return null;
   }
-  
-  
+
   public void cleanupConda() throws ServiceException {
     List<Project> projects = projectFacade.findAll();
     if (projects != null && !projects.isEmpty()) {
       Project project = projects.get(0);
       condaEnvironmentOp(CondaCommandFacade.CondaOp.CLEAN, "", project, "",
-        LibraryFacade.MachineType.ALL, "", false);
+        LibraryFacade.MachineType.ALL, "", false, false);
     }
   }
   
@@ -393,16 +392,16 @@ public class EnvironmentController {
     ArrayList<String> ymlList = new ArrayList<>();
     long exportTime = date.getTime();
     if (cpuHost != null) {
-      String cpuYmlName = "environment_cpu_" + exportTime + ".yml";
-      exportEnvironment(cpuHost, cpuYmlName, hdfsUser, project,
-          projectRelativeExportPath);
+      String cpuYmlName = projectRelativeExportPath + "/" + "environment_cpu_" + exportTime + ".yml";
+      condaEnvironmentOp(CondaCommandFacade.CondaOp.EXPORT, project.getPythonVersion(), project,
+          cpuYmlName, LibraryFacade.MachineType.CPU, null, false, true);
       ymlList.add(projectRelativeExportPath + "/" + cpuYmlName);
     }
     String gpuHost = hostsFacade.findGPUHost();
     if (gpuHost != null) {
-      String gpuYmlName = "environment_gpu_" + exportTime + ".yml";
-      exportEnvironment(gpuHost, gpuYmlName, hdfsUser, project,
-          projectRelativeExportPath);
+      String gpuYmlName = projectRelativeExportPath + "/" + "environment_gpu_" + exportTime + ".yml";
+      condaEnvironmentOp(CondaCommandFacade.CondaOp.EXPORT, project.getPythonVersion(), project,
+          gpuYmlName, LibraryFacade.MachineType.GPU, null, false, true);
       ymlList.add(projectRelativeExportPath + "/" + gpuYmlName);
     }
     return ymlList.toArray(new String[0]);

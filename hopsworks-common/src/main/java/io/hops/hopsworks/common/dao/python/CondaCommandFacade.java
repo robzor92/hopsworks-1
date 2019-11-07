@@ -55,7 +55,8 @@ public class CondaCommandFacade extends AbstractFacade<CondaCommands> {
     UNINSTALL,
     UPGRADE,
     CLEAN,
-    YML;
+    YML,
+    EXPORT;
 
     public boolean isEnvOp() {
       return CondaOp.isEnvOp(this);
