@@ -379,14 +379,13 @@ public class EnvironmentController {
     }
   }
   
-  public String[] exportEnv(Users user, Project project, String projectRelativeExportPath)
+  public String[] exportEnv(Project project, String projectRelativeExportPath)
       throws PythonException, ServiceException {
     if (!project.getConda()) {
       throw new PythonException(RESTCodes.PythonErrorCode.ANACONDA_ENVIRONMENT_NOT_FOUND, Level.FINE);
     }
-    String hdfsUser = hdfsUsersController.getHdfsUserName(project, user);
+    
     String cpuHost = hostsFacade.findCPUHost();
-
     Date date = new Date();
 
     ArrayList<String> ymlList = new ArrayList<>();
