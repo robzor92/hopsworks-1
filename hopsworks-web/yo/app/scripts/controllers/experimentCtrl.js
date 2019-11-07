@@ -27,7 +27,7 @@ angular.module('hopsWorksApp')
 
             self.deleted = {}
 
-            self.pageSize = 12;
+            self.pageSize = 8;
             self.currentPage = 1;
             self.totalItems = 0;
 
