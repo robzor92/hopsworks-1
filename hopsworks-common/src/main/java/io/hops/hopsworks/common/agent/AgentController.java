@@ -249,7 +249,7 @@ public class AgentController {
         if (command.getOp().equals(CondaCommandFacade.CondaOp.EXPORT) &&
             status.equals(CondaCommandFacade.CondaStatus.SUCCESS)) {
           environmentController.uploadYmlInProject(command.getProjectId(), command.getUserId(),
-              command.getEnvironmentYml(), command.getArg() );
+              cc.getEnvironmentYml(), command.getArg() );
         }
 
         // An upgrade results in an unknown version installed, query local conda

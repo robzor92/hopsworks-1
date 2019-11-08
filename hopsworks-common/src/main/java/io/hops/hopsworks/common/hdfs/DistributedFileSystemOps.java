@@ -518,9 +518,9 @@ public class DistributedFileSystemOps {
 
   public void create(Path path, String content) throws IOException {
     dfs.create(path);
-    FSDataOutputStream outputStream=dfs.create(path);
-    outputStream.writeBytes(content);
-    outputStream.close();
+    try(FSDataOutputStream outputStream = dfs.create(path)) {
+      outputStream.writeBytes(content);
+    }
   }
   
   /**
