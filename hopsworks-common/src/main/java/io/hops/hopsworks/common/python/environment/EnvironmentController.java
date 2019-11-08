@@ -61,6 +61,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -257,13 +258,12 @@ public class EnvironmentController {
     String arg, LibraryFacade.MachineType machineType, String environmentYml,
     Boolean installJupyter, boolean singleHost)
     throws ServiceException {
-
     if (projectUtils.isReservedProjectName(proj.getName())) {
       throw new IllegalStateException("Tried to execute a conda env op on a reserved project name");
     }
     List<Hosts> hosts = validateCondaHosts(machineType);
     if (singleHost) {
-      CondaCommands cc = new CondaCommands(hosts.get(0), settings.getAnacondaUser(),
+      CondaCommands cc = new CondaCommands(hosts.get(new Random().nextInt(hosts.size())), settings.getAnacondaUser(),
           op, CondaCommandFacade.CondaStatus.NEW, CondaCommandFacade.CondaInstallType.ENVIRONMENT, machineType,
           proj, pythonVersion, "", "defaults", new Date(), arg, environmentYml, installJupyter);
       condaCommandFacade.save(cc);

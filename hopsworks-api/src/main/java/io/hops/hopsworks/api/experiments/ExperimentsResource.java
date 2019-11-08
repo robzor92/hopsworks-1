@@ -111,7 +111,7 @@ public class ExperimentsResource {
       @PathParam("id") String id,
       @Context UriInfo uriInfo,
       @BeanParam ExperimentsBeanParam experimentsBeanParam)
-      throws ServiceException, GenericException, ExperimentsException, DatasetException, PythonException {
+      throws ServiceException, GenericException, ExperimentsException, DatasetException {
     ResourceRequest resourceRequest = new ResourceRequest(ResourceRequest.Name.EXPERIMENTS);
     resourceRequest.setExpansions(experimentsBeanParam.getExpansions().getResources());
     FileState fileState = experimentsController.getExperiment(project, id);
