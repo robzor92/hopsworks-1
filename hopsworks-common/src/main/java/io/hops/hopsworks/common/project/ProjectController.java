@@ -418,7 +418,7 @@ public class ProjectController {
 
       if (environmentController.condaEnabledHosts()) {
         try {
-          environmentController.createEnv("3.6", project);//TODO: use variables for version
+          environmentController.createEnv(project, project.getOwner(), "3.6");//TODO: use variables for version
         } catch (PythonException | EJBException ex) {
           cleanup(project, sessionId, projectCreationFutures);
           throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_ANACONDA_ENABLE_ERROR, Level.SEVERE,
@@ -2481,7 +2481,7 @@ public class ProjectController {
 
   @TransactionAttribute(TransactionAttributeType.NEVER)
   public void removeAnacondaEnv(Project project) throws ServiceException {
-    environmentController.removeEnvironment(project);
+    environmentController.removeEnvironment(project, project.getOwner());
   }
 
   @TransactionAttribute(TransactionAttributeType.NEVER)
@@ -2492,11 +2492,6 @@ public class ProjectController {
   @TransactionAttribute(TransactionAttributeType.NEVER)
   public void removeTensorBoard(Project project) throws TensorBoardException {
     tensorBoardController.removeProject(project);
-  }
-
-  @TransactionAttribute(TransactionAttributeType.NEVER)
-  public void cloneAnacondaEnv(Project srcProj, Project destProj) throws ServiceException {
-    environmentController.cloneProject(srcProj, destProj);
   }
 
   /**

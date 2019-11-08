@@ -147,7 +147,7 @@ public class ExperimentsResource {
       if(xAttrSetFlag.equals(ExperimentDTO.XAttrSetFlag.CREATE)) {
         try {
           experimentSummary.setEnvironmentYmlFiles(
-              experimentsController.exportExperimentEnvironment(id, project));
+              experimentsController.exportExperimentEnvironment(id, project, user));
         } catch(Exception e) {
           LOGGER.log(Level.WARNING, "Failed to export Anaconda environment in project " + project.getName(), e);
         }

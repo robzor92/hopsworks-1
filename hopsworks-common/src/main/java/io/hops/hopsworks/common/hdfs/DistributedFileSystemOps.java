@@ -515,7 +515,13 @@ public class DistributedFileSystemOps {
       return dfs.append(path);
     }
   }
-  
+
+  public void create(Path path, String content) throws IOException {
+    dfs.create(path);
+    FSDataOutputStream outputStream=dfs.create(path);
+    outputStream.writeBytes(content);
+    outputStream.close();
+  }
   
   /**
    * Set permission for path.
