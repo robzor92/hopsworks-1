@@ -25,6 +25,7 @@ import io.hops.hopsworks.common.dao.python.CondaCommands;
 import io.hops.hopsworks.common.dao.python.LibraryFacade;
 import io.hops.hopsworks.common.dao.python.PythonDep;
 import io.hops.hopsworks.common.dao.user.Users;
+import io.hops.hopsworks.common.util.ProjectUtils;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.common.util.WebCommunication;
 import io.hops.hopsworks.exceptions.GenericException;
@@ -66,6 +67,8 @@ public class CommandsController {
   private WebCommunication web;
   @EJB
   private LibraryFacade libraryFacade;
+  @EJB
+  private ProjectUtils projectUtils;
   
   @Resource(lookup = "concurrent/kagentExecutorService")
   ManagedExecutorService kagentExecutorService;
@@ -166,7 +169,7 @@ public class CommandsController {
       for (Hosts h : hosts) {
         CondaCommands cc = new CondaCommands(h, settings.getAnacondaUser(), user, op,
             CondaCommandFacade.CondaStatus.NEW, installType, machineType, proj, lib, version, channelUrl,
-            new Date(), "", null, false);
+            new Date(), "", null, false, projectUtils.getCurrentCondaEnvironment(proj));
         condaCommandFacade.save(cc);
       }
     } catch (Exception ex) {

@@ -80,7 +80,7 @@ public class CondaController implements Serializable {
 
   @PostConstruct
   public void init() {
-    logger.info("init CondaController");
+    logger.fine("init CondaController");
     loadCommands();
   }
 

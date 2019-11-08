@@ -520,6 +520,7 @@ public class DistributedFileSystemOps {
     dfs.create(path);
     try(FSDataOutputStream outputStream = dfs.create(path)) {
       outputStream.writeBytes(content);
+      outputStream.flush();
     }
   }
   

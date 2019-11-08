@@ -224,9 +224,9 @@ public class EnvironmentController {
   
   @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
   public void copyOnWriteCondaEnv(Project project, Users user) throws ServiceException {
+    setCondaEnv(project, true);
     condaEnvironmentOp(CondaCommandFacade.CondaOp.CREATE, project.getPythonVersion(), project, user,
       project.getPythonVersion(), LibraryFacade.MachineType.ALL, null, false, false);
-    setCondaEnv(project, true);
   }
   
   /**
@@ -267,14 +267,16 @@ public class EnvironmentController {
     if (singleHost) {
       CondaCommands cc = new CondaCommands(hosts.get(new Random().nextInt(hosts.size())), settings.getAnacondaUser(),
           user, op, CondaCommandFacade.CondaStatus.NEW, CondaCommandFacade.CondaInstallType.ENVIRONMENT, machineType,
-          proj, pythonVersion, "", "defaults", new Date(), arg, environmentYml, installJupyter);
+          proj, pythonVersion, "", "defaults", new Date(), arg, environmentYml, installJupyter,
+          projectUtils.getCurrentCondaEnvironment(proj));
       condaCommandFacade.save(cc);
     } else {
       for (Hosts h : hosts) {
         // For environment operations, we don't care about the Conda Channel, so we just pick 'defaults'
         CondaCommands cc = new CondaCommands(h, settings.getAnacondaUser(),
             user, op, CondaCommandFacade.CondaStatus.NEW, CondaCommandFacade.CondaInstallType.ENVIRONMENT, machineType,
-            proj, pythonVersion, "", "defaults", new Date(), arg, environmentYml, installJupyter);
+            proj, pythonVersion, "", "defaults", new Date(), arg, environmentYml, installJupyter,
+            projectUtils.getCurrentCondaEnvironment(proj));
         condaCommandFacade.save(cc);
       }
     }
@@ -416,15 +418,15 @@ public class EnvironmentController {
   }
   
   public void createEnv(Project project, Users user, String version) throws PythonException,
-    ServiceException {
+      ServiceException, ProjectException {
     if (project.getConda() || project.getCondaEnv()) {
       throw new PythonException(RESTCodes.PythonErrorCode.ANACONDA_ENVIRONMENT_ALREADY_INITIALIZED, Level.FINE);
     }
     createProjectInDb(project, user, version, LibraryFacade.MachineType.ALL, null, false);
     project.setPythonVersion(version);
     projectFacade.update(project);
-    
     synchronizeDependencies(project);
+    createKibanaIndex(project);
   }
   
   private String getYmlFromPath(Path fullPath, String username) throws ServiceException {
