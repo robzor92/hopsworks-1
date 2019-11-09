@@ -37,6 +37,7 @@ angular.module('hopsWorksApp')
             self.loadingText = "";
 
             $scope.activeForm;
+            $scope.indextab = 0;
 
             self.condaResultsMsgShowing = false;
 
@@ -405,12 +406,13 @@ angular.module('hopsWorksApp')
 
             self.exportEnvironment = function () {
                 self.exporting = true;
+                $scope.indextab = 3;
                 PythonService.exportEnvironment(self.projectId).then(
                     function (success) {
                         self.exporting = false;
-                        growl.success("Exporting environment completed successfully. Check your Resources dataset for the .yml file(s)", {
-                            title: 'Done',
-                            ttl: 20000
+                        growl.success("Exporting environment operation ongoing. Check your Resources dataset for the .yml file(s) once the operation is finished.", {
+                            title: 'Export Ongoing...',
+                            ttl: 10000
                         });
                     },
                     function (error) {
