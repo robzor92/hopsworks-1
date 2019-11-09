@@ -200,46 +200,6 @@ public class ElasticController {
     }
   }
 
-  public String findExperiment(String index, String app_id) throws ServiceException {
-
-    Client client = getClient();
-
-    SearchResponse searchResponse = client.prepareSearch(index)
-        .setQuery(QueryBuilders.matchQuery("app_id", app_id))
-        .get();
-
-    int status = searchResponse.status().getStatus();
-    if(status != 200) {
-      LOG.log(Level.SEVERE, "Unexpected response code " + searchResponse.status().getStatus() +
-          " when updating experiment in Elastic. " + searchResponse.toString());
-    }
-
-    return searchResponse.toString();
-  }
-
-  public void updateExperiment(String index, String id, JSONObject source) throws IOException, ServiceException {
-
-    Client client = getClient();
-
-    Map<String, Object> map;
-
-    ObjectMapper mapper = new ObjectMapper();
-    map = mapper.readValue(source.toString(),
-        new TypeReference<HashMap<String, Object>>() {
-        });
-
-    IndexResponse indexResponse = client.prepareIndex(index, "experiments", id)
-        .setSource(map)
-        .get();
-
-    int status = indexResponse.status().getStatus();
-    if(status != 200) {
-      LOG.log(Level.SEVERE, "Unexpected response code " + indexResponse.status().getStatus() +
-              " when updating experiment in Elastic. " + indexResponse.toString());
-    }
-
-  }
-
   public List<ElasticHit> projectSearch(Integer projectId, String searchTerm) throws ServiceException {
     Client client = getClient();
     //check if the index are up and running
@@ -971,35 +931,6 @@ public class ElasticController {
       }
     }
     return objectId;
-  }
-
-  public String getLogdirFromElastic(Project project, String elasticId) throws ProjectException {
-    Map<String, String> params = new HashMap<>();
-    params.put("op", "GET");
-    String projectName = project.getName().toLowerCase();
-
-    String experimentsIndex = projectName + "_experiments";
-
-    String templateUrl = "http://"+settings.getElasticRESTEndpoint() + "/" +
-        experimentsIndex + "/experiments/" + elasticId;
-
-    boolean foundEntry = false;
-    JSONObject resp = null;
-    try {
-      resp = sendKibanaReq(templateUrl, params, false);
-      foundEntry = (boolean) resp.get("found");
-    } catch (Exception ex) {
-      throw new ProjectException(RESTCodes.ProjectErrorCode.TENSORBOARD_ELASTIC_INDEX_NOT_FOUND, Level.SEVERE,
-        "project:" + project.getName()+ ", index: " + elasticId, ex.getMessage(), ex);
-    }
-
-    if(!foundEntry) {
-      throw new ProjectException(RESTCodes.ProjectErrorCode.TENSORBOARD_ELASTIC_INDEX_NOT_FOUND, Level.WARNING,
-        "project:" + project.getName()+ ", index: " + elasticId);
-    }
-
-    JSONObject source = resp.getJSONObject("_source");
-    return (String)source.get("logdir");
   }
 }
 
