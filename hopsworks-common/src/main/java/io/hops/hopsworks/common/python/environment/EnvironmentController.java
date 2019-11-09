@@ -402,17 +402,17 @@ public class EnvironmentController {
     ArrayList<String> ymlList = new ArrayList<>();
     long exportTime = date.getTime();
     if (cpuHost != null) {
-      String cpuYmlName = projectRelativeExportPath + "/" + "environment_cpu_" + exportTime + ".yml";
+      String cpuYmlPath = projectRelativeExportPath + "/" + "environment_cpu_" + exportTime + ".yml";
       condaEnvironmentOp(CondaCommandFacade.CondaOp.EXPORT, project.getPythonVersion(), project, user,
-          cpuYmlName, LibraryFacade.MachineType.CPU, null, false, true);
-      ymlList.add(projectRelativeExportPath + "/" + cpuYmlName);
+          cpuYmlPath, LibraryFacade.MachineType.CPU, null, false, true);
+      ymlList.add(cpuYmlPath);
     }
     String gpuHost = hostsFacade.findGPUHost();
     if (gpuHost != null) {
-      String gpuYmlName = projectRelativeExportPath + "/" + "environment_gpu_" + exportTime + ".yml";
+      String gpuYmlPath = projectRelativeExportPath + "/" + "environment_gpu_" + exportTime + ".yml";
       condaEnvironmentOp(CondaCommandFacade.CondaOp.EXPORT, project.getPythonVersion(), project, user,
-          gpuYmlName, LibraryFacade.MachineType.GPU, null, false, true);
-      ymlList.add(projectRelativeExportPath + "/" + gpuYmlName);
+          gpuYmlPath, LibraryFacade.MachineType.GPU, null, false, true);
+      ymlList.add(gpuYmlPath);
     }
     return ymlList.toArray(new String[0]);
   }
