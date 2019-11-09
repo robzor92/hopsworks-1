@@ -39,8 +39,6 @@
 
 package io.hops.hopsworks.common.elastic;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import io.hops.hopsworks.common.dao.dataset.Dataset;
 import io.hops.hopsworks.common.dao.dataset.DatasetFacade;
@@ -65,7 +63,6 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRespon
 import org.elasticsearch.action.admin.indices.exists.types.TypesExistsRequest;
 import org.elasticsearch.action.admin.indices.exists.types.TypesExistsResponse;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.AdminClient;
@@ -76,7 +73,6 @@ import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
@@ -89,7 +85,6 @@ import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
