@@ -254,7 +254,7 @@ angular.module('hopsWorksApp')
 
             self.goToModel = function (model) {
                 var modelSplit = model.split('_')
-                $window.open('#!/project/' + self.projectId + '/datasets/Models/' + modelSplit[0] + '/' + modelSplit[1], '_blank');
+                $window.open('#!/project/' + self.projectId + '/datasets/' + model, '_blank');
             };
 
             self.init = function () {
