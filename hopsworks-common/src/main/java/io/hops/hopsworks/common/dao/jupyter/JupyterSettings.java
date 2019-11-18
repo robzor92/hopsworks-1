@@ -43,6 +43,7 @@ import io.hops.hopsworks.common.dao.jupyter.config.GitConfig;
 import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.user.Users;
 import io.hops.hopsworks.common.jobs.configuration.JobConfiguration;
+import io.hops.hopsworks.common.jupyter.DockerConfigurationConverter;
 import io.hops.hopsworks.common.jupyter.JupyterConfigurationConverter;
 
 import java.io.Serializable;
@@ -137,6 +138,10 @@ public class JupyterSettings implements Serializable {
   @Column(name = "job_config")
   @Convert(converter = JupyterConfigurationConverter.class)
   private JobConfiguration jobConfig;
+
+  @Column(name = "docker_config")
+  @Convert(converter = DockerConfigurationConverter.class)
+  private JobConfiguration dockerConfig;
   
   @Transient
   private String privateDir = "";
@@ -294,6 +299,14 @@ public class JupyterSettings implements Serializable {
   
   public void setGitConfig(GitConfig gitConfig) {
     this.gitConfig = gitConfig;
+  }
+
+  public JobConfiguration getDockerConfig() {
+    return dockerConfig;
+  }
+
+  public void setDockerConfig(JobConfiguration dockerConfig) {
+    this.dockerConfig = dockerConfig;
   }
 
   public boolean isPythonKernel() {
