@@ -196,7 +196,7 @@ public class HiveController {
       final FsPermission fsPermission = FsPermissions.rwxrwx___T;
       dfso.setPermission(dbPath, fsPermission);
   
-      fsProvenanceCtrl.newHiveDatasetProvCore(user, project, dbPath.toString());
+      fsProvenanceCtrl.newHiveDatasetProvCore(project, dbPath.toString(), dfso);
       datasetController.logDataset(dbDataset, OperationType.Add);
       activityFacade.persistActivity(ActivityFacade.NEW_DATA + dbDataset.getName(), project, user,
         ActivityFlag.DATASET);

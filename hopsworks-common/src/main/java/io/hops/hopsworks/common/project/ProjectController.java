@@ -378,7 +378,7 @@ public class ProjectController {
       ProvTypeDTO provType = settings.getProvType().dto;
       try {
         mkProjectDIR(projectName, dfso);
-        fsProvController.newProjectProvType(owner, project, provType);
+        fsProvController.updateProjectProvType(project, provType, dfso);
       } catch (IOException | EJBException ex) {
         cleanup(project, sessionId, projectCreationFutures, true, owner);
         throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_FOLDER_NOT_CREATED, Level.SEVERE,

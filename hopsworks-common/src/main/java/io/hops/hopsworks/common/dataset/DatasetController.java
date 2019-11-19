@@ -69,7 +69,6 @@ import io.hops.hopsworks.common.provenance.v3.xml.ProvTypeDTO;
 import io.hops.hopsworks.common.util.HopsUtils;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.DatasetException;
-import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.HopsSecurityException;
 import io.hops.hopsworks.restutils.RESTCodes;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -147,7 +146,7 @@ public class DatasetController {
   public void createDataset(Users user, Project project, String dataSetName,
       String datasetDescription, int templateId, ProvTypeDTO metaStatus,
       boolean stickyBit, boolean defaultDataset, DistributedFileSystemOps dfso)
-    throws DatasetException, HopsSecurityException, GenericException {
+    throws DatasetException, HopsSecurityException {
   
     //Parameter checking.
     if (user == null || project == null || dataSetName == null) {
@@ -190,7 +189,7 @@ public class DatasetController {
 
         Dataset logDs = getByProjectAndDsName(project,null, dataSetName);
         //set the dataset meta enabled(or prov). Support 3 level indexing
-        fsProvController.updateDatasetProvType(user, logDs, metaStatus);
+        fsProvController.updateDatasetProvType(logDs, metaStatus, dfso);
         logDataset(logDs, OperationType.Add);
       } catch (Exception e) {
         try {

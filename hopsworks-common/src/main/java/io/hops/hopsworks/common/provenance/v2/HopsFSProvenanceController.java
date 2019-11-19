@@ -125,22 +125,11 @@ public class HopsFSProvenanceController {
     }
   }
   
-  public void newProjectProvType(Users user, Project project, ProvTypeDTO provType) throws GenericException {
-    DistributedFileSystemOps udfso = dfs.getDfsOps();
-    try {
-      setProjectProvType(project, provType, udfso);
-    } finally {
-      if(udfso != null) {
-        dfs.closeDfsClient(udfso);
-      }
-    }
-  }
-  
   public void updateProjectProvType(Users user, Project project, ProvTypeDTO provType) throws GenericException {
     String hdfsUsername = hdfsUsersController.getHdfsUserName(project, user);
     DistributedFileSystemOps udfso = dfs.getDfsOps(hdfsUsername);
     try {
-      setProjectProvType(project, provType, udfso);
+      updateProjectProvType(project, provType, udfso);
     } finally {
       if(udfso != null) {
         dfs.closeDfsClient(udfso);
@@ -148,33 +137,61 @@ public class HopsFSProvenanceController {
     }
   }
   
-  private void setProjectProvType(Project project, ProvTypeDTO provType, DistributedFileSystemOps udfso)
+  public void updateProjectProvType(Project project, ProvTypeDTO newProvType, DistributedFileSystemOps dfso)
     throws GenericException {
     String projectPath = Utils.getProjectPath(project.getName());
     
-    ProvCoreDTO provCore = getProvCoreXAttr(projectPath, udfso);
-    if (provCore != null && provType.equals(provCore.getType())) {
+    ProvCoreDTO provCore = getProvCoreXAttr(projectPath, dfso);
+    if (provCore != null && newProvType.equals(provCore.getType())) {
       return;
     }
-    if(provCore == null) {
-      provCore = new ProvCoreDTO(provType, null);
-    } else {
-      provCore.setType(provType);
-    }
-    setProvCoreXAttr(projectPath, provCore, udfso);
+    provCore = new ProvCoreDTO(newProvType, null);
+    setProvCoreXAttr(projectPath, provCore, dfso);
+  
+    provCore = new ProvCoreDTO(newProvType, project.getInode().getId());
     for (Dataset dataset : project.getDatasetCollection()) {
       String datasetPath = getDatasetPath(dataset);
-      ProvCoreDTO datasetProvCore = getProvCoreXAttr(datasetPath, udfso);
-      if(datasetProvCore != null && datasetProvCore.getType().equals(ProvTypeDTO.ProvType.DISABLED.dto)) {
+      ProvCoreDTO datasetProvCore = getProvCoreXAttr(datasetPath, dfso);
+      if(datasetProvCore != null
+        && (datasetProvCore.getType().equals(ProvTypeDTO.ProvType.DISABLED.dto)
+          || datasetProvCore.getType().equals(newProvType))) {
         continue;
       }
-      if(datasetProvCore == null) {
-        datasetProvCore = new ProvCoreDTO(provType, project.getInode().getId());
-      } else {
-        datasetProvCore.setType(provType);
-      }
-      setProvCoreXAttr(datasetPath, datasetProvCore, udfso);
+      updateDatasetProvType(datasetPath, provCore, dfso);
     }
+  }
+  
+  public void updateDatasetProvType(Dataset dataset, ProvTypeDTO newProvType, DistributedFileSystemOps dfso)
+    throws GenericException {
+    ProvCoreDTO newProvCore = new ProvCoreDTO(newProvType, dataset.getProject().getInode().getId());
+    String datasetPath = getDatasetPath(dataset);
+    ProvCoreDTO currentProvCore = getProvCoreXAttr(datasetPath, dfso);
+    if(currentProvCore != null && currentProvCore.getType().equals(newProvType)) {
+      return;
+    }
+    updateDatasetProvType(datasetPath, newProvCore, dfso);
+  }
+  
+  public void newHiveDatasetProvCore(Project project, String hiveDBPath, DistributedFileSystemOps dfso)
+    throws GenericException {
+    String projectPath = Utils.getProjectPath(project.getName());
+    ProvCoreDTO provCore = getProvCoreXAttr(projectPath, dfso);
+    if(provCore == null) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "hopsfs - hive db - set meta status error - project without prov core");
+    }
+    updateDatasetProvType(hiveDBPath, provCore, dfso);
+  }
+  
+  private void updateDatasetProvType(String datasetPath, ProvCoreDTO provCore, DistributedFileSystemOps dfso)
+    throws GenericException {
+    try {
+      dfso.setMetaStatus(datasetPath, provCore.getType().getMetaStatus());
+    } catch (IOException e) {
+      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
+        "hopsfs - dataset set meta status error", "hopsfs - dataset set meta status error", e);
+    }
+    setProvCoreXAttr(datasetPath, provCore, dfso);
   }
   
   public List<ProvTypeDatasetDTO> getDatasetsProvType(Users user, Project project) throws GenericException {
@@ -198,35 +215,6 @@ public class HopsFSProvenanceController {
     }
   }
   
-  public void updateDatasetProvType(Users user, Dataset dataset, ProvTypeDTO provType)
-    throws GenericException {
-    String hdfsUsername = hdfsUsersController.getHdfsUserName(dataset.getProject(), user);
-    DistributedFileSystemOps udfso = dfs.getDfsOps(hdfsUsername);
-    String datasetPath = getDatasetPath(dataset);
-    try {
-      ProvCoreDTO provCore = getProvCoreXAttr(datasetPath, udfso);
-      if(provCore != null && provCore.getType().equals(provType)) {
-        return;
-      }
-      if(provCore == null) {
-        provCore = new ProvCoreDTO(provType, dataset.getProject().getInode().getId());
-      } else {
-        provCore.setType(provType);
-      }
-      try {
-        udfso.setMetaStatus(datasetPath, provType.getMetaStatus());
-      } catch (IOException e) {
-        throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-          "hopsfs - dataset set meta status error", "hopsfs - dataset set meta status error", e);
-      }
-      setProvCoreXAttr(datasetPath, provCore, udfso);
-    } finally {
-      if(udfso != null) {
-        dfs.closeDfsClient(udfso);
-      }
-    }
-  }
-  
   private String getDatasetPath(Dataset dataset) {
     if(dataset.getName().equals(FeaturestoreHelper.getHiveDBName(dataset.getProject()))) {
       return FeaturestoreHelper.getHiveDBPath(settings, dataset.getProject());
@@ -234,29 +222,6 @@ public class HopsFSProvenanceController {
       return FeaturestoreHelper.getFeaturestorePath(settings, dataset.getProject());
     } else {
       return Utils.getDatasetPath(dataset.getProject().getName(), dataset.getName());
-    }
-  }
-  
-  public void newHiveDatasetProvCore(Users user, Project project, String hiveDBPath)
-    throws GenericException {
-    String hdfsUsername = hdfsUsersController.getHdfsUserName(project, user);
-    DistributedFileSystemOps udfso = dfs.getDfsOps(hdfsUsername);
-  
-    try {
-      String projectPath = Utils.getProjectPath(project.getName());
-      ProvCoreDTO provCore = getProvCoreXAttr(projectPath, udfso);
-      //set meta status - used in hops - featurestore is not an actual dataset
-      udfso.setMetaStatus(hiveDBPath, provCore.getType().getMetaStatus());
-      //set project id - no way to get this in hdfs - project inodeId is not in the path of the hivedb
-      provCore.setProjectIId(project.getInode().getId());
-      setProvCoreXAttr(hiveDBPath, provCore, udfso);
-    } catch (IOException e) {
-      throw new GenericException(RESTCodes.GenericErrorCode.ILLEGAL_STATE, Level.INFO,
-        "hopsfs - hive db - set meta status error", "hopsfs - hive db - set meta status error", e);
-    } finally {
-      if(udfso != null) {
-        dfs.closeDfsClient(udfso);
-      }
     }
   }
   
