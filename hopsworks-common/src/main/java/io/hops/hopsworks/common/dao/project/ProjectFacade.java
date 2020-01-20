@@ -265,13 +265,6 @@ public class ProjectFacade extends AbstractFacade<Project> {
     em.merge(project);
   }
 
-  public void enableConda(Project project) {
-    if (project != null) {
-      project.setConda(true);
-    }
-    em.merge(project);
-  }
-
   public void enableLogs(Project project) {
     if (project != null) {
       project.setLogs(true);

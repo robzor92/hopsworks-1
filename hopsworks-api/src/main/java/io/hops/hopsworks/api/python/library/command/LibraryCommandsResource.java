@@ -62,7 +62,7 @@ public class LibraryCommandsResource {
   private Project project;
   private String pythonVersion;
   
-  public LibraryCommandsResource setProject(Project project, String pythonVersion) {
+  public LibraryCommandsResource setProjectAndVersion(Project project, String pythonVersion) {
     this.project = project;
     this.pythonVersion = pythonVersion;
     return this;

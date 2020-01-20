@@ -55,6 +55,7 @@ import io.hops.hopsworks.common.jobs.AsynchronousJobExecutor;
 import io.hops.hopsworks.common.jobs.configuration.JobType;
 import io.hops.hopsworks.common.jobs.yarn.YarnJobsMonitor;
 import io.hops.hopsworks.common.jupyter.JupyterController;
+import io.hops.hopsworks.common.util.ProjectUtils;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.JobException;
@@ -97,6 +98,8 @@ public class SparkController {
   private JupyterController jupyterController;
   @EJB
   private DistributedFsService dfs;
+  @EJB
+  private ProjectUtils projectUtils;
 
   /**
    * Start the Spark job as the given user.
@@ -117,13 +120,20 @@ public class SparkController {
     SparkJobConfiguration sparkConfig = (SparkJobConfiguration)job.getJobConfig();
     String appPath = sparkConfig.getAppPath();
 
-    //If it is a notebook we need to convert it to a .py file every time the job is run
-    if(appPath.endsWith(".ipynb")) {
-      String outPath = "hdfs://" + Utils.getProjectPath(job.getProject().getName()) + Settings.PROJECT_STAGING_DIR;
-      String pyAppPath = outPath + "/job_tmp_" + job.getName() + ".py";
-      sparkConfig.setAppPath(pyAppPath);
-      jupyterController.convertIPythonNotebook(username, appPath, job.getProject(), pyAppPath,
-          JupyterController.NotebookConversion.PY);
+    if(job.getJobType().equals(JobType.PYSPARK)) {
+      if (!projectUtils.isCondaEnabled(job.getProject())) {
+        //Throw error in Hopsworks UI to notify user to enable Anaconda
+        throw new JobException(RESTCodes.JobErrorCode.JOB_START_FAILED, Level.SEVERE,
+            "PySpark job needs to have Python Anaconda environment enabled");
+      }
+      //If it is a notebook we need to convert it to a .py file every time the job is run
+      if (appPath.endsWith(".ipynb")) {
+        String outPath = "hdfs://" + Utils.getProjectPath(job.getProject().getName()) + Settings.PROJECT_STAGING_DIR;
+        String pyAppPath = outPath + "/job_tmp_" + job.getName() + ".py";
+        sparkConfig.setAppPath(pyAppPath);
+        jupyterController.convertIPythonNotebook(username, appPath, job.getProject(), pyAppPath,
+            JupyterController.NotebookConversion.PY);
+      }
     }
 
     SparkJob sparkjob = null;

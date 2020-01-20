@@ -60,7 +60,8 @@ public class EnvironmentCommandsResource {
   
   private Project project;
   private String pythonVersion;
-  public EnvironmentCommandsResource setProject(Project project, String pythonVersion) {
+
+  public EnvironmentCommandsResource setProjectAndVersion(Project project, String pythonVersion) {
     this.project = project;
     this.pythonVersion = pythonVersion;
     return this;

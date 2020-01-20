@@ -84,15 +84,6 @@ public class LibraryController {
       }
     }
   }
-
-  public List<PythonDep> listProject(Project proj) {
-    List<PythonDep> libs = new ArrayList<>();
-    Collection<PythonDep> objs = proj.getPythonDepCollection();
-    if (objs != null) {
-      libs.addAll(objs);
-    }
-    return libs;
-  }
   
   public void addPythonDepsForProject(Project proj, Collection<PythonDep> pythonDeps) {
     // proj.setPythonDepCollection(pythonDeps); will overwrite any dep already in proj.

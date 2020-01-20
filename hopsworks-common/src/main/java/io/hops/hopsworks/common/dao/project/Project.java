@@ -65,6 +65,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import io.hops.hopsworks.common.dao.dataset.DatasetSharedWith;
+import io.hops.hopsworks.common.dao.python.CondaEnvironment;
 import io.hops.hopsworks.common.dao.tensorflow.TensorBoard;
 import io.hops.hopsworks.common.dao.serving.Serving;
 import org.codehaus.jackson.annotate.JsonIgnore;
@@ -105,14 +106,10 @@ import javax.persistence.ManyToMany;
   @NamedQuery(name = "Project.findByInodeId",
       query = "SELECT t FROM Project t WHERE t.inode.inodePK.parentId = :parentid "
       + "AND t.inode.inodePK.name = :name"),
-  @NamedQuery(name = "Project.findAllCondaEnabled",
-      query = "SELECT t FROM Project t where t.conda = true"),
   @NamedQuery(name = "Project.findByNameCaseInsensitive",
       query = "SELECT t FROM Project t where LOWER(t.name) = LOWER(:name)")})
 public class Project implements Serializable {
 
-  @Column(name = "conda")
-  private Boolean conda = false;
   @Column(name = "archived")
   private Boolean archived = false;
   @Column(name = "logs")
@@ -121,6 +118,10 @@ public class Project implements Serializable {
   // If 'true' the user now has his/her own conda env.
   @Column(name = "conda_env")
   private Boolean condaEnv = false;
+  @JoinColumn(name = "conda_environment_id",
+      referencedColumnName = "id")
+  @ManyToOne
+  private CondaEnvironment condaEnvironment;
   @OneToMany(cascade = CascadeType.ALL,
       mappedBy = "project")
   private Collection<ProjectTeam> projectTeamCollection;
@@ -185,9 +186,6 @@ public class Project implements Serializable {
   @Column(name = "payment_type")
   @Enumerated(EnumType.STRING)
   private PaymentType paymentType;
-
-  @Column(name = "python_version")
-  private String pythonVersion;
 
   @Size(max = 2000)
   @Column(name = "description")
@@ -294,14 +292,6 @@ public class Project implements Serializable {
     this.retentionPeriod = retentionPeriod;
   }
 
-  public String getPythonVersion() {
-    return pythonVersion;
-  }
-
-  public void setPythonVersion(String pythonVersion) {
-    this.pythonVersion = pythonVersion;
-  }
-
   public String getDescription() {
     return description;
   }
@@ -366,14 +356,6 @@ public class Project implements Serializable {
       return false;
     }
     return true;
-  }
-
-  public Boolean getConda() {
-    return conda;
-  }
-
-  public void setConda(Boolean conda) {
-    this.conda = conda;
   }
 
   public Boolean getArchived() {
@@ -537,5 +519,13 @@ public class Project implements Serializable {
   public String toString() {
     return "se.kth.bbc.project.Project[ name=" + this.name + ", id=" + this.id
         + ", parentId=" + this.inode.getInodePK().getParentId() + " ]";
+  }
+
+  public CondaEnvironment getCondaEnvironment() {
+    return condaEnvironment;
+  }
+
+  public void setCondaEnvironment(CondaEnvironment condaEnvironment) {
+    this.condaEnvironment = condaEnvironment;
   }
 }

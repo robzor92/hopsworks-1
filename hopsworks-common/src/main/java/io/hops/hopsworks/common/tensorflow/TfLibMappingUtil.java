@@ -76,8 +76,7 @@ public class TfLibMappingUtil {
     }
 
     //.so library for RCCL
-    ldPathBuilder.append(settings.getAnacondaProjectDir(project) + "/lib/python" +
-        project.getPythonVersion() + ROCM_RCCL_PATH
+    ldPathBuilder.append(settings.getAnacondaProjectDir(project) + "/lib/python3.6" + ROCM_RCCL_PATH
         + File.pathSeparator);
 
     return ldPathBuilder.toString();

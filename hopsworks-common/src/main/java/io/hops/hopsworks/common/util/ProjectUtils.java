@@ -60,14 +60,15 @@ public class ProjectUtils {
     }
     return false;
   }
-  
+
+  public boolean isCondaEnabled(Project project) {
+    return project.getCondaEnv() || project.getCondaEnvironment() != null;
+  }
+
   public String getCurrentCondaEnvironment(Project project) {
     String condaEnv = project.getName();
-    
-    if (project.getConda() && !project.getCondaEnv()) {
-      if (project.getPythonVersion().compareToIgnoreCase("2.7") == 0) {
-        condaEnv = "python27";
-      } else if (project.getPythonVersion().compareToIgnoreCase("3.6") == 0) {
+    if (project.getCondaEnvironment() != null && !project.getCondaEnv()) {
+      if (project.getCondaEnvironment().getPythonVersion().compareToIgnoreCase("3.6") == 0) {
         condaEnv = "python36";
       } else {
         throw new IllegalArgumentException("Error. Python has not been enabled for this project.");
@@ -77,9 +78,7 @@ public class ProjectUtils {
   }
 
   public String getCurrentCondaBaseEnvironment(Project project) {
-    if (project.getPythonVersion().compareToIgnoreCase("2.7") == 0) {
-      return "python27";
-    } else if (project.getPythonVersion().compareToIgnoreCase("3.6") == 0) {
+    if (isCondaEnabled(project)) {
       return "python36";
     } else {
       throw new IllegalArgumentException("Error. Python has not been enabled for this project.");

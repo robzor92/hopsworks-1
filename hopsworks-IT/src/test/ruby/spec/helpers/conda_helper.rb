@@ -101,7 +101,7 @@ module CondaHelper
 
   def create_env(project, version)
     project = get_project_by_name(project[:projectname])
-    if not (project[:python_version].nil? or project[:python_version].empty?)
+    if not project[:conda_environment_id].nil?
       delete_env(project[:id], version)
     end
     post "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/python/environments/#{version}?action=create"
@@ -113,7 +113,7 @@ module CondaHelper
 
   def create_env_and_update_project(project, version)
     project = get_project_by_name(project[:projectname])
-    if project[:python_version].nil? or project[:python_version].empty?
+    if project[:conda_environment_id].nil?
       create_env(project, version)
       expect_status(201)
       get_project_by_name(project[:projectname]) #get project from db with updated python version

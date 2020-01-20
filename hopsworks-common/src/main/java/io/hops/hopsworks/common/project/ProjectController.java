@@ -444,7 +444,8 @@ public class ProjectController {
   
       if (environmentController.condaEnabledHosts()) {
         try {
-          environmentController.createEnv(project, project.getOwner(), "3.6");//TODO: use variables for version
+          environmentController.createEnv(project, project.getOwner(), settings.getCondaPythonVersion(),
+              settings.getTensorflowVersion());
         } catch (PythonException | EJBException ex) {
           cleanup(project, sessionId, projectCreationFutures);
           throw new ProjectException(RESTCodes.ProjectErrorCode.PROJECT_ANACONDA_ENABLE_ERROR, Level.SEVERE,

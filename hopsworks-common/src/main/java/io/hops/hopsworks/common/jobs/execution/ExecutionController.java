@@ -69,6 +69,7 @@ import io.hops.hopsworks.common.jobs.spark.SparkController;
 import io.hops.hopsworks.common.jobs.spark.SparkJobConfiguration;
 import io.hops.hopsworks.common.jobs.yarn.YarnLogUtil;
 import io.hops.hopsworks.common.jobs.yarn.YarnMonitor;
+import io.hops.hopsworks.common.util.ProjectUtils;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.common.yarn.YarnClientService;
 import io.hops.hopsworks.common.yarn.YarnClientWrapper;
@@ -140,6 +141,8 @@ public class ExecutionController {
   private YarnProjectsQuotaFacade yarnProjectsQuotaFacade;
   @EJB
   private AsynchronousJobExecutor async;
+  @EJB
+  private ProjectUtils projectUtils;
 
   private static final Logger LOGGER = Logger.getLogger(ExecutionController.class.getName());
   private static final String REMOTE_PROTOCOL = "hdfs://";
@@ -183,7 +186,7 @@ public class ExecutionController {
           ActivityFlag.JOB);
         break;
       case PYSPARK:
-        if(!job.getProject().getConda()){
+        if(!projectUtils.isCondaEnabled(job.getProject())){
           throw new ProjectException(RESTCodes.ProjectErrorCode.ANACONDA_NOT_ENABLED, Level.FINEST);
         }
         exec = sparkController.startJob(job, args, user);

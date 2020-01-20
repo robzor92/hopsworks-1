@@ -261,7 +261,7 @@ public class LibraryResource {
   @Path("{library}/commands")
   @AllowedProjectRoles({AllowedProjectRoles.DATA_OWNER, AllowedProjectRoles.DATA_SCIENTIST})
   public LibraryCommandsResource libraryCommandsResource() {
-    return this.libraryCommandsResource.setProject(project, pythonVersion);
+    return this.libraryCommandsResource.setProjectAndVersion(project, pythonVersion);
   }
 
   private void validatePattern(String element) throws IllegalArgumentException {

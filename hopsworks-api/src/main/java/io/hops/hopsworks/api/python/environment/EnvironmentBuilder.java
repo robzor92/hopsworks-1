@@ -89,7 +89,7 @@ public class EnvironmentBuilder {
     expand(dto, resourceRequest);
     if (dto.isExpand()) {
       List<String> envs =  new ArrayList<>();
-      envs.add(project.getPythonVersion()); //Currently we only have one environment
+      envs.add(project.getCondaEnvironment().getPythonVersion()); //Currently we only have one environment
       dto.setCount((long) envs.size());
       return buildItems(dto, uriInfo, resourceRequest, project, envs);
     }
