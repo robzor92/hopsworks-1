@@ -75,7 +75,7 @@ describe "On #{ENV['OS']}" do
         it "should not be able to register" do
           post @register_resource, {"host-id": @random_host, password: "some_pass"}
           expect_status(404)
-	  expect_json(errorCode: 100025)
+          expect_json(errorCode: 100025)
         end
 
         it "should not be able to heartbeat" do
