@@ -36,6 +36,8 @@
  DAMAGES OR  OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 =end
+require 'pp'
+
 module ProjectHelper
   def with_valid_project
     @project ||= create_project
@@ -57,7 +59,7 @@ module ProjectHelper
     with_valid_session
     new_project = {projectName: "ProJect_#{short_random_id}", description:"", status: 0, services: ["JOBS","JUPYTER","HIVE","KAFKA","SERVING", "FEATURESTORE"],
                    projectTeam:[], retentionPeriod: ""}
-    pp "#{new_project}"
+    pp new_project
     post "#{ENV['HOPSWORKS_API']}/project", new_project
     expect_status(201)
     expect_json(successMessage: regex("Project created successfully.*"))
