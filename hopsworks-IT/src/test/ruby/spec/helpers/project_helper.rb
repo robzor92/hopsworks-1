@@ -37,6 +37,8 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 =end
 require 'pp'
+require 'typhoeus'
+require 'concurrent'
 
 module ProjectHelper
   def with_valid_project
@@ -88,12 +90,24 @@ module ProjectHelper
     get_project_by_name(json_body[:name])
   end
 
-  def raw_delete_project(project)
-    post "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/delete"
+  def raw_delete_project(project, response, headers)
+    if !headers["set_cookie"].nil? && !headers["set_cookie"][1].nil?
+      cookie = headers["set_cookie"][1].split(';')[0].split('=')
+      cookies = {"SESSIONID"=> JSON.parse(response.body)["sessionID"], cookie[0] => cookie[1]}
+    else
+      cookies = {"SESSIONID"=> JSON.parse(response.body)["sessionID"]}
+    end
+    request = Typhoeus::Request.new(
+      "https://#{ENV['WEB_HOST']}:#{ENV['WEB_PORT']}#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/delete",
+      headers: {:cookies => cookies, 'Authorization' => headers["authorization"]},
+      method: "post",
+      followlocation: true,
+      ssl_verifypeer: false,
+      ssl_verifyhost: 0)
   end
 
   def delete_project(project)
-    raw_delete_project(project)
+    post "#{ENV['HOPSWORKS_API']}/project/#{project[:id]}/delete"
     expect_status(200)
     expect_json(successMessage: "The project and all related files were removed successfully.")
   end
@@ -158,27 +172,67 @@ module ProjectHelper
     end
   end
 
-  def clean_test_projects(name_pattern)
-    pp "cleaning projects with names like:#{name_pattern}"
-    Project.where("projectname LIKE ?", name_pattern).each do |project|
-      response = raw_create_session(project[:username], "Pass123")
-      next unless response.code == 200
-
-      response = raw_delete_project(project)
-      if response.code == 200
-        pp "deleted project:#{project[:projectname]} with user:#{project[:username]}"
+  def on_complete(request)
+    request.on_complete do |response|
+      if response.success?
+        pp "Successful request: " + response.code.to_s
+      elsif response.timed_out?
+        pp "Timed out sending request"
+      elsif response.code == 0
+        pp response.return_message
       else
-        pp "could not delete project:#{project[:projectname]} with user:#{project[:username]}"
+        pp "HTTP request failed: " + response.code.to_s
       end
     end
   end
 
+
+  def clean_test_project(project)
+    response, headers = login_user(project[:username], "Pass123")
+    if response.code != 200
+      pp "could not login and delete project:#{project[:projectname]} with user:#{project[:username]}"
+    end
+    request = raw_delete_project(project, response, headers)
+    on_complete(request)
+    return request
+  end
+
+
+  # This function must be added under the first describe of each .spec file to ensure test projects are cleaned up properly
   def clean_all_test_projects
-    clean_test_projects('project\_%')
-    clean_test_projects('ProJect\_%')
-    clean_test_projects('demo\_%')
-    clean_test_projects('HOPSWORKS256%')
-    clean_test_projects('hopsworks256%')
-    clean_test_projects('prov\_proj\_%')
+    pp "Cleaning up test projects"
+
+    starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    hydra = Typhoeus::Hydra.new(max_concurrency: 10)
+
+    Project.where("projectname LIKE ?", 'project\_%').each{|project|
+      hydra.queue clean_test_project(project)
+    }
+
+    Project.where("projectname LIKE ?", 'ProJect\_%').each{|project|
+      hydra.queue clean_test_project(project)
+    }
+
+    Project.where("projectname LIKE ?", 'demo\_%').each{|project|
+      hydra.queue clean_test_project(project)
+    }
+
+    Project.where("projectname LIKE ?", 'HOPSWORKS256%').each{|project|
+      hydra.queue clean_test_project(project)
+    }
+
+    Project.where("projectname LIKE ?", 'hopsworks256%').each{|project|
+      hydra.queue clean_test_project(project)
+    }
+
+    Project.where("projectname LIKE ?", 'prov\_proj\_%').each{|project|
+      hydra.queue clean_test_project(project)
+    }
+
+    hydra.run
+    ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    elapsed = ending - starting
+
+    pp "Finished cleanup - time elapsed " + elapsed.to_s + "s"
   end
 end

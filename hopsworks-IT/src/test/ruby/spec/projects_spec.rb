@@ -39,6 +39,7 @@
 =end
 
 describe "On #{ENV['OS']}" do
+  after(:all) {clean_all_test_projects}
   describe 'projects' do
     describe "#create" do
       context 'without authentication' do
@@ -208,7 +209,7 @@ describe "On #{ENV['OS']}" do
         it "Should be able to create a Project after a failed attempt" do
           # First shutdown the service
           execute_remotely @service_host, "sudo systemctl stop #{@failed_service}"
-          project_name = "doomed2fail_#{Time.now.to_i}"
+          project_name = "ProJect_doomed2fail_#{Time.now.to_i}"
           post "#{ENV['HOPSWORKS_API']}/project", {projectName: project_name,
                                                   services: ["JOBS","JUPYTER"]}
           expect_status(500)
