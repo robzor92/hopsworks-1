@@ -74,7 +74,6 @@ import io.hops.hopsworks.common.livy.LivyMsg;
 import io.hops.hopsworks.common.security.CertificateMaterializer;
 import io.hops.hopsworks.common.util.HopsUtils;
 import io.hops.hopsworks.common.util.Ip;
-import io.hops.hopsworks.common.util.ProjectUtils;
 import io.hops.hopsworks.common.util.Settings;
 import io.hops.hopsworks.exceptions.GenericException;
 import io.hops.hopsworks.exceptions.HopsSecurityException;
@@ -158,8 +157,6 @@ public class JupyterService {
   private JupyterNbVCSController jupyterNbVCSController;
   @EJB
   private SparkController sparkController;
-  @EJB
-  private ProjectUtils projectUtils;
 
   private Integer projectId;
   // No @EJB annotation for Project, it's injected explicitly in ProjectService.
@@ -303,7 +300,7 @@ public class JupyterService {
       }
     }
 
-    boolean enabled = projectUtils.isCondaEnabled(project);
+    boolean enabled = project.getConda();
     if (!enabled) {
       throw new ProjectException(RESTCodes.ProjectErrorCode.ANACONDA_NOT_ENABLED, Level.FINE);
     }

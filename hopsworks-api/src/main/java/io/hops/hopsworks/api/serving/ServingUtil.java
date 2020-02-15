@@ -25,7 +25,6 @@ import io.hops.hopsworks.common.dao.serving.ServingType;
 import io.hops.hopsworks.common.hdfs.Utils;
 import io.hops.hopsworks.common.hdfs.inode.InodeController;
 import io.hops.hopsworks.common.serving.ServingWrapper;
-import io.hops.hopsworks.common.util.ProjectUtils;
 import io.hops.hopsworks.exceptions.ServingException;
 import io.hops.hopsworks.restutils.RESTCodes;
 
@@ -49,8 +48,6 @@ public class ServingUtil {
   private ServingFacade servingFacade;
   @EJB
   private InodeController inodeController;
-  @EJB
-  private ProjectUtils projectUtils;
   
   /**
    * Validates user input before creating or updating a serving. This method contains the common input validation
@@ -119,7 +116,7 @@ public class ServingUtil {
     }
     
     //Check that python environment is activated
-    boolean enabled = projectUtils.isCondaEnabled(project);
+    boolean enabled = project.getConda();
     if(!enabled){
       throw new ServingException(RESTCodes.ServingErrorCode.PYTHON_ENVIRONMENT_NOT_ENABLED, Level.SEVERE, null);
     }
