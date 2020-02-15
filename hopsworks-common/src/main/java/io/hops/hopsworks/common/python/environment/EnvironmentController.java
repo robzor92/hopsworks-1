@@ -22,8 +22,6 @@ import io.hops.hopsworks.common.dao.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
 import io.hops.hopsworks.common.dao.python.CondaCommandFacade;
 import io.hops.hopsworks.common.dao.python.CondaCommands;
-import io.hops.hopsworks.common.dao.python.CondaEnvironment;
-import io.hops.hopsworks.common.dao.python.CondaEnvironmentFacade;
 import io.hops.hopsworks.common.dao.python.LibraryFacade;
 import io.hops.hopsworks.common.dao.python.PythonDep;
 import io.hops.hopsworks.common.dao.user.Users;
@@ -74,8 +72,6 @@ public class EnvironmentController {
   @EJB
   private HostsFacade hostsFacade;
   @EJB
-  private CondaEnvironmentFacade condaEnvironmentFacade;
-  @EJB
   private OSProcessExecutor osProcessExecutor;
   @EJB
   private Settings settings;
@@ -101,8 +97,7 @@ public class EnvironmentController {
   private static final DateTimeFormatter ELASTIC_INDEX_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd");
   
   public void checkCondaEnabled(Project project, String pythonVersion) throws PythonException {
-    if (!projectUtils.isCondaEnabled(project) ||
-        !pythonVersion.equals(project.getCondaEnvironment().getPythonVersion())) {
+    if (!project.getConda() || !pythonVersion.equals(project.getPythonVersion())) {
       throw new PythonException(RESTCodes.PythonErrorCode.ANACONDA_ENVIRONMENT_NOT_FOUND, Level.FINE);
     }
   }
@@ -110,7 +105,7 @@ public class EnvironmentController {
   public void checkCondaEnvExists(Project project, Users user)
       throws ServiceException, ProjectException, PythonException,
       ElasticException {
-    if (!projectUtils.isCondaEnabled(project)) {
+    if (!project.getConda()) {
       throw new PythonException(RESTCodes.PythonErrorCode.ANACONDA_ENVIRONMENT_NOT_FOUND, Level.FINE);
     }
     if (!project.getCondaEnv()) {
@@ -127,20 +122,34 @@ public class EnvironmentController {
     libraryController.addPythonDepsForProject(project, pythonDeps);
   }
   
-  private void createProjectInDb(Project project, Users user, String pythonVersion, String tensorflowVersion,
+  private Collection<PythonDep> createProjectInDb(Project project, Users user, String pythonVersion,
     LibraryFacade.MachineType machineType, String environmentYml, Boolean installJupyter) throws ServiceException {
     
-    if (environmentYml == null && pythonVersion.compareToIgnoreCase("3.6") != 0) {
+    if (environmentYml == null && pythonVersion.compareToIgnoreCase("2.7") != 0 && pythonVersion.
+      compareToIgnoreCase("3.5") != 0 && pythonVersion.
+      compareToIgnoreCase("3.6") != 0 && !pythonVersion.contains("X")) {
       throw new ServiceException(RESTCodes.ServiceErrorCode.PYTHON_INVALID_VERSION,
         Level.INFO, "pythonVersion: " + pythonVersion);
     }
     
     if (environmentYml != null) {
-      condaEnvironmentOp(CondaCommandFacade.CondaOp.YML, pythonVersion, project, user, tensorflowVersion, machineType,
+      condaEnvironmentOp(CondaCommandFacade.CondaOp.YML, pythonVersion, project, user, pythonVersion, machineType,
         environmentYml, installJupyter, false);
       setCondaEnv(project, true);
     } else {
       validateCondaHosts(machineType);
+    }
+
+    List<PythonDep> all = new ArrayList<>();
+    enableConda(project);
+    return all;
+  }
+  
+  private void enableConda(Project project) {
+    if (project != null) {
+      project.setConda(true);
+      projectFacade.update(project);
+      projectFacade.flushEm();
     }
   }
   
@@ -166,10 +175,8 @@ public class EnvironmentController {
   @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
   public void copyOnWriteCondaEnv(Project project, Users user) throws ServiceException {
     setCondaEnv(project, true);
-    condaEnvironmentOp(CondaCommandFacade.CondaOp.CREATE,
-        project.getCondaEnvironment().getPythonVersion(), project, user,
-      project.getCondaEnvironment().getPythonVersion(), LibraryFacade.MachineType.ALL,
-        null, false, false);
+    condaEnvironmentOp(CondaCommandFacade.CondaOp.CREATE, project.getPythonVersion(), project, user,
+      project.getPythonVersion(), LibraryFacade.MachineType.ALL, null, false, false);
   }
   
   /**
@@ -226,6 +233,11 @@ public class EnvironmentController {
       "", LibraryFacade.MachineType.ALL, null, false, false);
   }
   
+  private void condaEnvironmentClone(Project srcProj, Project destProj, Users user) throws ServiceException {
+    condaEnvironmentOp(CondaCommandFacade.CondaOp.CLONE, "", srcProj, user, destProj.getName(),
+      LibraryFacade.MachineType.ALL, null, false, false);
+  }
+  
   public CondaCommands getOngoingEnvCreation(Project proj) {
     List<CondaCommands> commands = condaCommandFacade.getCommandsForProject(proj);
     for (CondaCommands command : commands) {
@@ -250,8 +262,8 @@ public class EnvironmentController {
   
   private void removePythonForProject(Project proj) {
     proj.setPythonDepCollection(new ArrayList<>());
-    proj.setCondaEnvironment(null);
-    proj.setCondaEnv(false);
+    proj.setPythonVersion("");
+    proj.setConda(false);
     projectFacade.update(proj);
   }
   
@@ -266,23 +278,11 @@ public class EnvironmentController {
     }
     return foundVersion;
   }
-
-  public String findTensorFlowVersion(String ymlFile) {
-    String foundVersion = null;
-    Pattern urlPattern = Pattern.compile("(- tensorflow=(\\d+.\\d+))");
-    Matcher urlMatcher = urlPattern.matcher(ymlFile);
-    if (urlMatcher.find()) {
-      foundVersion = urlMatcher.group(2);
-    } else {
-      return settings.getTensorflowVersion();
-    }
-    return foundVersion;
-  }
   
   public String createEnvironmentFromYml(String allYmlPath, String cpuYmlPath, String gpuYmlPath,
     boolean installJupyter, Users user, Project project) throws PythonException,
       ServiceException, ProjectException, ElasticException {
-    if (projectUtils.isCondaEnabled(project)) {
+    if ((project.getConda() || project.getCondaEnv())) {
       throw new PythonException(RESTCodes.PythonErrorCode.ANACONDA_ENVIRONMENT_ALREADY_INITIALIZED, Level.FINE);
     }
     String username = hdfsUsersController.getHdfsUserName(project, user);
@@ -295,14 +295,10 @@ public class EnvironmentController {
       }
       String allYml = getYmlFromPath(new Path(allYmlPath), username);
       String pythonVersion = findPythonVersion(allYml);
-      String tensorflowVersion = findTensorFlowVersion(allYml);
       version = pythonVersion;
       createKibanaIndex(project, user);
-      createProjectInDb(project, user, version, tensorflowVersion,
-          LibraryFacade.MachineType.ALL, allYml, installJupyter);
-      CondaEnvironment condaEnvironment = condaEnvironmentFacade.findByTfAndPythonVersion(version, tensorflowVersion);
-      project.setCondaEnvironment(condaEnvironment);
-      project.setCondaEnv(true);
+      createProjectInDb(project, user, version, LibraryFacade.MachineType.ALL, allYml, installJupyter);
+      project.setPythonVersion(version);
       projectFacade.update(project);
       return version;
     } else {
@@ -325,7 +321,6 @@ public class EnvironmentController {
     
       String pythonVersionCPUYml = findPythonVersion(cpuYml);
       String pythonVersionGPUYml = findPythonVersion(gpuYml);
-      String tensorflowVersion = findTensorFlowVersion(gpuYml);
       if (!pythonVersionCPUYml.equals(pythonVersionGPUYml)) {
         throw new ServiceException(RESTCodes.ServiceErrorCode.INVALID_YML, Level.FINE,
             "python version mismatch between .yml files.");
@@ -333,23 +328,18 @@ public class EnvironmentController {
       version = pythonVersionCPUYml;
 
       createKibanaIndex(project, user);
-      createProjectInDb(project, user, version, tensorflowVersion,
-          LibraryFacade.MachineType.CPU, cpuYml, installJupyter);
-      createProjectInDb(project, user, version, tensorflowVersion,
-          LibraryFacade.MachineType.GPU, gpuYml, installJupyter);
-
-      CondaEnvironment condaEnvironment = condaEnvironmentFacade.findByTfAndPythonVersion(version, tensorflowVersion);
-      project.setCondaEnvironment(condaEnvironment);
-      project.setCondaEnv(true);
+      createProjectInDb(project, user, version, LibraryFacade.MachineType.CPU, cpuYml, installJupyter);
+      createProjectInDb(project, user, version, LibraryFacade.MachineType.GPU, gpuYml, installJupyter);
+    
+      project.setPythonVersion(version);
       projectFacade.update(project);
-
       return version;
     }
   }
   
   public String[] exportEnv(Project project, Users user, String projectRelativeExportPath)
       throws PythonException, ServiceException {
-    if (!projectUtils.isCondaEnabled(project)) {
+    if (!project.getConda()) {
       throw new PythonException(RESTCodes.PythonErrorCode.ANACONDA_ENVIRONMENT_NOT_FOUND, Level.FINE);
     }
 
@@ -360,32 +350,27 @@ public class EnvironmentController {
     long exportTime = date.getTime();
     if (cpuHost.isPresent()) {
       String cpuYmlPath = projectRelativeExportPath + "/" + "environment_cpu_" + exportTime + ".yml";
-      condaEnvironmentOp(CondaCommandFacade.CondaOp.EXPORT, settings.getCondaPythonVersion(), project, user,
+      condaEnvironmentOp(CondaCommandFacade.CondaOp.EXPORT, project.getPythonVersion(), project, user,
           cpuYmlPath, LibraryFacade.MachineType.CPU, null, false, true);
       ymlList.add(cpuYmlPath);
     }
     Optional<String> gpuHost = hostsFacade.findGPUHost();
     if (gpuHost.isPresent()) {
       String gpuYmlPath = projectRelativeExportPath + "/" + "environment_gpu_" + exportTime + ".yml";
-      condaEnvironmentOp(CondaCommandFacade.CondaOp.EXPORT, settings.getCondaPythonVersion(), project, user,
+      condaEnvironmentOp(CondaCommandFacade.CondaOp.EXPORT, project.getPythonVersion(), project, user,
           gpuYmlPath, LibraryFacade.MachineType.GPU, null, false, true);
       ymlList.add(gpuYmlPath);
     }
     return ymlList.toArray(new String[0]);
   }
   
-  public void createEnv(Project project, Users user, String pythonVersion, String tensorflowVersion)
-      throws PythonException, ServiceException {
-    if (projectUtils.isCondaEnabled(project)) {
+  public void createEnv(Project project, Users user, String version) throws PythonException,
+      ServiceException, ProjectException {
+    if (project.getConda() || project.getCondaEnv()) {
       throw new PythonException(RESTCodes.PythonErrorCode.ANACONDA_ENVIRONMENT_ALREADY_INITIALIZED, Level.FINE);
     }
-
-    createProjectInDb(project, user, pythonVersion, tensorflowVersion, LibraryFacade.MachineType.ALL, null, false);
-
-    CondaEnvironment condaEnvironment =
-        condaEnvironmentFacade.findByTfAndPythonVersion(pythonVersion, tensorflowVersion);
-    project.setCondaEnvironment(condaEnvironment);
-
+    createProjectInDb(project, user, version, LibraryFacade.MachineType.ALL, null, false);
+    project.setPythonVersion(version);
     projectFacade.update(project);
     synchronizeDependencies(project);
   }

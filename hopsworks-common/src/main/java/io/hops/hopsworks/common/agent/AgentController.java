@@ -37,7 +37,6 @@ import io.hops.hopsworks.common.python.environment.EnvironmentController;
 import io.hops.hopsworks.common.python.library.LibraryController;
 import io.hops.hopsworks.common.util.ProcessDescriptor;
 import io.hops.hopsworks.common.util.ProcessResult;
-import io.hops.hopsworks.common.util.ProjectUtils;
 import io.hops.hopsworks.restutils.RESTCodes;
 import io.hops.hopsworks.exceptions.ServiceException;
 import io.hops.hopsworks.common.util.OSProcessExecutor;
@@ -90,8 +89,6 @@ public class AgentController {
   private AgentLivenessMonitor agentLivenessMonitor;
   @EJB
   private HostsController hostsController;
-  @EJB
-  private ProjectUtils projectUtils;
 
 
   public void register(String hostId, String password) throws ServiceException {
@@ -136,7 +133,7 @@ public class AgentController {
           // Project does not exist any longer
           // OR Project does not have a CoW (CopyOnWrite) environment
           // OR does not have Conda enabled at all (really for safety reasons)
-          return project == null || !project.getCondaEnv() || !projectUtils.isCondaEnabled(project);
+          return project == null || !project.getCondaEnv() || !project.getConda();
         }).collect(Collectors.toList());
 
     String projectNamesStr = new Gson().toJson(envsToDelete);

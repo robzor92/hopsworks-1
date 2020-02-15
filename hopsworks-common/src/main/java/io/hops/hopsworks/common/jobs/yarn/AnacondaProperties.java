@@ -36,53 +36,27 @@
  * DAMAGES OR  OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package io.hops.hopsworks.common.util;
 
-import io.hops.hopsworks.common.dao.project.Project;
+package io.hops.hopsworks.common.jobs.yarn;
 
-import javax.ejb.EJB;
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
+/**
+ *
+ * <p>
+ */
+public class AnacondaProperties {
 
-@Stateless
-@TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
-public class ProjectUtils {
-  
-  @EJB
-  private Settings settings;
-  
-  public boolean isReservedProjectName(String projectName) {
-    for (String name : settings.getReservedProjectNames()) {
-      if (name.equalsIgnoreCase(projectName)) {
-        return true;
-      }
-    }
-    return false;
-  }
-  
-  public String getCurrentCondaEnvironment(Project project) {
-    String condaEnv = project.getName();
-    
-    if (project.getConda() && !project.getCondaEnv()) {
-      if (project.getPythonVersion().compareToIgnoreCase("2.7") == 0) {
-        condaEnv = "python27";
-      } else if (project.getPythonVersion().compareToIgnoreCase("3.6") == 0) {
-        condaEnv = "python36";
-      } else {
-        throw new IllegalArgumentException("Error. Python has not been enabled for this project.");
-      }
-    }
-    return condaEnv;
+  private String envPath;
+
+  public AnacondaProperties(String envPath) {
+    this.envPath = envPath;
   }
 
-  public String getCurrentCondaBaseEnvironment(Project project) {
-    if (project.getPythonVersion().compareToIgnoreCase("2.7") == 0) {
-      return "python27";
-    } else if (project.getPythonVersion().compareToIgnoreCase("3.6") == 0) {
-      return "python36";
-    } else {
-      throw new IllegalArgumentException("Error. Python has not been enabled for this project.");
-    }
+  public String getEnvPath() {
+    return envPath;
   }
+
+  public void setEnvPath(String envPath) {
+    this.envPath = envPath;
+  }
+
 }

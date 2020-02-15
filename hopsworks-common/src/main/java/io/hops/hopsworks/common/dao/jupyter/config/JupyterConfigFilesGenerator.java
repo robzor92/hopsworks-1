@@ -199,7 +199,7 @@ public class JupyterConfigFilesGenerator {
   }
   
   public void createJupyterNotebookConfig(Writer out, Project project, String nameNodeEndpoint, int port,
-      JupyterSettings js, String hdfsUser, String certsDir, String allowOrigin)
+      JupyterSettings js, String hdfsUser, String pythonKernelName, String certsDir, String allowOrigin)
         throws IOException, ServiceException {
     String[] nn = nameNodeEndpoint.split(":");
     String nameNodeIp = nn[0];
@@ -222,7 +222,7 @@ public class JupyterConfigFilesGenerator {
         .setPort(port)
         .setBaseDirectory(js.getBaseDir())
         .setHdfsUser(hdfsUser)
-        .setWhiteListedKernels("'" + pythonKernelName(project.getCondaEnvironment().getPythonVersion()) +
+        .setWhiteListedKernels("'" + pythonKernelName(js.getProject().getPythonVersion()) +
             "', 'pysparkkernel', 'sparkkernel', 'sparkrkernel'")
         .setHadoopHome(settings.getHadoopSymbolicLinkDir())
         .setJupyterCertsDirectory(certsDir)
@@ -312,7 +312,7 @@ public class JupyterConfigFilesGenerator {
     File sparkmagic_config_file = new File(confDirPath, SparkMagicConfigTemplate.FILE_NAME);
     
     if (!jupyter_config_file.exists()) {
-      String pythonKernelName = pythonKernelName(project.getCondaEnvironment().getPythonVersion());
+      String pythonKernelName = pythonKernelName(project.getPythonVersion());
       if (settings.isPythonKernelEnabled()) {
         String pythonKernelPath = pythonKernelPath(kernelsDir, pythonKernelName);
         File pythonKernelFile = new File(pythonKernelPath, KernelTemplate.FILE_NAME);
@@ -325,7 +325,8 @@ public class JupyterConfigFilesGenerator {
       }
   
       try (Writer out = new FileWriter(jupyter_config_file, false)) {
-        createJupyterNotebookConfig(out, project, nameNodeEndpoint, port, js, hdfsUser, certsDir, allowOrigin);
+        createJupyterNotebookConfig(out, project, nameNodeEndpoint, port, js, hdfsUser,
+            pythonKernelName, certsDir, allowOrigin);
       }
     }
     
