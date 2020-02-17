@@ -75,9 +75,7 @@ public class ProjectUtils {
   }
 
   public String getCurrentCondaBaseEnvironment(Project project) {
-    if (project.getPythonVersion().compareToIgnoreCase("2.7") == 0) {
-      return "python27";
-    } else if (project.getPythonVersion().compareToIgnoreCase("3.6") == 0) {
+    if (project.getPythonVersion().compareToIgnoreCase("3.6") == 0) {
       return "python36";
     } else {
       throw new IllegalArgumentException("Error. Python has not been enabled for this project.");
