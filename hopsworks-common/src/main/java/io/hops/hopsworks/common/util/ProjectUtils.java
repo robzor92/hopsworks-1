@@ -65,9 +65,7 @@ public class ProjectUtils {
     String condaEnv = project.getName();
     
     if (project.getConda() && !project.getCondaEnv()) {
-      if (project.getPythonVersion().compareToIgnoreCase("2.7") == 0) {
-        condaEnv = "python27";
-      } else if (project.getPythonVersion().compareToIgnoreCase("3.6") == 0) {
+      if (project.getPythonVersion().compareToIgnoreCase("3.6") == 0) {
         condaEnv = "python36";
       } else {
         throw new IllegalArgumentException("Error. Python has not been enabled for this project.");
